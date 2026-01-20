@@ -9,7 +9,7 @@ export default function SignInPage() {
           app.pagelet-dev.kr/signin
         </p>
         <p className="text-sm text-center text-gray-500">
-          이 페이지는 /app/signin으로 rewrite되었습니다.
+          이 페이지는 (app) route group에 있습니다.
         </p>
       </div>
     </div>

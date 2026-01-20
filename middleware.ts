@@ -15,10 +15,10 @@ export function middleware(req: NextRequest) {
   const host = getHostname(req);
   const path = url.pathname;
 
-  // 1) app 서브도메인: /app/* 로 rewrite
+  // 1) app 서브도메인: route groups (app)이 자동으로 처리
+  // rewrite 없이 그대로 전달 (route groups는 URL에 영향을 주지 않음)
   if (host === `app.${ROOT_DOMAIN}` || host === "app.localhost") {
-    url.pathname = `/app${path}`;
-    return NextResponse.rewrite(url);
+    return NextResponse.next();
   }
 
   // 2) 테넌트 서브도메인: /t/[slug]/* 로 rewrite
