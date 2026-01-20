@@ -1,4 +1,4 @@
-import { KakaoLoginButton } from "./KakaoLoginButton";
+import { KakaoLoginButton } from "../KakaoLoginButton";
 
 export default function Home() {
   return (
