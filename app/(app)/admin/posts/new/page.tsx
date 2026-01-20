@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCreatePost } from '@/hooks/use-posts';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { ThumbnailInput } from '@/components/post/thumbnail-input';
 import { AxiosError } from 'axios';
 
 export default function NewPostPage() {
@@ -183,18 +184,17 @@ export default function NewPostPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="ogImageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                      OG 이미지 URL
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      썸네일 이미지
                     </label>
-                    <input
-                      id="ogImageUrl"
-                      type="url"
+                    <ThumbnailInput
                       value={ogImageUrl}
-                      onChange={(e) => setOgImageUrl(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      maxLength={500}
+                      onChange={(url) => setOgImageUrl(url || '')}
+                      disabled={createPost.isPending}
                     />
+                    <p className="mt-2 text-xs text-gray-500">
+                      게시글 썸네일로 사용됩니다. URL 입력 또는 직접 업로드가 가능합니다.
+                    </p>
                   </div>
                 </div>
               )}

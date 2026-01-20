@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMySiteSettings, useUpdateSiteSettings } from '@/hooks/use-site-settings';
@@ -10,23 +10,58 @@ import { Button } from '@/components/ui/button';
 // Zod 스키마 정의
 const siteSettingsSchema = z.object({
   // 브랜딩
-  logo_image_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
+  logo_image_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
   favicon_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   // SEO
-  og_image_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
+  og_image_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
   seo_title: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
   seo_description: z.string().nullable().or(z.literal('')),
   seo_keywords: z.string().max(500).nullable().or(z.literal('')),
-  canonical_base_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
+  canonical_base_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
   robots_index: z.boolean(),
   // 연락처
-  contact_email: z.string().email('올바른 이메일 형식이어야 합니다').max(255).nullable().or(z.literal('')),
+  contact_email: z
+    .string()
+    .email('올바른 이메일 형식이어야 합니다')
+    .max(255)
+    .nullable()
+    .or(z.literal('')),
   contact_phone: z.string().max(50).nullable().or(z.literal('')),
   address: z.string().nullable().or(z.literal('')),
   // 소셜 링크
-  kakao_channel_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
-  naver_map_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
-  instagram_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
+  kakao_channel_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
+  naver_map_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
+  instagram_url: z
+    .string()
+    .url('올바른 URL 형식이어야 합니다')
+    .max(500)
+    .nullable()
+    .or(z.literal('')),
   // 사업자 정보
   business_number: z.string().max(20).nullable().or(z.literal('')),
   business_name: z.string().max(100).nullable().or(z.literal('')),
@@ -43,8 +78,8 @@ export default function SiteSettingsPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting, isDirty },
-    watch,
     setValue,
   } = useForm<SiteSettingsFormData>({
     resolver: zodResolver(siteSettingsSchema),
@@ -94,14 +129,18 @@ export default function SiteSettingsPage() {
     }
   }, [settings, reset]);
 
+  // robots_index 필드 값 구독
+  const robotsIndex = useWatch({
+    control,
+    name: 'robots_index',
+    defaultValue: false,
+  });
+
   const onSubmit = async (data: SiteSettingsFormData) => {
     try {
       // 빈 문자열을 null로 변환
       const payload = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [
-          key,
-          value === '' ? null : value,
-        ])
+        Object.entries(data).map(([key, value]) => [key, value === '' ? null : value]),
       );
       await updateSettings.mutateAsync(payload);
     } catch {
@@ -228,7 +267,7 @@ export default function SiteSettingsPage() {
               <SwitchField
                 label="검색 엔진 인덱싱 허용"
                 hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
-                checked={watch('robots_index')}
+                checked={robotsIndex}
                 onChange={(checked) => setValue('robots_index', checked, { shouldDirty: true })}
               />
             </div>
@@ -349,9 +388,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
   ({ label, error, hint, ...props }, ref) => {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
         <input
           ref={ref}
           className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -363,7 +400,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
-  }
+  },
 );
 InputField.displayName = 'InputField';
 
@@ -377,9 +414,7 @@ const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
   ({ label, error, hint, ...props }, ref) => {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
         <textarea
           ref={ref}
           className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y ${
@@ -391,7 +426,7 @@ const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
-  }
+  },
 );
 TextareaField.displayName = 'TextareaField';
 
