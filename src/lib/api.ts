@@ -32,6 +32,13 @@ export const AccountStatus = {
 
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
 
+export const PostStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type PostStatus = (typeof PostStatus)[keyof typeof PostStatus];
+
 export interface User {
   id: string;
   email: string | null;
@@ -40,6 +47,42 @@ export interface User {
   onboardingStep: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  status: PostStatus;
+  published_at: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  og_image_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  published_at: string;
+  seo_title: string | null;
+  seo_description: string | null;
+  og_image_url: string | null;
+}
+
+export interface PostListItem {
+  id: string;
+  title: string;
+  slug: string;
+  status: PostStatus;
+  published_at: string | null;
+  seo_description: string | null;
+  og_image_url: string | null;
+  created_at: string;
 }
 
 export interface ApiResponse<T> {
@@ -85,6 +128,11 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
 export interface CreatePostRequest {
   title: string;
   content: string;
+  slug?: string;
+  status?: PostStatus;
+  seo_title?: string;
+  seo_description?: string;
+  og_image_url?: string;
 }
 
 export async function createPost(data: CreatePostRequest): Promise<void> {
@@ -97,4 +145,58 @@ export async function skipFirstPost(): Promise<void> {
 
 export async function completeOnboarding(): Promise<void> {
   await api.post('/onboarding/complete');
+}
+
+// ===== Admin Post API =====
+
+export async function createAdminPost(data: CreatePostRequest): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>('/admin/posts', data);
+  return response.data.data;
+}
+
+export async function getAdminPosts(): Promise<PostListItem[]> {
+  const response = await api.get<ApiResponse<PostListItem[]>>('/admin/posts');
+  return response.data.data;
+}
+
+export async function checkPostSlugAvailability(slug: string): Promise<boolean> {
+  try {
+    const response = await api.get<ApiResponse<{ available: boolean }>>(
+      `/admin/posts/check-slug`,
+      { params: { slug } }
+    );
+    return response.data.data.available;
+  } catch {
+    return false;
+  }
+}
+
+// ===== Public Post API =====
+
+export async function getPublicPosts(siteSlug: string): Promise<PublicPost[]> {
+  const response = await api.get<ApiResponse<PublicPost[]>>('/public/posts', {
+    params: { site_slug: siteSlug },
+  });
+  return response.data.data;
+}
+
+export async function getPublicPostBySlug(siteSlug: string, postSlug: string): Promise<PublicPost> {
+  const response = await api.get<ApiResponse<PublicPost>>(`/public/posts/${postSlug}`, {
+    params: { site_slug: siteSlug },
+  });
+  return response.data.data;
+}
+
+// Server-side fetch for ISR (without axios interceptors)
+export async function fetchPublicPosts(siteSlug: string): Promise<PublicPost[]> {
+  const res = await fetch(`${API_BASE_URL}/public/posts?site_slug=${encodeURIComponent(siteSlug)}`, {
+    next: { revalidate: 60 }, // ISR: 60초
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch posts: ${res.status}`);
+  }
+  
+  const data: ApiResponse<PublicPost[]> = await res.json();
+  return data.data;
 }
