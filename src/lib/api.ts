@@ -74,6 +74,54 @@ export interface PublicPost {
   og_image_url: string | null;
 }
 
+export interface SiteSettings {
+  id: string;
+  name: string;
+  slug: string;
+  // 브랜딩
+  logo_image_url: string | null;
+  favicon_url: string | null;
+  // SEO
+  og_image_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  canonical_base_url: string | null;
+  robots_index: boolean;
+  // 연락처
+  contact_email: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  // 소셜 링크
+  kakao_channel_url: string | null;
+  naver_map_url: string | null;
+  instagram_url: string | null;
+  // 사업자 정보
+  business_number: string | null;
+  business_name: string | null;
+  representative_name: string | null;
+}
+
+export interface UpdateSiteSettingsRequest {
+  logo_image_url?: string | null;
+  favicon_url?: string | null;
+  og_image_url?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
+  canonical_base_url?: string | null;
+  robots_index?: boolean;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  address?: string | null;
+  kakao_channel_url?: string | null;
+  naver_map_url?: string | null;
+  instagram_url?: string | null;
+  business_number?: string | null;
+  business_name?: string | null;
+  representative_name?: string | null;
+}
+
 export interface PostListItem {
   id: string;
   title: string;
@@ -198,5 +246,40 @@ export async function fetchPublicPosts(siteSlug: string): Promise<PublicPost[]> 
   }
   
   const data: ApiResponse<PublicPost[]> = await res.json();
+  return data.data;
+}
+
+// ===== Site Settings API (Admin) =====
+
+export async function getMySiteSettings(): Promise<SiteSettings | null> {
+  const response = await api.get<ApiResponse<SiteSettings | null>>('/site-settings');
+  return response.data.data;
+}
+
+export async function updateMySiteSettings(data: UpdateSiteSettingsRequest): Promise<SiteSettings> {
+  const response = await api.put<ApiResponse<SiteSettings>>('/site-settings', data);
+  return response.data.data;
+}
+
+export async function getSiteSettingsBySlug(slug: string): Promise<SiteSettings> {
+  const response = await api.get<ApiResponse<SiteSettings>>(`/sites/${encodeURIComponent(slug)}/settings`);
+  return response.data.data;
+}
+
+// Server-side fetch for ISR (without axios interceptors)
+// X-Site-Slug 헤더를 사용하여 /public/site-settings 호출
+export async function fetchSiteSettings(slug: string): Promise<SiteSettings> {
+  const res = await fetch(`${API_BASE_URL}/public/site-settings`, {
+    headers: {
+      'X-Site-Slug': slug,
+    },
+    next: { revalidate: 60 }, // ISR: 60초
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch site settings: ${res.status}`);
+  }
+  
+  const data: ApiResponse<SiteSettings> = await res.json();
   return data.data;
 }

@@ -67,10 +67,10 @@ export default function NewPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">새 게시글 작성</h1>
+    <div className="p-8">
+      <div className="max-w-3xl">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">새 게시글 작성</h1>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
