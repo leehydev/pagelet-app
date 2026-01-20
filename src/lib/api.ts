@@ -283,3 +283,61 @@ export async function fetchSiteSettings(slug: string): Promise<SiteSettings> {
   const data: ApiResponse<SiteSettings> = await res.json();
   return data.data;
 }
+
+// ===== Upload API =====
+
+export type PostImageType = 'THUMBNAIL' | 'CONTENT' | 'GALLERY';
+
+export interface PresignUploadRequest {
+  filename: string;
+  size: number;
+  mimeType: string;
+  imageType?: PostImageType;
+  postId?: string;
+}
+
+export interface PresignUploadResponse {
+  uploadUrl: string;
+  publicUrl: string;
+  s3Key: string;
+  maxSize: number;
+  imageId: string;
+}
+
+export interface CompleteUploadRequest {
+  s3Key: string;
+  postId?: string;
+  imageType?: PostImageType;
+}
+
+export interface CompleteUploadResponse {
+  imageId: string;
+  publicUrl: string;
+}
+
+export interface AbortUploadRequest {
+  s3Key: string;
+}
+
+/**
+ * Presigned URL 생성 요청
+ */
+export async function presignUpload(data: PresignUploadRequest): Promise<PresignUploadResponse> {
+  const response = await api.post<ApiResponse<PresignUploadResponse>>('/uploads/presign', data);
+  return response.data.data;
+}
+
+/**
+ * 업로드 완료 확정
+ */
+export async function completeUpload(data: CompleteUploadRequest): Promise<CompleteUploadResponse> {
+  const response = await api.post<ApiResponse<CompleteUploadResponse>>('/uploads/complete', data);
+  return response.data.data;
+}
+
+/**
+ * 업로드 중단
+ */
+export async function abortUpload(data: AbortUploadRequest): Promise<void> {
+  await api.post('/uploads/abort', data);
+}
