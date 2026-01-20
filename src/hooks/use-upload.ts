@@ -9,6 +9,7 @@ import {
   PresignUploadRequest,
   CompleteUploadRequest,
   PresignUploadResponse,
+  CompleteUploadResponse,
 } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -48,23 +49,22 @@ export function useUpload() {
           }));
         });
 
-        // 업로드 완료 확정 (선택)
-        try {
-          const completeData: CompleteUploadRequest = {
-            s3Key: response.s3Key,
-            postId: request.postId,
-            imageType: request.imageType,
-          };
-          await completeUpload(completeData);
-        } catch (error) {
-          // complete 실패해도 업로드는 성공했으므로 계속 진행
-          console.warn('Failed to complete upload:', error);
-        }
+        setUploadProgress((prev) => ({
+          ...prev,
+          status: 'completing',
+        }));
+
+        const completeData: CompleteUploadRequest = {
+          s3Key: response.s3Key,
+          postId: request.postId,
+          imageType: request.imageType,
+        };
+        const completeResponse = await completeUpload(completeData);
 
         setUploadProgress({
           status: 'completed',
           progress: 100,
-          publicUrl: response.publicUrl,
+          publicUrl: completeResponse.publicUrl,
           s3Key: response.s3Key,
         });
       } catch (error) {
@@ -85,23 +85,26 @@ export function useUpload() {
         });
       }
     },
-    onError: (error: AxiosError<{ message?: string; code?: string; details?: unknown }>) => {
+    onError: (
+      error: AxiosError<{ error: { message?: string; code?: string; details?: unknown } }>,
+    ) => {
       let errorMessage = '업로드 준비에 실패했습니다.';
 
       // 용량 초과 에러
-      if (error.response?.data?.code === 'STORAGE_001') {
+      if (error.response?.data?.error?.code === 'STORAGE_001') {
         // 서버에서 보낸 상세 메시지가 있으면 사용, 없으면 기본 메시지
         errorMessage =
-          error.response.data.message ||
+          error.response.data.error.message ||
           '저장 용량이 부족합니다. 기존 파일을 삭제한 후 다시 시도해주세요.';
       }
       // 잘못된 업로드 요청
-      else if (error.response?.data?.code === 'STORAGE_003') {
-        errorMessage = error.response.data.message || '잘못된 파일 형식이거나 크기가 너무 큽니다.';
+      else if (error.response?.data?.error?.code === 'STORAGE_003') {
+        errorMessage =
+          error.response.data.error.message || '잘못된 파일 형식이거나 크기가 너무 큽니다.';
       }
       // 기타 에러 (서버 메시지 우선)
-      else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      else if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
       }
 
       setUploadProgress({
