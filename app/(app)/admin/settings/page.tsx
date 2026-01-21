@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMySiteSettings, useUpdateSiteSettings } from '@/hooks/use-site-settings';
 import { Button } from '@/components/ui/button';
+import { ValidationInput } from '@/components/form/ValidationInput';
+import { ValidationTextarea } from '@/components/form/ValidationTextarea';
 
 // Zod 스키마 정의
 const siteSettingsSchema = z.object({
@@ -74,14 +76,7 @@ export default function SiteSettingsPage() {
   const { data: settings, isLoading, error } = useMySiteSettings();
   const updateSettings = useUpdateSiteSettings();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors, isSubmitting, isDirty },
-    setValue,
-  } = useForm<SiteSettingsFormData>({
+  const methods = useForm<SiteSettingsFormData>({
     resolver: zodResolver(siteSettingsSchema),
     defaultValues: {
       logo_image_url: '',
@@ -103,6 +98,14 @@ export default function SiteSettingsPage() {
       representative_name: '',
     },
   });
+
+  const {
+    handleSubmit,
+    reset,
+    control,
+    formState: { isSubmitting, isDirty },
+    setValue,
+  } = methods;
 
   // 설정 로드 시 폼에 반영
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function SiteSettingsPage() {
 
   // robots_index 필드 값 구독
   const robotsIndex = useWatch({
-    control,
+    control: methods.control,
     name: 'robots_index',
     defaultValue: false,
   });
@@ -201,234 +204,158 @@ export default function SiteSettingsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          {/* 브랜딩 섹션 */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
-            <div className="space-y-4">
-              <InputField
-                label="로고 이미지 URL"
-                error={errors.logo_image_url?.message}
-                {...register('logo_image_url')}
-                type="url"
-                placeholder="https://example.com/logo.png"
-              />
-              <InputField
-                label="파비콘 URL"
-                error={errors.favicon_url?.message}
-                {...register('favicon_url')}
-                type="url"
-                placeholder="https://example.com/favicon.ico"
-              />
-            </div>
-          </section>
+        <FormProvider {...methods}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* 브랜딩 섹션 */}
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
+              <div className="space-y-4">
+                <ValidationInput
+                  name="logo_image_url"
+                  label="로고 이미지 URL"
+                  type="url"
+                  placeholder="https://example.com/logo.png"
+                />
+                <ValidationInput
+                  name="favicon_url"
+                  label="파비콘 URL"
+                  type="url"
+                  placeholder="https://example.com/favicon.ico"
+                />
+              </div>
+            </section>
 
-          {/* SEO 섹션 */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
-            <div className="space-y-4">
-              <InputField
-                label="OG 이미지 URL"
-                hint="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
-                error={errors.og_image_url?.message}
-                {...register('og_image_url')}
-                type="url"
-                placeholder="https://example.com/og-image.jpg"
-              />
-              <InputField
-                label="SEO 제목"
-                hint="최대 120자"
-                error={errors.seo_title?.message}
-                {...register('seo_title')}
-                placeholder="사이트 제목"
-                maxLength={120}
-              />
-              <TextareaField
-                label="SEO 설명"
-                error={errors.seo_description?.message}
-                {...register('seo_description')}
-                placeholder="검색 결과에 표시될 사이트 설명"
-                rows={3}
-              />
-              <InputField
-                label="SEO 키워드"
-                hint="쉼표로 구분하여 입력"
-                error={errors.seo_keywords?.message}
-                {...register('seo_keywords')}
-                placeholder="키워드1, 키워드2, 키워드3"
-              />
-              <InputField
-                label="Canonical 기본 URL"
-                error={errors.canonical_base_url?.message}
-                {...register('canonical_base_url')}
-                type="url"
-                placeholder="https://yourdomain.com"
-              />
-              <SwitchField
-                label="검색 엔진 인덱싱 허용"
-                hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
-                checked={robotsIndex}
-                onChange={(checked) => setValue('robots_index', checked, { shouldDirty: true })}
-              />
-            </div>
-          </section>
+            {/* SEO 섹션 */}
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
+              <div className="space-y-4">
+                <ValidationInput
+                  name="og_image_url"
+                  label="OG 이미지 URL"
+                  description="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
+                  type="url"
+                  placeholder="https://example.com/og-image.jpg"
+                />
+                <ValidationInput
+                  name="seo_title"
+                  label="SEO 제목"
+                  description="최대 120자"
+                  placeholder="사이트 제목"
+                  maxLength={120}
+                />
+                <ValidationTextarea
+                  name="seo_description"
+                  label="SEO 설명"
+                  placeholder="검색 결과에 표시될 사이트 설명"
+                  rows={3}
+                />
+                <ValidationInput
+                  name="seo_keywords"
+                  label="SEO 키워드"
+                  description="쉼표로 구분하여 입력"
+                  placeholder="키워드1, 키워드2, 키워드3"
+                />
+                <ValidationInput
+                  name="canonical_base_url"
+                  label="Canonical 기본 URL"
+                  type="url"
+                  placeholder="https://yourdomain.com"
+                />
+                <SwitchField
+                  label="검색 엔진 인덱싱 허용"
+                  hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
+                  checked={robotsIndex}
+                  onChange={(checked) => setValue('robots_index', checked, { shouldDirty: true })}
+                />
+              </div>
+            </section>
 
-          {/* 연락처 섹션 */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처</h2>
-            <div className="space-y-4">
-              <InputField
-                label="이메일"
-                error={errors.contact_email?.message}
-                {...register('contact_email')}
-                type="email"
-                placeholder="contact@example.com"
-              />
-              <InputField
-                label="전화번호"
-                error={errors.contact_phone?.message}
-                {...register('contact_phone')}
-                type="tel"
-                placeholder="02-1234-5678"
-              />
-              <TextareaField
-                label="주소"
-                error={errors.address?.message}
-                {...register('address')}
-                placeholder="서울시 강남구..."
-                rows={2}
-              />
-            </div>
-          </section>
+            {/* 연락처 섹션 */}
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처</h2>
+              <div className="space-y-4">
+                <ValidationInput
+                  name="contact_email"
+                  label="이메일"
+                  type="email"
+                  placeholder="contact@example.com"
+                />
+                <ValidationInput
+                  name="contact_phone"
+                  label="전화번호"
+                  type="tel"
+                  placeholder="02-1234-5678"
+                />
+                <ValidationTextarea
+                  name="address"
+                  label="주소"
+                  placeholder="서울시 강남구..."
+                  rows={2}
+                />
+              </div>
+            </section>
 
-          {/* 소셜 링크 섹션 */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">소셜 링크</h2>
-            <div className="space-y-4">
-              <InputField
-                label="카카오 채널 URL"
-                error={errors.kakao_channel_url?.message}
-                {...register('kakao_channel_url')}
-                type="url"
-                placeholder="https://pf.kakao.com/..."
-              />
-              <InputField
-                label="네이버 지도 URL"
-                error={errors.naver_map_url?.message}
-                {...register('naver_map_url')}
-                type="url"
-                placeholder="https://naver.me/..."
-              />
-              <InputField
-                label="인스타그램 URL"
-                error={errors.instagram_url?.message}
-                {...register('instagram_url')}
-                type="url"
-                placeholder="https://instagram.com/..."
-              />
-            </div>
-          </section>
+            {/* 소셜 링크 섹션 */}
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">소셜 링크</h2>
+              <div className="space-y-4">
+                <ValidationInput
+                  name="kakao_channel_url"
+                  label="카카오 채널 URL"
+                  type="url"
+                  placeholder="https://pf.kakao.com/..."
+                />
+                <ValidationInput
+                  name="naver_map_url"
+                  label="네이버 지도 URL"
+                  type="url"
+                  placeholder="https://naver.me/..."
+                />
+                <ValidationInput
+                  name="instagram_url"
+                  label="인스타그램 URL"
+                  type="url"
+                  placeholder="https://instagram.com/..."
+                />
+              </div>
+            </section>
 
-          {/* 사업자 정보 섹션 */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">사업자 정보</h2>
-            <div className="space-y-4">
-              <InputField
-                label="사업자등록번호"
-                error={errors.business_number?.message}
-                {...register('business_number')}
-                placeholder="123-45-67890"
-              />
-              <InputField
-                label="상호명"
-                error={errors.business_name?.message}
-                {...register('business_name')}
-                placeholder="(주)예시회사"
-              />
-              <InputField
-                label="대표자명"
-                error={errors.representative_name?.message}
-                {...register('representative_name')}
-                placeholder="홍길동"
-              />
-            </div>
-          </section>
+            {/* 사업자 정보 섹션 */}
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">사업자 정보</h2>
+              <div className="space-y-4">
+                <ValidationInput
+                  name="business_number"
+                  label="사업자등록번호"
+                  placeholder="123-45-67890"
+                />
+                <ValidationInput name="business_name" label="상호명" placeholder="(주)예시회사" />
+                <ValidationInput name="representative_name" label="대표자명" placeholder="홍길동" />
+              </div>
+            </section>
 
-          {/* 저장 버튼 */}
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => reset()}
-              disabled={!isDirty || isSubmitting}
-            >
-              초기화
-            </Button>
-            <Button type="submit" disabled={isSubmitting || updateSettings.isPending}>
-              {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
-            </Button>
-          </div>
-        </form>
+            {/* 저장 버튼 */}
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => reset()}
+                disabled={!isDirty || isSubmitting}
+              >
+                초기화
+              </Button>
+              <Button type="submit" disabled={isSubmitting || updateSettings.isPending}>
+                {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
+              </Button>
+            </div>
+          </form>
+        </FormProvider>
       </div>
     </div>
   );
 }
 
 // ===== 폼 컴포넌트 =====
-
-import { forwardRef } from 'react';
-
-interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  error?: string;
-  hint?: string;
-}
-
-const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
-  ({ label, error, hint, ...props }, ref) => {
-    return (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-        <input
-          ref={ref}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            error ? 'border-red-300' : 'border-gray-300'
-          }`}
-          {...props}
-        />
-        {hint && !error && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-      </div>
-    );
-  },
-);
-InputField.displayName = 'InputField';
-
-interface TextareaFieldProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label: string;
-  error?: string;
-  hint?: string;
-}
-
-const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
-  ({ label, error, hint, ...props }, ref) => {
-    return (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-        <textarea
-          ref={ref}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y ${
-            error ? 'border-red-300' : 'border-gray-300'
-          }`}
-          {...props}
-        />
-        {hint && !error && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-      </div>
-    );
-  },
-);
-TextareaField.displayName = 'TextareaField';
 
 interface SwitchFieldProps {
   label: string;

@@ -9,7 +9,6 @@ import {
   PresignUploadRequest,
   CompleteUploadRequest,
   PresignUploadResponse,
-  CompleteUploadResponse,
 } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -31,7 +30,7 @@ export function useUpload() {
   });
 
   const presignMutation = useMutation({
-    mutationFn: ({ request, file }: { request: PresignUploadRequest; file: File }) =>
+    mutationFn: ({ request }: { request: PresignUploadRequest; file: File }) =>
       presignUpload(request),
     onSuccess: async (response: PresignUploadResponse, { request, file }) => {
       setUploadProgress({
@@ -170,6 +169,7 @@ export function useUpload() {
         progress: 0,
         error: '이미지 파일을 읽을 수 없습니다. 유효한 이미지 파일인지 확인해주세요.',
       });
+      console.error(error);
       return;
     }
 

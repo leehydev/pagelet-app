@@ -2,233 +2,242 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useCreatePost } from '@/hooks/use-posts';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { ValidationInput } from '@/components/form/ValidationInput';
+import { ValidationTextarea } from '@/components/form/ValidationTextarea';
+import { Input } from '@/components/ui/input';
+import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/post/thumbnail-input';
 import { AxiosError } from 'axios';
+import { scrollToFirstError } from '@/lib/scroll-to-error';
+import type { FieldErrors } from 'react-hook-form';
+
+// Zod 스키마 정의
+const postSchema = z.object({
+  title: z.string().min(1, '제목을 입력해주세요').max(500, '제목은 500자 이하여야 합니다').trim(),
+  slug: z
+    .string()
+    .max(255, 'slug는 255자 이하여야 합니다')
+    .regex(/^[a-z0-9-]*$/, 'slug는 영소문자, 숫자, 하이픈만 사용할 수 있습니다')
+    .optional()
+    .or(z.literal('')),
+  content: z.string().min(1, '내용을 입력해주세요').trim(),
+  seo_title: z.string().max(255, 'SEO 제목은 255자 이하여야 합니다').optional().or(z.literal('')),
+  seo_description: z
+    .string()
+    .max(500, 'SEO 설명은 500자 이하여야 합니다')
+    .optional()
+    .or(z.literal('')),
+  og_image_url: z.string().url('올바른 URL 형식이어야 합니다').optional().or(z.literal('')),
+});
+
+type PostFormData = z.infer<typeof postSchema>;
 
 export default function NewPostPage() {
   const router = useRouter();
   const createPost = useCreatePost();
 
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [content, setContent] = useState('');
-  const [seoTitle, setSeoTitle] = useState('');
-  const [seoDescription, setSeoDescription] = useState('');
-  const [ogImageUrl, setOgImageUrl] = useState('');
   const [showSeo, setShowSeo] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ogImageUrl, setOgImageUrl] = useState('');
 
-  const generateSlug = () => {
-    const generated = title
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 100);
-    setSlug(generated || `post-${Date.now().toString(36)}`);
-  };
+  const methods = useForm<PostFormData>({
+    resolver: zodResolver(postSchema),
+    defaultValues: {
+      title: '',
+      slug: '',
+      content: '',
+      seo_title: '',
+      seo_description: '',
+      og_image_url: '',
+    },
+  });
 
   const handleSubmit = async (status: PostStatus) => {
-    if (!title.trim()) {
-      setError('제목을 입력해주세요.');
-      return;
-    }
-    if (!content.trim()) {
-      setError('내용을 입력해주세요.');
-      return;
-    }
-
     setError(null);
 
     try {
+      const data = methods.getValues();
       await createPost.mutateAsync({
-        title: title.trim(),
-        slug: slug.trim() || undefined,
-        content: content.trim(),
+        title: data.title.trim(),
+        slug: data.slug?.trim() || undefined,
+        content: data.content.trim(),
         status,
-        seo_title: seoTitle.trim() || undefined,
-        seo_description: seoDescription.trim() || undefined,
+        seo_title: data.seo_title?.trim() || undefined,
+        seo_description: data.seo_description?.trim() || undefined,
         og_image_url: ogImageUrl.trim() || undefined,
       });
 
-      // 성공 시 목록으로 이동 (또는 성공 메시지 표시)
       router.push('/admin/posts');
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; code?: string }>;
       if (axiosError.response?.status === 409) {
+        methods.setError('slug', {
+          type: 'manual',
+          message: '이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.',
+        });
         setError('이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.');
+        // slug 에러 발생 시 해당 필드로 스크롤
+        setTimeout(() => {
+          scrollToFirstError('이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.');
+        }, 150);
       } else {
         setError(axiosError.response?.data?.message || '게시글 저장에 실패했습니다.');
       }
     }
   };
 
+  const onError = (errors: FieldErrors<PostFormData>) => {
+    // onError에서 받은 errors를 직접 사용하여 스크롤
+    // 더 긴 지연 시간을 주어 React가 완전히 렌더링할 시간을 확보
+    setTimeout(() => {
+      scrollToFirstError(errors);
+    }, 150);
+  };
+
   return (
-    <div className="p-8">
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">새 게시글 작성</h1>
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+    <FormProvider {...methods}>
+      <div className="p-8">
+        <div className="max-w-3xl">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">새 게시글 작성</h1>
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                {error}
+              </div>
+            )}
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-6">
-            {/* 제목 */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                제목 <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="title"
+            <div className="space-y-6">
+              {/* 제목 */}
+              <ValidationInput
+                name="title"
+                label="제목"
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
                 placeholder="게시글 제목을 입력하세요"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 maxLength={500}
+                required
               />
-            </div>
 
-            {/* Slug */}
-            <div>
-              <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                URL Slug
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="slug"
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                  placeholder="url-friendly-slug (비워두면 자동 생성)"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  maxLength={255}
-                />
+              {/* Slug */}
+              <Controller
+                name="slug"
+                control={methods.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={!!fieldState.error}>
+                    <FieldLabel htmlFor="slug">URL Slug</FieldLabel>
+                    <div className="flex flex-col gap-1.5">
+                      <Input
+                        {...field}
+                        id="slug"
+                        type="text"
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value.toLowerCase();
+                          field.onChange(value);
+                        }}
+                        placeholder="url-friendly-slug (선택사항, 비워두면 자동 생성)"
+                        maxLength={255}
+                        aria-invalid={!!fieldState.error}
+                      />
+                      <FieldDescription>영소문자, 숫자, 하이픈만 사용 가능합니다.</FieldDescription>
+                      <FieldError>{fieldState.error?.message || ''}</FieldError>
+                    </div>
+                  </Field>
+                )}
+              />
+
+              {/* 내용 */}
+              <ValidationTextarea
+                name="content"
+                label="내용"
+                placeholder="게시글 내용을 입력하세요"
+                rows={12}
+                required
+              />
+
+              {/* SEO 섹션 (토글) */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSeo(!showSeo)}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  <span className="mr-2">{showSeo ? '▼' : '▶'}</span>
+                  SEO 설정 (선택)
+                </button>
+
+                {showSeo && (
+                  <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
+                    <ValidationInput
+                      name="seo_title"
+                      label="SEO 제목"
+                      type="text"
+                      placeholder="검색 엔진에 표시될 제목"
+                      maxLength={255}
+                    />
+                    <ValidationTextarea
+                      name="seo_description"
+                      label="SEO 설명"
+                      placeholder="검색 결과에 표시될 설명"
+                      rows={3}
+                      maxLength={500}
+                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        썸네일 이미지
+                      </label>
+                      <ThumbnailInput
+                        value={ogImageUrl}
+                        onChange={(url) => setOgImageUrl(url || '')}
+                        disabled={createPost.isPending}
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        게시글 썸네일로 사용됩니다. URL 입력 또는 직접 업로드가 가능합니다.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={generateSlug}
-                  disabled={!title.trim()}
+                  onClick={() => router.back()}
+                  disabled={createPost.isPending}
                 >
-                  자동 생성
+                  취소
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    methods.handleSubmit(() => handleSubmit(PostStatus.DRAFT), onError)();
+                  }}
+                  disabled={createPost.isPending}
+                >
+                  {createPost.isPending ? '저장 중...' : '임시 저장'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    methods.handleSubmit(() => handleSubmit(PostStatus.PUBLISHED), onError)();
+                  }}
+                  disabled={createPost.isPending}
+                >
+                  {createPost.isPending ? '발행 중...' : '발행하기'}
                 </Button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                영소문자, 숫자, 하이픈만 사용 가능합니다.
-              </p>
-            </div>
-
-            {/* 내용 */}
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                내용 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="게시글 내용을 입력하세요"
-                rows={12}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
-              />
-            </div>
-
-            {/* SEO 섹션 (토글) */}
-            <div className="border-t pt-4">
-              <button
-                type="button"
-                onClick={() => setShowSeo(!showSeo)}
-                className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                <span className="mr-2">{showSeo ? '▼' : '▶'}</span>
-                SEO 설정 (선택)
-              </button>
-
-              {showSeo && (
-                <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
-                  <div>
-                    <label htmlFor="seoTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                      SEO 제목
-                    </label>
-                    <input
-                      id="seoTitle"
-                      type="text"
-                      value={seoTitle}
-                      onChange={(e) => setSeoTitle(e.target.value)}
-                      placeholder="검색 엔진에 표시될 제목"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      maxLength={255}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="seoDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                      SEO 설명
-                    </label>
-                    <textarea
-                      id="seoDescription"
-                      value={seoDescription}
-                      onChange={(e) => setSeoDescription(e.target.value)}
-                      placeholder="검색 결과에 표시될 설명"
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
-                      maxLength={500}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      썸네일 이미지
-                    </label>
-                    <ThumbnailInput
-                      value={ogImageUrl}
-                      onChange={(url) => setOgImageUrl(url || '')}
-                      disabled={createPost.isPending}
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      게시글 썸네일로 사용됩니다. URL 입력 또는 직접 업로드가 가능합니다.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 버튼 */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={createPost.isPending}
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleSubmit(PostStatus.DRAFT)}
-                disabled={createPost.isPending}
-              >
-                {createPost.isPending ? '저장 중...' : '임시 저장'}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => handleSubmit(PostStatus.PUBLISHED)}
-                disabled={createPost.isPending}
-              >
-                {createPost.isPending ? '발행 중...' : '발행하기'}
-              </Button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </FormProvider>
   );
 }
