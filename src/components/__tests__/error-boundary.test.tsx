@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ErrorBoundary } from '../error-boundary';
-import { ErrorFallback } from '../error-fallback';
+import { ErrorBoundary } from '../ErrorBoundary';
+import { ErrorFallback } from '../ErrorFallback';
 
 // next/navigation의 useRouter를 mock
 const mockPush = vi.fn();

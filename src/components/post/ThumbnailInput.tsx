@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Thumbnail } from './thumbnail';
+import { Thumbnail } from './Thumbnail';
 import { useUpload } from '@/hooks/use-upload';
 import { cn } from '@/lib/utils';
 

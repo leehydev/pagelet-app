@@ -7,7 +7,7 @@ import {
   SiteSettings,
 } from '@/lib/api';
 import { Metadata } from 'next';
-import { PostCard } from '@/components/public/post-card';
+import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
 
 // ISR: 60초마다 재검증

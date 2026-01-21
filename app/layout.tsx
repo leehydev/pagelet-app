@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 // import { Suspense } from 'react';
 import './globals.css';
 import { RootProviders } from './providers/root-providers';
-import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
+import { ErrorBoundaryWrapper } from '@/components/ErrorBoundaryWrapper';
 // import NavigationTracker from '@/components/NavigationTracker';
 
 const geistSans = Geist({

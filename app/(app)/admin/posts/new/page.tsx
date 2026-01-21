@@ -13,7 +13,7 @@ import { ValidationInput } from '@/components/form/ValidationInput';
 import { ValidationTextarea } from '@/components/form/ValidationTextarea';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
-import { ThumbnailInput } from '@/components/post/thumbnail-input';
+import { ThumbnailInput } from '@/components/post/ThumbnailInput';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
