@@ -50,6 +50,7 @@ export function Thumbnail({
 
   return (
     <div className={cn('relative overflow-hidden rounded-md', aspectRatioClass, className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}

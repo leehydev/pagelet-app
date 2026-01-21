@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ErrorFallback } from '../error-fallback';
+import { ErrorFallback } from '../ErrorFallback';
 import * as nextNavigation from 'next/navigation';
 
 // next/navigation의 useRouter를 mock

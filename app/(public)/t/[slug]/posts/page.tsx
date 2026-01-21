@@ -1,6 +1,6 @@
 import { fetchPublicPosts, fetchSiteSettings, PublicPost, SiteSettings } from '@/lib/api';
 import { Metadata } from 'next';
-import { PostCard } from '@/components/public/post-card';
+import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -99,10 +99,7 @@ export default async function AllPostsPage({ params }: PageProps) {
             <div className="text-gray-400 text-6xl mb-4">📝</div>
             <h2 className="text-xl font-medium text-gray-600 mb-2">아직 게시글이 없습니다</h2>
             <p className="text-gray-400 mb-6">곧 새로운 글이 올라올 예정입니다.</p>
-            <Link
-              href={`/t/${slug}`}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <Link href={`/t/${slug}`} className="text-blue-600 hover:text-blue-700 font-medium">
               메인으로 돌아가기 →
             </Link>
           </div>

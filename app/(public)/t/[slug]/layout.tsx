@@ -1,9 +1,9 @@
-import { CategoryTabs } from '@/components/public/category-tabs';
+import { CategoryTabs } from '@/components/public/CategoryTabs';
 import { PublicCategory, SiteSettings, fetchPublicCategories, fetchSiteSettings } from '@/lib/api';
 import { notFound } from 'next/navigation';
-import { SocialLinks } from '@/components/public/social-links';
-import { ContactInfo } from '@/components/public/contact-info';
-import { BusinessInfo } from '@/components/public/business-info';
+import { SocialLinks } from '@/components/public/SocialLinks';
+import { ContactInfo } from '@/components/public/ContactInfo';
+import { BusinessInfo } from '@/components/public/BusinessInfo';
 import Link from 'next/link';
 
 async function getSiteSettings(siteSlug: string): Promise<SiteSettings> {

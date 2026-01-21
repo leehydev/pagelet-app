@@ -7,7 +7,7 @@ import {
   SiteSettings,
 } from '@/lib/api';
 import { Metadata } from 'next';
-import { PostCard } from '@/components/public/post-card';
+import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
 
 // ISR: 60초마다 재검증
@@ -103,7 +103,7 @@ export default async function CategoryPostsPage({ params }: PageProps) {
           </div>
           <h2 className="text-4xl font-bold text-gray-900 mb-3">{category.name}</h2>
           {category.description && (
-            <p className="text-gray-600 text-lg max-w-3xl">{category.description}</p>
+            <p className="text-gray-600 text-lg max-w-7xl">{category.description}</p>
           )}
         </div>
       </div>

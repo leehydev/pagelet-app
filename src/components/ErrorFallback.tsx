@@ -22,28 +22,29 @@ export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps)
         <div className="flex justify-center mb-4">
           <AlertTriangle className="h-12 w-12 text-destructive" />
         </div>
-        
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          문제가 발생했습니다
-        </h1>
-        
+
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">문제가 발생했습니다</h1>
+
         <p className="text-gray-600 mb-6">
           예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
         </p>
 
         {process.env.NODE_ENV === 'development' && (
           <div className="mb-6 p-4 bg-gray-100 rounded-md text-left">
-            <p className="text-sm font-mono text-red-600 break-words">
-              {error.message}
-            </p>
+            <p className="text-sm font-mono text-red-600 wrap-break-word">{error.message}</p>
             {error.stack && (
               <details className="mt-2">
                 <summary className="text-xs text-gray-500 cursor-pointer">
                   스택 트레이스 보기
                 </summary>
-                <pre className="text-xs text-gray-600 mt-2 whitespace-pre-wrap break-words">
-                  {error.stack}
-                </pre>
+                <div
+                  className="mt-2 rounded bg-white border max-h-72 overflow-auto p-2"
+                  style={{ maxHeight: '18rem' }} // Tailwind max-h-72 = 18rem
+                >
+                  <pre className="text-xs text-gray-600 whitespace-pre-wrap wrap-break-word m-0">
+                    {error.stack}
+                  </pre>
+                </div>
               </details>
             )}
           </div>
@@ -58,12 +59,8 @@ export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps)
             <RefreshCw className="h-4 w-4" />
             다시 시도
           </Button>
-          
-          <Button
-            onClick={handleGoHome}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
+
+          <Button onClick={handleGoHome} variant="outline" className="flex items-center gap-2">
             <Home className="h-4 w-4" />
             홈으로 이동
           </Button>

@@ -54,7 +54,10 @@ export interface Post {
   title: string;
   subtitle: string;
   slug: string;
-  content: string;
+  content: string | null; // Deprecated: 하위 호환성
+  contentJson: Record<string, any> | null;
+  contentHtml: string | null;
+  contentText: string | null;
   status: PostStatus;
   publishedAt: string | null;
   seoTitle: string | null;
@@ -69,7 +72,10 @@ export interface PublicPost {
   title: string;
   subtitle: string;
   slug: string;
-  content: string;
+  content: string | null; // Deprecated: 하위 호환성
+  contentJson: Record<string, any> | null;
+  contentHtml: string | null;
+  contentText: string | null;
   publishedAt: string;
   seoTitle: string | null;
   seoDescription: string | null;
@@ -183,7 +189,10 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
 export interface CreatePostRequest {
   title: string;
   subtitle: string;
-  content: string;
+  content?: string; // Deprecated: 하위 호환성
+  contentJson: Record<string, any>;
+  contentHtml?: string;
+  contentText?: string;
   slug?: string;
   status?: PostStatus;
   seoTitle?: string;

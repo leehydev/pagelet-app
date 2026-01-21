@@ -32,11 +32,57 @@ export default function FirstPostPage() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: FirstPostFormData) => {
+      // 간단한 텍스트를 tiptap JSON 형식으로 변환
+      const contentText = data.content.trim();
+      
+      // 줄바꿈으로 분리하여 각 줄을 paragraph로 변환
+      const lines = contentText.split('\n').filter((line) => line.trim() || line === '');
+      const paragraphs = lines.map((line) => {
+        if (line.trim()) {
+          return {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: line.trim(),
+              },
+            ],
+          };
+        } else {
+          // 빈 줄은 빈 paragraph로
+          return {
+            type: 'paragraph',
+          };
+        }
+      });
+
+      const contentJson: Record<string, any> = {
+        type: 'doc',
+        content: paragraphs.length > 0 ? paragraphs : [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: contentText,
+              },
+            ],
+          },
+        ],
+      };
+
+      // HTML로 변환 (줄바꿈 처리)
+      const contentHtml = lines
+        .map((line) => (line.trim() ? `<p>${line.trim()}</p>` : '<p></p>'))
+        .join('');
+
       await createPost({
         title: data.title.trim(),
-        content: data.content.trim(),
+        subtitle: data.title.trim(), // 부제목은 제목과 동일하게
+        contentJson,
+        contentHtml,
+        contentText,
         categoryId: 'uncategorized',
-        subtitle: '',
       });
       await completeOnboarding();
     },

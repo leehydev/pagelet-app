@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ErrorBoundary } from '@/components/error-boundary';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // 에러를 발생시키는 컴포넌트
 function ErrorThrower({ shouldThrow }: { shouldThrow: boolean }) {
