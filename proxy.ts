@@ -10,7 +10,7 @@ function getHostname(req: NextRequest) {
   return host.split(":")[0].toLowerCase();
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const url = req.nextUrl.clone();
   const host = getHostname(req);
   const path = url.pathname;
