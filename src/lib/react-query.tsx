@@ -6,17 +6,28 @@ import { ReactNode, useState } from 'react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-
 // Devtools는 개발 환경에서만 동적으로 로드
-const ReactQueryDevtools = process.env.NODE_ENV === 'development'
-  ? dynamic(
-      () =>
-        import('@tanstack/react-query-devtools').then((res) => ({
-          default: res.ReactQueryDevtools,
-        })),
-      { ssr: false }
-    )
-  : () => null;
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? dynamic(
+        () =>
+          import('@tanstack/react-query-devtools').then((res) => ({
+            default: res.ReactQueryDevtools,
+          })),
+        { ssr: false },
+      )
+    : () => null;
+
+/**
+ * 로그아웃 처리 (쿠키 삭제 후 로그인 페이지로 이동)
+ */
+function logout() {
+  if (typeof window !== 'undefined') {
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    window.location.href = '/signin';
+  }
+}
 
 function getErrorMessage(error: Error): string {
   // Axios 에러 처리
@@ -82,7 +93,7 @@ function handleGlobalError(error: Error) {
   }
 
   const errorMessage = getErrorMessage(error);
-  
+
   // 에러 메시지가 비어있으면 표시하지 않음 (401 등)
   if (!errorMessage) {
     return;
@@ -112,12 +123,22 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
           },
         },
         queryCache: new QueryCache({
-          onError: handleGlobalError,
+          onError: (error, query) => {
+            // /me 요청에서 403(계정 정지/탈퇴) 또는 404(사용자 없음)면 로그아웃
+            if (query.queryKey[0] === 'user' && query.queryKey[1] === 'me') {
+              const status = (error as AxiosError).response?.status;
+              if (status === 403 || status === 404) {
+                logout();
+                return;
+              }
+            }
+            handleGlobalError(error);
+          },
         }),
         mutationCache: new MutationCache({
           onError: handleGlobalError,
         }),
-      })
+      }),
   );
 
   return (

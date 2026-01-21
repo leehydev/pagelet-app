@@ -89,7 +89,11 @@ export default function AdminPostsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {posts.map((post) => (
-                  <tr key={post.id} className="hover:bg-gray-50">
+                  <tr
+                    key={post.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => (window.location.href = `/admin/posts/${post.id}`)}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {post.ogImageUrl && (
@@ -106,11 +110,14 @@ export default function AdminPostsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{post.title}</div>
-                      <div className="text-xs text-gray-500">
-                        /{post.slug}
-                        {post.ogImageUrl}
-                      </div>
+                      <Link
+                        href={`/admin/posts/${post.id}`}
+                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {post.title}
+                      </Link>
+                      <div className="text-xs text-gray-500">/{post.slug}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-900">{post.categoryName || '-'}</span>

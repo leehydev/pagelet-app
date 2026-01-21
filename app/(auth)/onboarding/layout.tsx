@@ -19,11 +19,7 @@ function getStepFromPath(pathname: string): number {
   return 1;
 }
 
-export default function OnboardingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: user, isLoading, error } = useUser();
@@ -82,19 +78,13 @@ export default function OnboardingLayout({
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Pagelet 시작하기
-          </h1>
-          <p className="text-gray-600 mt-2">
-            몇 가지 정보만 입력하면 바로 시작할 수 있어요
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Pagelet 시작하기</h1>
+          <p className="text-gray-600 mt-2">몇 가지 정보만 입력하면 바로 시작할 수 있어요</p>
         </div>
 
         <Stepper currentStep={currentStep} />
 
-        <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">
-          {children}
-        </div>
+        <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">{children}</div>
       </div>
     </div>
   );

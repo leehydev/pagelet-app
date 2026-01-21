@@ -9,5 +9,7 @@ export function useUser() {
     queryFn: getMe,
     retry: false,
     staleTime: 30 * 1000, // 30초
+    refetchOnWindowFocus: true, // 탭 포커스 시 refetch
+    refetchOnReconnect: true, // 네트워크 재연결 시 refetch
   });
 }

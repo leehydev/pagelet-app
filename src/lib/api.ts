@@ -21,13 +21,15 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Types
 export const AccountStatus = {
   ONBOARDING: 'ONBOARDING',
   ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED', // 서비스 이용불가
+  WITHDRAWN: 'WITHDRAWN', // 탈퇴
 } as const;
 
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
@@ -55,7 +57,7 @@ export interface Post {
   subtitle: string;
   slug: string;
   content: string | null; // Deprecated: 하위 호환성
-  contentJson: Record<string, any> | null;
+  contentJson: Record<string, unknown> | null;
   contentHtml: string | null;
   contentText: string | null;
   status: PostStatus;
@@ -73,7 +75,7 @@ export interface PublicPost {
   subtitle: string;
   slug: string;
   content: string | null; // Deprecated: 하위 호환성
-  contentJson: Record<string, any> | null;
+  contentJson: Record<string, unknown> | null;
   contentHtml: string | null;
   contentText: string | null;
   publishedAt: string;
@@ -178,7 +180,7 @@ export async function createSite(data: CreateSiteRequest): Promise<void> {
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
   try {
     const response = await api.get<ApiResponse<{ available: boolean }>>(
-      `/sites/check-slug?slug=${encodeURIComponent(slug)}`
+      `/sites/check-slug?slug=${encodeURIComponent(slug)}`,
     );
     return response.data.data.available;
   } catch {
@@ -190,7 +192,7 @@ export interface CreatePostRequest {
   title: string;
   subtitle: string;
   content?: string; // Deprecated: 하위 호환성
-  contentJson: Record<string, any>;
+  contentJson: Record<string, unknown>;
   contentHtml?: string;
   contentText?: string;
   slug?: string;
@@ -229,19 +231,26 @@ export async function getAdminPosts(categoryId?: string): Promise<PostListItem[]
 
 export async function checkPostSlugAvailability(slug: string): Promise<boolean> {
   try {
-    const response = await api.get<ApiResponse<{ available: boolean }>>(
-      `/admin/posts/check-slug`,
-      { params: { slug } }
-    );
+    const response = await api.get<ApiResponse<{ available: boolean }>>(`/admin/posts/check-slug`, {
+      params: { slug },
+    });
     return response.data.data.available;
   } catch {
     return false;
   }
 }
 
+export async function getAdminPost(postId: string): Promise<Post> {
+  const response = await api.get<ApiResponse<Post>>(`/admin/posts/${postId}`);
+  return response.data.data;
+}
+
 // ===== Public Post API =====
 
-export async function getPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
+export async function getPublicPosts(
+  siteSlug: string,
+  categorySlug?: string,
+): Promise<PublicPost[]> {
   const params: { siteSlug: string; categorySlug?: string } = { siteSlug: siteSlug };
   if (categorySlug) {
     params.categorySlug = categorySlug;
@@ -258,7 +267,10 @@ export async function getPublicPostBySlug(siteSlug: string, postSlug: string): P
 }
 
 // Server-side fetch for ISR (without axios interceptors)
-export async function fetchPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
+export async function fetchPublicPosts(
+  siteSlug: string,
+  categorySlug?: string,
+): Promise<PublicPost[]> {
   const params = new URLSearchParams({ siteSlug: siteSlug });
   if (categorySlug) {
     params.append('categorySlug', categorySlug);
@@ -266,12 +278,34 @@ export async function fetchPublicPosts(siteSlug: string, categorySlug?: string):
   const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
     next: { revalidate: 60 }, // ISR: 60초
   });
-  
+
   if (!res.ok) {
     throw new Error(`Failed to fetch posts: ${res.status}`);
   }
-  
+
   const data: ApiResponse<PublicPost[]> = await res.json();
+  return data.data;
+}
+
+// Server-side fetch for ISR - 게시글 단건 조회 (slug 기반)
+export async function fetchPublicPostBySlug(
+  siteSlug: string,
+  postSlug: string,
+): Promise<PublicPost> {
+  const res = await fetch(
+    `${API_BASE_URL}/public/posts/${encodeURIComponent(postSlug)}?siteSlug=${encodeURIComponent(
+      siteSlug,
+    )}`,
+    {
+      next: { revalidate: 60 }, // ISR: 60초
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch post: ${res.status}`);
+  }
+
+  const data: ApiResponse<PublicPost> = await res.json();
   return data.data;
 }
 
@@ -288,7 +322,9 @@ export async function updateMySiteSettings(data: UpdateSiteSettingsRequest): Pro
 }
 
 export async function getSiteSettingsBySlug(slug: string): Promise<SiteSettings> {
-  const response = await api.get<ApiResponse<SiteSettings>>(`/sites/${encodeURIComponent(slug)}/settings`);
+  const response = await api.get<ApiResponse<SiteSettings>>(
+    `/sites/${encodeURIComponent(slug)}/settings`,
+  );
   return response.data.data;
 }
 
@@ -301,11 +337,11 @@ export async function fetchSiteSettings(slug: string): Promise<SiteSettings> {
     },
     next: { revalidate: 60 }, // ISR: 60초
   });
-  
+
   if (!res.ok) {
     throw new Error(`Failed to fetch site settings: ${res.status}`);
   }
-  
+
   const data: ApiResponse<SiteSettings> = await res.json();
   return data.data;
 }
@@ -439,13 +475,13 @@ export async function fetchPublicCategories(siteSlug: string): Promise<PublicCat
     `${API_BASE_URL}/public/categories?siteSlug=${encodeURIComponent(siteSlug)}`,
     {
       next: { revalidate: 60 }, // ISR: 60초
-    }
+    },
   );
-  
+
   if (!res.ok) {
     throw new Error(`Failed to fetch categories: ${res.status}`);
   }
-  
+
   const data: ApiResponse<PublicCategory[]> = await res.json();
   return data.data;
 }
