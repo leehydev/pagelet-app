@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,23 +14,28 @@ import { ValidationTextarea } from '@/components/form/ValidationTextarea';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/post/ThumbnailInput';
+import { TiptapEditor, type TiptapEditorRef } from '@/components/editor/TiptapEditor';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
 import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { toast } from 'sonner';
 
 // Zod 스키마 정의
 const postSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요').max(500, '제목은 500자 이하여야 합니다').trim(),
-  subtitle: z.string().min(1, '부제목을 입력해주세요').max(500, '부제목은 500자 이하여야 합니다').trim(),
+  subtitle: z
+    .string()
+    .min(1, '부제목을 입력해주세요')
+    .max(500, '부제목은 500자 이하여야 합니다')
+    .trim(),
   slug: z
     .string()
     .max(255, 'slug는 255자 이하여야 합니다')
     .regex(/^[a-z0-9-]*$/, 'slug는 영소문자, 숫자, 하이픈만 사용할 수 있습니다')
     .optional()
     .or(z.literal('')),
-  content: z.string().min(1, '내용을 입력해주세요').trim(),
   categoryId: z.string().optional().or(z.literal('')),
   seoTitle: z.string().max(255, 'SEO 제목은 255자 이하여야 합니다').optional().or(z.literal('')),
   seoDescription: z
@@ -47,6 +52,7 @@ export default function NewPostPage() {
   const router = useRouter();
   const createPost = useCreatePost();
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
+  const editorRef = useRef<TiptapEditorRef>(null);
 
   const [showSeo, setShowSeo] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +67,6 @@ export default function NewPostPage() {
       title: '',
       subtitle: '',
       slug: '',
-      content: '',
       categoryId: defaultCategory?.id || '',
       seoTitle: '',
       seoDescription: '',
@@ -74,11 +79,49 @@ export default function NewPostPage() {
 
     try {
       const data = methods.getValues();
+
+      // 에디터에서 내용 추출
+      const editor = editorRef.current;
+      if (!editor) {
+        toast.error('에디터를 불러올 수 없습니다');
+        return;
+      }
+
+      const contentJson = editor.getJSON();
+      if (!contentJson) {
+        toast.error('내용을 입력해주세요');
+        return;
+      }
+
+      // 빈 문서 체크 (기본 tiptap 문서 구조)
+      const isEmpty =
+        !contentJson.content ||
+        (Array.isArray(contentJson.content) &&
+          (contentJson.content.length === 0 ||
+            (contentJson.content.length === 1 &&
+              contentJson.content[0].type === 'paragraph' &&
+              (!contentJson.content[0].content || contentJson.content[0].content.length === 0))));
+
+      if (isEmpty) {
+        toast.error('내용을 입력해주세요');
+        return;
+      }
+
+      const contentHtml = editor.getHTML();
+      const contentText = editor.getText().trim();
+
+      if (!contentText) {
+        toast.error('내용을 입력해주세요');
+        return;
+      }
+
       await createPost.mutateAsync({
         title: data.title.trim(),
         subtitle: data.subtitle.trim(),
         slug: data.slug?.trim() || undefined,
-        content: data.content.trim(),
+        contentJson,
+        contentHtml,
+        contentText,
         status,
         categoryId: data.categoryId?.trim() || undefined,
         seoTitle: data.seoTitle?.trim() || undefined,
@@ -121,7 +164,7 @@ export default function NewPostPage() {
       <div>
         <AdminPageHeader breadcrumb="Management" title="New Post" />
         <div className="p-6">
-          <div className="max-w-3xl">
+          <div className="max-w-7xl">
             <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
@@ -181,13 +224,10 @@ export default function NewPostPage() {
                 />
 
                 {/* 내용 */}
-                <ValidationTextarea
-                  name="content"
-                  label="내용"
-                  placeholder="게시글 내용을 입력하세요"
-                  rows={12}
-                  required
-                />
+                <Field>
+                  <FieldLabel>내용</FieldLabel>
+                  <TiptapEditor ref={editorRef} />
+                </Field>
 
                 {/* 카테고리 선택 */}
                 <Controller

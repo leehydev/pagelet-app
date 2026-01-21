@@ -21,12 +21,7 @@ const siteSettingsSchema = z.object({
     .or(z.literal('')),
   faviconUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   // SEO
-  ogImageUrl: z
-    .string()
-    .url('올바른 URL 형식이어야 합니다')
-    .max(500)
-    .nullable()
-    .or(z.literal('')),
+  ogImageUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   seoTitle: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
   seoDescription: z.string().nullable().or(z.literal('')),
   seoKeywords: z.string().max(500).nullable().or(z.literal('')),
@@ -53,12 +48,7 @@ const siteSettingsSchema = z.object({
     .max(500)
     .nullable()
     .or(z.literal('')),
-  naverMapUrl: z
-    .string()
-    .url('올바른 URL 형식이어야 합니다')
-    .max(500)
-    .nullable()
-    .or(z.literal('')),
+  naverMapUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   instagramUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
@@ -195,7 +185,7 @@ export default function SiteSettingsPage() {
     <div>
       <AdminPageHeader breadcrumb="Management" title="Site Settings" />
       <div className="p-6">
-        <div className="max-w-3xl">
+        <div className="max-w-7xl">
           <div className="flex items-center justify-between mb-6">
             <span className="text-sm text-gray-500">
               {settings.name} ({settings.slug})

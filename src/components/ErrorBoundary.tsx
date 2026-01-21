@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ErrorFallback, type ErrorFallbackProps } from './ErrorFallback';
+import { ErrorFallback, type ErrorFallbackProps } from '@/components/ErrorFallback';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // 커스텀 에러 핸들러 호출
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -42,10 +42,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError && this.state.error) {
       const FallbackComponent = this.props.fallback || ErrorFallback;
       return (
-        <FallbackComponent
-          error={this.state.error}
-          resetErrorBoundary={this.resetErrorBoundary}
-        />
+        <FallbackComponent error={this.state.error} resetErrorBoundary={this.resetErrorBoundary} />
       );
     }
 
