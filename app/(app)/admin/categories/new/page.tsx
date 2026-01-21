@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useCreateCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
-import { AxiosError } from 'axios';
+import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { CreateCategoryRequest } from '@/lib/api';
+import { getErrorDisplayMessage } from '@/lib/error-handler';
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -33,8 +33,7 @@ export default function NewCategoryPage() {
       await createCategory.mutateAsync(formData);
       router.push('/admin/categories');
     } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string; code?: string }>;
-      setError(axiosError.response?.data?.message || '카테고리 생성에 실패했습니다.');
+      setError(getErrorDisplayMessage(err, '카테고리 생성에 실패했습니다.'));
     }
   };
 
@@ -56,9 +55,7 @@ export default function NewCategoryPage() {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value.toLowerCase() })
-                }
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase() })}
                 placeholder="category-slug"
                 maxLength={255}
                 required

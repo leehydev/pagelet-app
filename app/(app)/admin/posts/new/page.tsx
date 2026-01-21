@@ -14,9 +14,10 @@ import { ValidationTextarea } from '@/components/form/ValidationTextarea';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/post/thumbnail-input';
-import { AxiosError } from 'axios';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
+import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
+import { AxiosError } from 'axios';
 
 // Zod 스키마 정의
 const postSchema = z.object({
@@ -83,19 +84,22 @@ export default function NewPostPage() {
 
       router.push('/admin/posts');
     } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string; code?: string }>;
-      if (axiosError.response?.status === 409) {
+      const errorCode = getErrorCode(err);
+      const errorMessage = getErrorDisplayMessage(err, '게시글 저장에 실패했습니다.');
+
+      // POST_002 (slug 중복) 또는 409 상태 코드인 경우 slug 필드에 에러 표시
+      if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
         methods.setError('slug', {
           type: 'manual',
-          message: '이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.',
+          message: errorMessage,
         });
-        setError('이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.');
+        setError(errorMessage);
         // slug 에러 발생 시 해당 필드로 스크롤
         setTimeout(() => {
-          scrollToFirstError('이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.');
+          scrollToFirstError(errorMessage);
         }, 150);
       } else {
-        setError(axiosError.response?.data?.message || '게시글 저장에 실패했습니다.');
+        setError(errorMessage);
       }
     }
   };

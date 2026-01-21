@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAdminCategories, useUpdateCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
-import { AxiosError } from 'axios';
+import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { UpdateCategoryRequest } from '@/lib/api';
+import { getErrorDisplayMessage } from '@/lib/error-handler';
 
 export default function EditCategoryPage() {
   const router = useRouter();
@@ -18,21 +18,32 @@ export default function EditCategoryPage() {
   const updateCategory = useUpdateCategory();
 
   const [error, setError] = useState<string | null>(null);
+
+  const category = categories?.find((c) => c.id === categoryId);
+  const isDefault = category?.slug === 'uncategorized';
+
+  // category가 변경될 때만 formData 초기화를 위한 ref
+  const prevCategoryIdRef = useRef<string | undefined>(undefined);
   const [formData, setFormData] = useState<UpdateCategoryRequest>({
     name: '',
     description: '',
   });
 
-  const category = categories?.find((c) => c.id === categoryId);
-  const isDefault = category?.slug === 'uncategorized';
-
+  // category가 변경되었을 때만 formData 업데이트
+  // 외부 데이터(category)가 변경될 때 state를 동기화하는 것은 useEffect의 올바른 사용 사례입니다
   useEffect(() => {
-    if (category) {
-      setFormData({
-        name: category.name,
-        description: category.description || '',
-      });
+    // category가 없거나 이전과 같은 경우 업데이트하지 않음
+    if (!category || category.id === prevCategoryIdRef.current) {
+      return;
     }
+
+    // category가 변경되었을 때만 업데이트
+    prevCategoryIdRef.current = category.id;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData({
+      name: category.name,
+      description: category.description || '',
+    });
   }, [category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,8 +59,7 @@ export default function EditCategoryPage() {
       await updateCategory.mutateAsync({ id: categoryId, data: formData });
       router.push('/admin/categories');
     } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string; code?: string }>;
-      setError(axiosError.response?.data?.message || '카테고리 수정에 실패했습니다.');
+      setError(getErrorDisplayMessage(err, '카테고리 수정에 실패했습니다.'));
     }
   };
 
@@ -104,9 +114,7 @@ export default function EditCategoryPage() {
                 <Input
                   id="slug"
                   value={formData.slug || category.slug}
-                  onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value.toLowerCase() })
-                  }
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase() })}
                   maxLength={255}
                 />
                 <FieldDescription>

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useAdminCategories, useDeleteCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
-import { AxiosError } from 'axios';
 import { Category } from '@/lib/api';
+import { getErrorDisplayMessage } from '@/lib/error-handler';
 
 export default function AdminCategoriesPage() {
   const { data: categories, isLoading, error } = useAdminCategories();
@@ -18,9 +18,7 @@ export default function AdminCategoriesPage() {
     try {
       await deleteCategory.mutateAsync(id);
     } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string; code?: string }>;
-      const message =
-        axiosError.response?.data?.message || '카테고리 삭제에 실패했습니다.';
+      const message = getErrorDisplayMessage(err, '카테고리 삭제에 실패했습니다.');
       alert(message);
     }
   };
@@ -103,13 +101,7 @@ export default function AdminCategoriesPage() {
   );
 }
 
-function CategoryRow({
-  category,
-  onDelete,
-}: {
-  category: Category;
-  onDelete: () => void;
-}) {
+function CategoryRow({ category, onDelete }: { category: Category; onDelete: () => void }) {
   const isDefault = category.slug === 'uncategorized';
 
   return (
@@ -139,7 +131,7 @@ function CategoryRow({
               variant="outline"
               size="sm"
               onClick={onDelete}
-              disabled={category.post_count && category.post_count > 0}
+              disabled={!!category.post_count && category.post_count > 0}
             >
               삭제
             </Button>
