@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import {
   presignUpload,
@@ -23,15 +23,17 @@ export interface UploadProgress {
 /**
  * 파일 업로드 훅
  */
-export function useUpload() {
+export function useUpload(siteId: string) {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({
     status: 'idle',
     progress: 0,
   });
+  const siteIdRef = useRef(siteId);
+  siteIdRef.current = siteId;
 
   const presignMutation = useMutation({
     mutationFn: ({ request }: { request: PresignUploadRequest; file: File }) =>
-      presignUpload(request),
+      presignUpload(siteIdRef.current, request),
     onSuccess: async (response: PresignUploadResponse, { request, file }) => {
       setUploadProgress({
         status: 'uploading',
@@ -58,7 +60,7 @@ export function useUpload() {
           postId: request.postId,
           imageType: request.imageType,
         };
-        const completeResponse = await completeUpload(completeData);
+        const completeResponse = await completeUpload(siteIdRef.current, completeData);
 
         setUploadProgress({
           status: 'completed',
@@ -69,7 +71,7 @@ export function useUpload() {
       } catch (error) {
         // 업로드 실패 시 abort
         try {
-          await abortUpload({ s3Key: response.s3Key });
+          await abortUpload(siteIdRef.current, { s3Key: response.s3Key });
         } catch (abortError) {
           console.warn('Failed to abort upload:', abortError);
         }

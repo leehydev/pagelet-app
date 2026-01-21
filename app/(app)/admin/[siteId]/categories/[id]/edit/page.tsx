@@ -8,15 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { UpdateCategoryRequest } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { useAdminHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 
 export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
+  const siteId = params.siteId as string;
   const categoryId = params.id as string;
 
-  const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
-  const updateCategory = useUpdateCategory();
+  const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+  const updateCategory = useUpdateCategory(siteId);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +30,6 @@ export default function EditCategoryPage() {
     name: '',
     description: '',
   });
-
-  useAdminHeader({ breadcrumb: 'Management', title: 'Edit Category' });
 
   // category가 변경되었을 때만 formData 업데이트
   // 외부 데이터(category)가 변경될 때 state를 동기화하는 것은 useEffect의 올바른 사용 사례입니다
@@ -60,7 +59,7 @@ export default function EditCategoryPage() {
 
     try {
       await updateCategory.mutateAsync({ id: categoryId, data: formData });
-      router.push('/admin/categories');
+      router.push(`/admin/${siteId}/categories`);
     } catch (err) {
       setError(getErrorDisplayMessage(err, '카테고리 수정에 실패했습니다.'));
     }
@@ -68,31 +67,34 @@ export default function EditCategoryPage() {
 
   if (categoriesLoading) {
     return (
-      <div>
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Edit Category" />
         <div className="p-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!category) {
     return (
-      <div>
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Edit Category" />
         <div className="p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
             카테고리를 찾을 수 없습니다.
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div>
+    <>
+      <AdminPageHeader breadcrumb="Management" title="Edit Category" />
       <div className="p-6">
         <div className="max-w-2xl">
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
@@ -166,6 +168,6 @@ export default function EditCategoryPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

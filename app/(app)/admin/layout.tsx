@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { AdminPageHeaderFromStore } from '@/components/layout/AdminPageHeader';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
 
@@ -13,6 +11,11 @@ const ONBOARDING_PATHS = {
   3: '/onboarding/first-post',
 } as const;
 
+/**
+ * Admin 루트 레이아웃
+ * - 인증 체크 및 온보딩 리다이렉트만 담당
+ * - 사이드바/헤더는 [siteId]/layout.tsx에서 렌더링
+ */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: user, isLoading } = useUser();
@@ -37,16 +40,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  return (
-    <div className="flex flex-col h-screen w-full max-w-7xl mx-auto">
-      {/* Header - 전체 너비 */}
-      <AdminPageHeaderFromStore />
-
-      {/* Sidebar + Main 영역 */}
-      <div className="flex flex-1 overflow-hidden">
-        <AdminSidebar />
-        <main className="flex-1 bg-[#f7f7f7] overflow-auto">{children}</main>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }

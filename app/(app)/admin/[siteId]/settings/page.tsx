@@ -4,12 +4,13 @@ import { useCallback, useEffect } from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMySiteSettings, useUpdateSiteSettings } from '@/hooks/use-site-settings';
+import { useAdminSiteSettings, useUpdateAdminSiteSettings } from '@/hooks/use-site-settings';
+import { useSiteId } from '@/contexts/site-context';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
 import { ValidationTextarea } from '@/components/form/ValidationTextarea';
 import { BrandingUploader } from '@/components/settings/BrandingUploader';
-import { useAdminHeaderStore } from '@/stores/admin-header-store';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 
 // 섹션 정의
 const SECTIONS = [
@@ -65,8 +66,9 @@ const siteSettingsSchema = z.object({
 type SiteSettingsFormData = z.infer<typeof siteSettingsSchema>;
 
 export default function SiteSettingsPage() {
-  const { data: settings, isLoading, error } = useMySiteSettings();
-  const updateSettings = useUpdateSiteSettings();
+  const siteId = useSiteId();
+  const { data: settings, isLoading, error } = useAdminSiteSettings(siteId);
+  const updateSettings = useUpdateAdminSiteSettings(siteId);
 
   const methods = useForm<SiteSettingsFormData>({
     resolver: zodResolver(siteSettingsSchema),
@@ -140,51 +142,6 @@ export default function SiteSettingsPage() {
     [updateSettings],
   );
 
-  // 헤더 설정
-  const setHeader = useAdminHeaderStore((s) => s.setHeader);
-  const clearHeader = useAdminHeaderStore((s) => s.clearHeader);
-
-  useEffect(() => {
-    setHeader({
-      breadcrumb: 'Management',
-      title: 'Site Settings',
-      extra: settings ? (
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => reset()}
-            disabled={!isDirty || isSubmitting}
-          >
-            초기화
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={isSubmitting || updateSettings.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
-          </Button>
-        </div>
-      ) : undefined,
-    });
-  }, [
-    settings,
-    isDirty,
-    isSubmitting,
-    updateSettings.isPending,
-    setHeader,
-    reset,
-    handleSubmit,
-    onSubmit,
-  ]);
-
-  useEffect(() => {
-    return () => clearHeader();
-  }, [clearHeader]);
-
   // 섹션으로 스크롤
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -193,39 +150,72 @@ export default function SiteSettingsPage() {
     }
   };
 
+  // 헤더 extra 컴포넌트
+  const headerExtra = settings ? (
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => reset()}
+        disabled={!isDirty || isSubmitting}
+      >
+        초기화
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        disabled={isSubmitting || updateSettings.isPending}
+        onClick={handleSubmit(onSubmit)}
+      >
+        {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
+      </Button>
+    </div>
+  ) : undefined;
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">로딩 중...</div>
-      </div>
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-gray-500">로딩 중...</div>
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-500">설정을 불러오는데 실패했습니다.</div>
-      </div>
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-red-500">설정을 불러오는데 실패했습니다.</div>
+        </div>
+      </>
     );
   }
 
   // 사이트가 없는 경우 (온보딩 미완료)
   if (!settings) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="text-gray-400 text-6xl mb-4">🏠</div>
-          <h2 className="text-xl font-medium text-gray-600 mb-2">
-            사이트가 아직 생성되지 않았습니다
-          </h2>
-          <p className="text-gray-400">먼저 온보딩을 완료해주세요.</p>
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 text-6xl mb-4">🏠</div>
+            <h2 className="text-xl font-medium text-gray-600 mb-2">
+              사이트가 아직 생성되지 않았습니다
+            </h2>
+            <p className="text-gray-400">먼저 온보딩을 완료해주세요.</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div>
+    <>
+      <AdminPageHeader breadcrumb="Management" title="Site Settings" extra={headerExtra} />
       <div className="p-6">
         <div className="flex gap-6">
           {/* 메인 콘텐츠 */}
@@ -256,6 +246,7 @@ export default function SiteSettingsPage() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
               <div className="divide-y divide-gray-100">
                 <BrandingUploader
+                  siteId={siteId}
                   type="logo"
                   title="로고"
                   description="권장: 가로형 200×60px 이상, PNG/JPG/SVG/WebP"
@@ -263,6 +254,7 @@ export default function SiteSettingsPage() {
                   updatedAt={settings.updatedAt}
                 />
                 <BrandingUploader
+                  siteId={siteId}
                   type="favicon"
                   title="파비콘"
                   description="브라우저 탭에 표시되는 아이콘. 권장: 32×32px, PNG/ICO"
@@ -270,6 +262,7 @@ export default function SiteSettingsPage() {
                   updatedAt={settings.updatedAt}
                 />
                 <BrandingUploader
+                  siteId={siteId}
                   type="og"
                   title="OG 이미지"
                   description="소셜 미디어 공유 시 표시될 이미지. 권장: 1200×630px, PNG/JPG/WebP"
@@ -440,7 +433,7 @@ export default function SiteSettingsPage() {
           </aside>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

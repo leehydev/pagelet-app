@@ -12,7 +12,6 @@ interface Step {
 const STEPS: Step[] = [
   { id: 1, label: '프로필 입력', path: '/onboarding/profile' },
   { id: 2, label: '홈페이지 생성', path: '/onboarding/site' },
-  { id: 3, label: '첫 글 작성', path: '/onboarding/first-post' },
 ];
 
 interface StepperProps {

@@ -7,6 +7,7 @@ import { BrandingType } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface BrandingUploaderProps {
+  siteId: string;
   type: BrandingType;
   title: string;
   description: string;
@@ -42,6 +43,7 @@ const VALIDATION_RULES: Record<
 };
 
 export function BrandingUploader({
+  siteId,
   type,
   title,
   description,
@@ -51,7 +53,7 @@ export function BrandingUploader({
 }: BrandingUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { state, upload, commit, reset, isUploading, isUploaded, isCommitting } =
-    useBrandingUpload(type);
+    useBrandingUpload(siteId, type);
 
   const rules = VALIDATION_RULES[type];
 
