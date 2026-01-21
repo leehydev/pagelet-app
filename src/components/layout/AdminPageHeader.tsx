@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
-import { Bell, ChevronRight, LucideIcon, PanelLeft } from 'lucide-react';
+import { ChevronRight, LucideIcon, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAdminHeaderStore } from '@/stores/admin-header-store';
+import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
 
-interface AdminPageHeaderProps {
+export interface AdminPageHeaderProps {
   breadcrumb: string;
   title: string;
   action?: {
@@ -21,7 +20,7 @@ interface AdminPageHeaderProps {
  * 사이드바 토글 버튼 컴포넌트
  */
 function SidebarToggle() {
-  const toggleSidebar = useAdminHeaderStore((s) => s.toggleSidebar);
+  const toggleSidebar = useAdminSidebarStore((s) => s.toggleSidebar);
 
   return (
     <Button
@@ -37,41 +36,7 @@ function SidebarToggle() {
 }
 
 /**
- * 페이지에서 헤더를 설정하는 훅
- * useEffect 내에서 자동으로 설정/정리됨
- */
-export function useAdminHeader(config: AdminPageHeaderProps) {
-  const setHeader = useAdminHeaderStore((s) => s.setHeader);
-  const clearHeader = useAdminHeaderStore((s) => s.clearHeader);
-
-  useEffect(() => {
-    setHeader(config);
-    return () => clearHeader();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 속성 비교로 무한 루프 방지
-  }, [config.breadcrumb, config.title, config.action, config.extra, setHeader, clearHeader]);
-}
-
-/**
- * 레이아웃에서 사용 - store에서 값을 읽어 렌더링
- */
-export function AdminPageHeaderFromStore() {
-  const config = useAdminHeaderStore((s) => s.config);
-
-  if (!config) {
-    return (
-      <header className="sticky top-0 z-40 w-full border-b bg-white">
-        <div className="flex h-16 items-center gap-4 px-4">
-          <SidebarToggle />
-        </div>
-      </header>
-    );
-  }
-
-  return <AdminPageHeader {...config} />;
-}
-
-/**
- * 직접 props를 전달하여 사용
+ * 페이지에서 직접 사용하는 헤더 컴포넌트
  */
 export function AdminPageHeader({ breadcrumb, title, action, extra }: AdminPageHeaderProps) {
   return (

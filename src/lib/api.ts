@@ -10,6 +10,7 @@ export const api = axios.create({
   },
 });
 
+
 // Response interceptor for handling common errors
 api.interceptors.response.use(
   (response) => response,
@@ -234,36 +235,46 @@ export async function completeOnboarding(): Promise<void> {
 
 // ===== Admin Post API =====
 
-export async function createAdminPost(data: CreatePostRequest): Promise<Post> {
-  const response = await api.post<ApiResponse<Post>>('/admin/posts', data);
+export async function createAdminPost(siteId: string, data: CreatePostRequest): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/sites/${siteId}/posts`, data);
   return response.data.data;
 }
 
-export async function getAdminPosts(categoryId?: string): Promise<PostListItem[]> {
-  const response = await api.get<ApiResponse<PostListItem[]>>('/admin/posts', {
+export async function getAdminPosts(siteId: string, categoryId?: string): Promise<PostListItem[]> {
+  const response = await api.get<ApiResponse<PostListItem[]>>(`/admin/sites/${siteId}/posts`, {
     params: categoryId ? { categoryId: categoryId } : {},
   });
   return response.data.data;
 }
 
-export async function checkPostSlugAvailability(slug: string): Promise<boolean> {
+export async function checkPostSlugAvailability(siteId: string, slug: string): Promise<boolean> {
   try {
-    const response = await api.get<ApiResponse<{ available: boolean }>>(`/admin/posts/check-slug`, {
-      params: { slug },
-    });
+    const response = await api.get<ApiResponse<{ available: boolean }>>(
+      `/admin/sites/${siteId}/posts/check-slug`,
+      {
+        params: { slug },
+      },
+    );
     return response.data.data.available;
   } catch {
     return false;
   }
 }
 
-export async function getAdminPost(postId: string): Promise<Post> {
-  const response = await api.get<ApiResponse<Post>>(`/admin/posts/${postId}`);
+export async function getAdminPost(siteId: string, postId: string): Promise<Post> {
+  const response = await api.get<ApiResponse<Post>>(`/admin/sites/${siteId}/posts/${postId}`);
   return response.data.data;
 }
 
-export async function updateAdminPost(postId: string, data: UpdatePostRequest): Promise<Post> {
-  const response = await api.patch<ApiResponse<Post>>(`/admin/posts/${postId}`, data);
+export async function updateAdminPost(
+  siteId: string,
+  postId: string,
+  data: UpdatePostRequest,
+): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(
+    `/admin/sites/${siteId}/posts/${postId}`,
+    data,
+  );
   return response.data.data;
 }
 
@@ -333,13 +344,16 @@ export async function fetchPublicPostBySlug(
 
 // ===== Site Settings API (Admin) =====
 
-export async function getMySiteSettings(): Promise<SiteSettings | null> {
-  const response = await api.get<ApiResponse<SiteSettings | null>>('/site-settings');
+export async function getAdminSiteSettings(siteId: string): Promise<SiteSettings> {
+  const response = await api.get<ApiResponse<SiteSettings>>(`/admin/sites/${siteId}/settings`);
   return response.data.data;
 }
 
-export async function updateMySiteSettings(data: UpdateSiteSettingsRequest): Promise<SiteSettings> {
-  const response = await api.put<ApiResponse<SiteSettings>>('/site-settings', data);
+export async function updateAdminSiteSettings(
+  siteId: string,
+  data: UpdateSiteSettingsRequest,
+): Promise<SiteSettings> {
+  const response = await api.put<ApiResponse<SiteSettings>>(`/admin/sites/${siteId}/settings`, data);
   return response.data.data;
 }
 
@@ -406,24 +420,36 @@ export interface AbortUploadRequest {
 /**
  * Presigned URL 생성 요청
  */
-export async function presignUpload(data: PresignUploadRequest): Promise<PresignUploadResponse> {
-  const response = await api.post<ApiResponse<PresignUploadResponse>>('/uploads/presign', data);
+export async function presignUpload(
+  siteId: string,
+  data: PresignUploadRequest,
+): Promise<PresignUploadResponse> {
+  const response = await api.post<ApiResponse<PresignUploadResponse>>(
+    `/admin/sites/${siteId}/uploads/presign`,
+    data,
+  );
   return response.data.data;
 }
 
 /**
  * 업로드 완료 확정
  */
-export async function completeUpload(data: CompleteUploadRequest): Promise<CompleteUploadResponse> {
-  const response = await api.post<ApiResponse<CompleteUploadResponse>>('/uploads/complete', data);
+export async function completeUpload(
+  siteId: string,
+  data: CompleteUploadRequest,
+): Promise<CompleteUploadResponse> {
+  const response = await api.post<ApiResponse<CompleteUploadResponse>>(
+    `/admin/sites/${siteId}/uploads/complete`,
+    data,
+  );
   return response.data.data;
 }
 
 /**
  * 업로드 중단
  */
-export async function abortUpload(data: AbortUploadRequest): Promise<void> {
-  await api.post('/uploads/abort', data);
+export async function abortUpload(siteId: string, data: AbortUploadRequest): Promise<void> {
+  await api.post(`/admin/sites/${siteId}/uploads/abort`, data);
 }
 
 // ===== Branding Asset API =====
@@ -457,10 +483,11 @@ export interface BrandingCommitResponse {
  * 브랜딩 에셋 Presigned URL 생성
  */
 export async function presignBrandingUpload(
+  siteId: string,
   data: BrandingPresignRequest,
 ): Promise<BrandingPresignResponse> {
   const response = await api.post<ApiResponse<BrandingPresignResponse>>(
-    '/admin/assets/branding/presign',
+    `/admin/sites/${siteId}/assets/branding/presign`,
     data,
   );
   return response.data.data;
@@ -470,10 +497,11 @@ export async function presignBrandingUpload(
  * 브랜딩 에셋 업로드 확정
  */
 export async function commitBrandingUpload(
+  siteId: string,
   data: BrandingCommitRequest,
 ): Promise<BrandingCommitResponse> {
   const response = await api.post<ApiResponse<BrandingCommitResponse>>(
-    '/admin/assets/branding/commit',
+    `/admin/sites/${siteId}/assets/branding/commit`,
     data,
   );
   return response.data.data;
@@ -516,23 +544,30 @@ export interface UpdateCategoryRequest {
 
 // ===== Admin Category API =====
 
-export async function getAdminCategories(): Promise<Category[]> {
-  const response = await api.get<ApiResponse<Category[]>>('/admin/categories');
+export async function getAdminCategories(siteId: string): Promise<Category[]> {
+  const response = await api.get<ApiResponse<Category[]>>(`/admin/sites/${siteId}/categories`);
   return response.data.data;
 }
 
-export async function createCategory(data: CreateCategoryRequest): Promise<Category> {
-  const response = await api.post<ApiResponse<Category>>('/admin/categories', data);
+export async function createCategory(siteId: string, data: CreateCategoryRequest): Promise<Category> {
+  const response = await api.post<ApiResponse<Category>>(`/admin/sites/${siteId}/categories`, data);
   return response.data.data;
 }
 
-export async function updateCategory(id: string, data: UpdateCategoryRequest): Promise<Category> {
-  const response = await api.put<ApiResponse<Category>>(`/admin/categories/${id}`, data);
+export async function updateCategory(
+  siteId: string,
+  id: string,
+  data: UpdateCategoryRequest,
+): Promise<Category> {
+  const response = await api.put<ApiResponse<Category>>(
+    `/admin/sites/${siteId}/categories/${id}`,
+    data,
+  );
   return response.data.data;
 }
 
-export async function deleteCategory(id: string): Promise<void> {
-  await api.delete(`/admin/categories/${id}`);
+export async function deleteCategory(siteId: string, id: string): Promise<void> {
+  await api.delete(`/admin/sites/${siteId}/categories/${id}`);
 }
 
 // ===== Public Category API =====
@@ -559,4 +594,17 @@ export async function fetchPublicCategories(siteSlug: string): Promise<PublicCat
 
   const data: ApiResponse<PublicCategory[]> = await res.json();
   return data.data;
+}
+
+// ===== Admin Site API =====
+
+export interface AdminSite {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export async function getAdminSites(): Promise<AdminSite[]> {
+  const response = await api.get<ApiResponse<AdminSite[]>>('/admin/sites');
+  return response.data.data;
 }

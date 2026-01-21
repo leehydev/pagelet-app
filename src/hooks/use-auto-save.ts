@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { updateAdminPost, UpdatePostRequest } from '@/lib/api';
 
 interface UseAutoSaveOptions {
+  siteId: string;
   postId: string | null; // null이면 자동저장 비활성화 (새 글)
   intervalMs?: number; // 자동저장 간격 (기본 5분)
   onSaveSuccess?: () => void;
@@ -18,6 +19,7 @@ interface AutoSaveState {
 }
 
 export function useAutoSave({
+  siteId,
   postId,
   intervalMs = 5 * 60 * 1000, // 5분
   onSaveSuccess,
@@ -35,7 +37,7 @@ export function useAutoSave({
   const mutation = useMutation({
     mutationFn: (data: UpdatePostRequest) => {
       if (!postId) throw new Error('postId is required');
-      return updateAdminPost(postId, data);
+      return updateAdminPost(siteId, postId, data);
     },
     onSuccess: () => {
       setState((prev) => ({

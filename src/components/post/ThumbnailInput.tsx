@@ -8,6 +8,7 @@ import { useUpload } from '@/hooks/use-upload';
 import { cn } from '@/lib/utils';
 
 export interface ThumbnailInputProps {
+  siteId: string;
   value?: string | null;
   onChange?: (url: string | null) => void;
   disabled?: boolean;
@@ -21,6 +22,7 @@ type InputMode = 'url' | 'upload';
  * URL 입력 모드와 파일 업로드 모드를 지원
  */
 export function ThumbnailInput({
+  siteId,
   value,
   onChange,
   disabled = false,
@@ -28,7 +30,7 @@ export function ThumbnailInput({
 }: ThumbnailInputProps) {
   const [mode, setMode] = useState<InputMode>('url');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { upload, uploadProgress, reset, isUploading } = useUpload();
+  const { upload, uploadProgress, reset, isUploading } = useUpload(siteId);
 
   // 업로드 완료 시 onChange 호출
   useEffect(() => {

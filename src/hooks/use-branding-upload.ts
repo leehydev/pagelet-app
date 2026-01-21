@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   presignBrandingUpload,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
 import { uploadFileToS3 } from './use-upload';
+import { siteSettingsKeys } from './use-site-settings';
 
 export interface BrandingUploadState {
   status: 'idle' | 'uploading' | 'uploaded' | 'committing' | 'error';
@@ -27,21 +28,25 @@ const initialState: BrandingUploadState = {
 /**
  * 브랜딩 에셋 업로드 훅
  */
-export function useBrandingUpload(type: BrandingType) {
+export function useBrandingUpload(siteId: string, type: BrandingType) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<BrandingUploadState>(initialState);
+  const siteIdRef = useRef(siteId);
+  siteIdRef.current = siteId;
 
   // Presign mutation
   const presignMutation = useMutation({
-    mutationFn: presignBrandingUpload,
+    mutationFn: (data: { type: BrandingType; filename: string; size: number; mimeType: string }) =>
+      presignBrandingUpload(siteIdRef.current, data),
   });
 
   // Commit mutation
   const commitMutation = useMutation({
-    mutationFn: commitBrandingUpload,
+    mutationFn: (data: { type: BrandingType; tmpKey: string }) =>
+      commitBrandingUpload(siteIdRef.current, data),
     onSuccess: () => {
-      // 설정 캐시 무효화 (모든 siteSettings 관련 쿼리)
-      queryClient.invalidateQueries({ queryKey: ['siteSettings'], exact: false });
+      // 설정 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteIdRef.current) });
     },
   });
 

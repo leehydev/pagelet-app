@@ -9,13 +9,11 @@ import { Stepper } from '@/components/onboarding/Stepper';
 const STEP_PATHS = {
   1: '/onboarding/profile',
   2: '/onboarding/site',
-  3: '/onboarding/first-post',
 } as const;
 
 function getStepFromPath(pathname: string): number {
   if (pathname.includes('/profile')) return 1;
   if (pathname.includes('/site')) return 2;
-  if (pathname.includes('/first-post')) return 3;
   return 1;
 }
 

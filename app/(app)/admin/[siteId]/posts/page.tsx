@@ -2,56 +2,65 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { useAdminHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 
 export default function AdminPostsPage() {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const { data: posts, isLoading, error } = useAdminPosts(selectedCategoryId || undefined);
-  const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
+  const params = useParams();
+  const siteId = params.siteId as string;
 
-  useAdminHeader({
-    breadcrumb: 'Management',
-    title: 'All Posts',
-    action: {
-      label: 'New Post',
-      href: '/admin/posts/new',
-      icon: Plus,
-    },
-  });
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const { data: posts, isLoading, error } = useAdminPosts(siteId, selectedCategoryId || undefined);
+  const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
 
   if (isLoading) {
     return (
-      <div>
+      <>
+        <AdminPageHeader
+          breadcrumb="Management"
+          title="All Posts"
+          action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+        />
         <div className="p-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div>
+      <>
+        <AdminPageHeader
+          breadcrumb="Management"
+          title="All Posts"
+          action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+        />
         <div className="p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
             게시글을 불러오는데 실패했습니다.
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div>
+    <>
+      <AdminPageHeader
+        breadcrumb="Management"
+        title="All Posts"
+        action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+      />
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
@@ -100,7 +109,7 @@ export default function AdminPostsPage() {
                   <tr
                     key={post.id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => (window.location.href = `/admin/posts/${post.id}`)}
+                    onClick={() => (window.location.href = `/admin/${siteId}/posts/${post.id}`)}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -119,7 +128,7 @@ export default function AdminPostsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <Link
-                        href={`/admin/posts/${post.id}`}
+                        href={`/admin/${siteId}/posts/${post.id}`}
                         className="text-sm font-medium text-gray-900 hover:text-blue-600"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -152,12 +161,12 @@ export default function AdminPostsPage() {
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-500 mb-4">아직 작성한 게시글이 없습니다.</p>
-            <Link href="/admin/posts/new">
+            <Link href={`/admin/${siteId}/posts/new`}>
               <Button>첫 글 작성하기</Button>
             </Link>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

@@ -1,28 +1,36 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import { LayoutDashboard, FileText, Settings, FolderTree } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { useAdminHeaderStore } from '@/stores/admin-header-store';
+import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
+import { SiteSwitcher } from './SiteSwitcher';
 
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/posts', label: 'Posts', icon: FileText },
-  { href: '/admin/categories', label: 'Categories', icon: FolderTree },
-  { href: '/admin/settings', label: 'Site Settings', icon: Settings },
+  { path: '', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/posts', label: 'Posts', icon: FileText },
+  { path: '/categories', label: 'Categories', icon: FolderTree },
+  { path: '/settings', label: 'Site Settings', icon: Settings },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const isSidebarOpen = useAdminHeaderStore((s) => s.isSidebarOpen);
+  const params = useParams();
+  const siteId = params.siteId as string;
+  const isSidebarOpen = useAdminSidebarStore((s) => s.isSidebarOpen);
 
-  const isActive = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin';
+  // 기본 경로 prefix
+  const baseHref = `/admin/${siteId}`;
+
+  const isActive = (path: string) => {
+    const fullPath = `${baseHref}${path}`;
+    if (path === '') {
+      // Dashboard: 정확히 /admin/{siteId}인 경우만
+      return pathname === baseHref;
     }
-    return pathname.startsWith(href);
+    return pathname.startsWith(fullPath);
   };
 
   return (
@@ -34,7 +42,7 @@ export function AdminSidebar() {
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-center border-b px-4">
-        <Link href="/admin" className="flex items-center">
+        <Link href={baseHref} className="flex items-center">
           <Image
             src="/admin_logo_200.png"
             alt="Pagelet"
@@ -47,16 +55,22 @@ export function AdminSidebar() {
         </Link>
       </div>
 
+      {/* Site Switcher */}
+      <div className="px-3 py-3 border-b">
+        <SiteSwitcher />
+      </div>
+
       {/* Menu */}
       <nav className="flex-1 py-4 px-3">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const href = `${baseHref}${item.path}`;
+            const active = isActive(item.path);
             return (
-              <li key={item.href}>
+              <li key={item.path}>
                 <Link
-                  href={item.href}
+                  href={href}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                     active

@@ -1,18 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useCreateCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { CreateCategoryRequest } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { useAdminHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 
 export default function NewCategoryPage() {
   const router = useRouter();
-  const createCategory = useCreateCategory();
+  const params = useParams();
+  const siteId = params.siteId as string;
+
+  const createCategory = useCreateCategory(siteId);
 
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateCategoryRequest>({
@@ -20,8 +23,6 @@ export default function NewCategoryPage() {
     name: '',
     description: '',
   });
-
-  useAdminHeader({ breadcrumb: 'Management', title: 'New Category' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +35,15 @@ export default function NewCategoryPage() {
 
     try {
       await createCategory.mutateAsync(formData);
-      router.push('/admin/categories');
+      router.push(`/admin/${siteId}/categories`);
     } catch (err) {
       setError(getErrorDisplayMessage(err, '카테고리 생성에 실패했습니다.'));
     }
   };
 
   return (
-    <div>
+    <>
+      <AdminPageHeader breadcrumb="Management" title="New Category" />
       <div className="p-6">
         <div className="max-w-2xl">
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
@@ -107,6 +109,6 @@ export default function NewCategoryPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
