@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+// import { Suspense } from 'react';
 import './globals.css';
 import { RootProviders } from './providers/root-providers';
 import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
+// import NavigationTracker from '@/components/NavigationTracker';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,8 +36,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col
         bg-background-light dark:bg-background-dark`}
+        suppressHydrationWarning
       >
         <RootProviders>
+          {/* 네비게이션 스택 추적 비활성화 (필요시 주석 해제) */}
+          {/* <Suspense fallback={null}>
+            <NavigationTracker />
+          </Suspense> */}
           <ErrorBoundaryWrapper>{children}</ErrorBoundaryWrapper>
         </RootProviders>
       </body>
