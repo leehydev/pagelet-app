@@ -1,6 +1,14 @@
-import { fetchPublicPosts, fetchSiteSettings, PublicPost, SiteSettings } from '@/lib/api';
+import {
+  fetchPublicPosts,
+  fetchPublicCategories,
+  fetchSiteSettings,
+  PublicPost,
+  PublicCategory,
+  SiteSettings,
+} from '@/lib/api';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { CategoryTabs } from '@/components/public/category-tabs';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -35,9 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     keywords: settings?.seo_keywords || undefined,
-    robots: allowIndex
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
+    robots: allowIndex ? { index: true, follow: true } : { index: false, follow: false },
     openGraph: {
       title,
       description,
@@ -45,20 +51,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     ...(settings?.canonical_base_url && {
       alternates: {
-        canonical: `${settings.canonical_base_url}/t/${slug}/home`,
+        canonical: `${settings.canonical_base_url}`,
       },
     }),
-    icons: settings?.favicon_url
-      ? { icon: settings.favicon_url }
-      : undefined,
+    icons: settings?.favicon_url ? { icon: settings.favicon_url } : undefined,
   };
 }
 
-async function getPosts(siteSlug: string): Promise<PublicPost[]> {
+async function getPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
   try {
-    return await fetchPublicPosts(siteSlug);
+    return await fetchPublicPosts(siteSlug, categorySlug);
   } catch (error) {
     console.error('Failed to fetch posts:', error);
+    return [];
+  }
+}
+
+async function getCategories(siteSlug: string): Promise<PublicCategory[]> {
+  try {
+    return await fetchPublicCategories(siteSlug);
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
     return [];
   }
 }
@@ -140,11 +153,7 @@ function PostCard({ post, siteSlug }: { post: PublicPost; siteSlug: string }) {
       {post.og_image_url && (
         <div className="aspect-video bg-gray-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.og_image_url}
-            alt={post.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={post.og_image_url} alt={post.title} className="w-full h-full object-cover" />
         </div>
       )}
       <div className="p-5">
@@ -154,9 +163,7 @@ function PostCard({ post, siteSlug }: { post: PublicPost; siteSlug: string }) {
           </h2>
         </Link>
         {post.seo_description && (
-          <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-            {post.seo_description}
-          </p>
+          <p className="text-gray-600 text-sm line-clamp-2 mb-3">{post.seo_description}</p>
         )}
         <time className="text-xs text-gray-400">
           {new Date(post.published_at).toLocaleDateString('ko-KR', {
@@ -172,8 +179,9 @@ function PostCard({ post, siteSlug }: { post: PublicPost; siteSlug: string }) {
 
 export default async function TenantHomePage({ params }: PageProps) {
   const { slug } = await params;
-  const [posts, settings] = await Promise.all([
+  const [posts, categories, settings] = await Promise.all([
     getPosts(slug),
+    getCategories(slug),
     getSiteSettings(slug),
   ]);
 
@@ -201,6 +209,15 @@ export default async function TenantHomePage({ params }: PageProps) {
         </div>
       </header>
 
+      {/* 카테고리 탭 */}
+      {categories.length > 0 && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4">
+            <CategoryTabs categories={categories} siteSlug={slug} />
+          </div>
+        </div>
+      )}
+
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 py-8 flex-1">
         {posts.length > 0 ? (
@@ -212,12 +229,8 @@ export default async function TenantHomePage({ params }: PageProps) {
         ) : (
           <div className="text-center py-16">
             <div className="text-gray-400 text-6xl mb-4">📝</div>
-            <h2 className="text-xl font-medium text-gray-600 mb-2">
-              아직 게시글이 없습니다
-            </h2>
-            <p className="text-gray-400">
-              곧 새로운 글이 올라올 예정입니다.
-            </p>
+            <h2 className="text-xl font-medium text-gray-600 mb-2">아직 게시글이 없습니다</h2>
+            <p className="text-gray-400">곧 새로운 글이 올라올 예정입니다.</p>
           </div>
         )}
       </main>
@@ -234,9 +247,7 @@ export default async function TenantHomePage({ params }: PageProps) {
               <BusinessInfo settings={settings} />
             </>
           )}
-          <div className="text-center text-sm text-gray-500 pt-2">
-            Powered by Pagelet
-          </div>
+          <div className="text-center text-sm text-gray-500 pt-2">Powered by Pagelet</div>
         </div>
       </footer>
     </div>
