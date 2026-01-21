@@ -13,62 +13,62 @@ import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 // Zod 스키마 정의
 const siteSettingsSchema = z.object({
   // 브랜딩
-  logo_image_url: z
+  logoImageUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
-  favicon_url: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
+  faviconUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   // SEO
-  og_image_url: z
+  ogImageUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
-  seo_title: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
-  seo_description: z.string().nullable().or(z.literal('')),
-  seo_keywords: z.string().max(500).nullable().or(z.literal('')),
-  canonical_base_url: z
+  seoTitle: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
+  seoDescription: z.string().nullable().or(z.literal('')),
+  seoKeywords: z.string().max(500).nullable().or(z.literal('')),
+  canonicalBaseUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
-  robots_index: z.boolean(),
+  robotsIndex: z.boolean(),
   // 연락처
-  contact_email: z
+  contactEmail: z
     .string()
     .email('올바른 이메일 형식이어야 합니다')
     .max(255)
     .nullable()
     .or(z.literal('')),
-  contact_phone: z.string().max(50).nullable().or(z.literal('')),
+  contactPhone: z.string().max(50).nullable().or(z.literal('')),
   address: z.string().nullable().or(z.literal('')),
   // 소셜 링크
-  kakao_channel_url: z
+  kakaoChannelUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
-  naver_map_url: z
+  naverMapUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
-  instagram_url: z
+  instagramUrl: z
     .string()
     .url('올바른 URL 형식이어야 합니다')
     .max(500)
     .nullable()
     .or(z.literal('')),
   // 사업자 정보
-  business_number: z.string().max(20).nullable().or(z.literal('')),
-  business_name: z.string().max(100).nullable().or(z.literal('')),
-  representative_name: z.string().max(50).nullable().or(z.literal('')),
+  businessNumber: z.string().max(20).nullable().or(z.literal('')),
+  businessName: z.string().max(100).nullable().or(z.literal('')),
+  representativeName: z.string().max(50).nullable().or(z.literal('')),
 });
 
 type SiteSettingsFormData = z.infer<typeof siteSettingsSchema>;
@@ -80,23 +80,23 @@ export default function SiteSettingsPage() {
   const methods = useForm<SiteSettingsFormData>({
     resolver: zodResolver(siteSettingsSchema),
     defaultValues: {
-      logo_image_url: '',
-      favicon_url: '',
-      og_image_url: '',
-      seo_title: '',
-      seo_description: '',
-      seo_keywords: '',
-      canonical_base_url: '',
-      robots_index: false,
-      contact_email: '',
-      contact_phone: '',
+      logoImageUrl: '',
+      faviconUrl: '',
+      ogImageUrl: '',
+      seoTitle: '',
+      seoDescription: '',
+      seoKeywords: '',
+      canonicalBaseUrl: '',
+      robotsIndex: false,
+      contactEmail: '',
+      contactPhone: '',
       address: '',
-      kakao_channel_url: '',
-      naver_map_url: '',
-      instagram_url: '',
-      business_number: '',
-      business_name: '',
-      representative_name: '',
+      kakaoChannelUrl: '',
+      naverMapUrl: '',
+      instagramUrl: '',
+      businessNumber: '',
+      businessName: '',
+      representativeName: '',
     },
   });
 
@@ -111,31 +111,31 @@ export default function SiteSettingsPage() {
   useEffect(() => {
     if (settings) {
       reset({
-        logo_image_url: settings.logo_image_url || '',
-        favicon_url: settings.favicon_url || '',
-        og_image_url: settings.og_image_url || '',
-        seo_title: settings.seo_title || '',
-        seo_description: settings.seo_description || '',
-        seo_keywords: settings.seo_keywords || '',
-        canonical_base_url: settings.canonical_base_url || '',
-        robots_index: settings.robots_index || false,
-        contact_email: settings.contact_email || '',
-        contact_phone: settings.contact_phone || '',
+        logoImageUrl: settings.logoImageUrl || '',
+        faviconUrl: settings.faviconUrl || '',
+        ogImageUrl: settings.ogImageUrl || '',
+        seoTitle: settings.seoTitle || '',
+        seoDescription: settings.seoDescription || '',
+        seoKeywords: settings.seoKeywords || '',
+        canonicalBaseUrl: settings.canonicalBaseUrl || '',
+        robotsIndex: settings.robotsIndex || false,
+        contactEmail: settings.contactEmail || '',
+        contactPhone: settings.contactPhone || '',
         address: settings.address || '',
-        kakao_channel_url: settings.kakao_channel_url || '',
-        naver_map_url: settings.naver_map_url || '',
-        instagram_url: settings.instagram_url || '',
-        business_number: settings.business_number || '',
-        business_name: settings.business_name || '',
-        representative_name: settings.representative_name || '',
+        kakaoChannelUrl: settings.kakaoChannelUrl || '',
+        naverMapUrl: settings.naverMapUrl || '',
+        instagramUrl: settings.instagramUrl || '',
+        businessNumber: settings.businessNumber || '',
+        businessName: settings.businessName || '',
+        representativeName: settings.representativeName || '',
       });
     }
   }, [settings, reset]);
 
-  // robots_index 필드 값 구독
+  // robotsIndex 필드 값 구독
   const robotsIndex = useWatch({
     control: methods.control,
-    name: 'robots_index',
+    name: 'robotsIndex',
     defaultValue: false,
   });
 
@@ -221,13 +221,13 @@ export default function SiteSettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
                 <div className="space-y-4">
                   <ValidationInput
-                    name="logo_image_url"
+                    name="logoImageUrl"
                     label="로고 이미지 URL"
                     type="url"
                     placeholder="https://example.com/logo.png"
                   />
                   <ValidationInput
-                    name="favicon_url"
+                    name="faviconUrl"
                     label="파비콘 URL"
                     type="url"
                     placeholder="https://example.com/favicon.ico"
@@ -240,33 +240,33 @@ export default function SiteSettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
                 <div className="space-y-4">
                   <ValidationInput
-                    name="og_image_url"
+                    name="ogImageUrl"
                     label="OG 이미지 URL"
                     description="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
                     type="url"
                     placeholder="https://example.com/og-image.jpg"
                   />
                   <ValidationInput
-                    name="seo_title"
+                    name="seoTitle"
                     label="SEO 제목"
                     description="최대 120자"
                     placeholder="사이트 제목"
                     maxLength={120}
                   />
                   <ValidationTextarea
-                    name="seo_description"
+                    name="seoDescription"
                     label="SEO 설명"
                     placeholder="검색 결과에 표시될 사이트 설명"
                     rows={3}
                   />
                   <ValidationInput
-                    name="seo_keywords"
+                    name="seoKeywords"
                     label="SEO 키워드"
                     description="쉼표로 구분하여 입력"
                     placeholder="키워드1, 키워드2, 키워드3"
                   />
                   <ValidationInput
-                    name="canonical_base_url"
+                    name="canonicalBaseUrl"
                     label="Canonical 기본 URL"
                     type="url"
                     placeholder="https://yourdomain.com"
@@ -275,7 +275,7 @@ export default function SiteSettingsPage() {
                     label="검색 엔진 인덱싱 허용"
                     hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
                     checked={robotsIndex}
-                    onChange={(checked) => setValue('robots_index', checked, { shouldDirty: true })}
+                    onChange={(checked) => setValue('robotsIndex', checked, { shouldDirty: true })}
                   />
                 </div>
               </section>
@@ -285,13 +285,13 @@ export default function SiteSettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처</h2>
                 <div className="space-y-4">
                   <ValidationInput
-                    name="contact_email"
+                    name="contactEmail"
                     label="이메일"
                     type="email"
                     placeholder="contact@example.com"
                   />
                   <ValidationInput
-                    name="contact_phone"
+                    name="contactPhone"
                     label="전화번호"
                     type="tel"
                     placeholder="02-1234-5678"
@@ -310,19 +310,19 @@ export default function SiteSettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">소셜 링크</h2>
                 <div className="space-y-4">
                   <ValidationInput
-                    name="kakao_channel_url"
+                    name="kakaoChannelUrl"
                     label="카카오 채널 URL"
                     type="url"
                     placeholder="https://pf.kakao.com/..."
                   />
                   <ValidationInput
-                    name="naver_map_url"
+                    name="naverMapUrl"
                     label="네이버 지도 URL"
                     type="url"
                     placeholder="https://naver.me/..."
                   />
                   <ValidationInput
-                    name="instagram_url"
+                    name="instagramUrl"
                     label="인스타그램 URL"
                     type="url"
                     placeholder="https://instagram.com/..."
@@ -335,13 +335,13 @@ export default function SiteSettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">사업자 정보</h2>
                 <div className="space-y-4">
                   <ValidationInput
-                    name="business_number"
+                    name="businessNumber"
                     label="사업자등록번호"
                     placeholder="123-45-67890"
                   />
-                  <ValidationInput name="business_name" label="상호명" placeholder="(주)예시회사" />
+                  <ValidationInput name="businessName" label="상호명" placeholder="(주)예시회사" />
                   <ValidationInput
-                    name="representative_name"
+                    name="representativeName"
                     label="대표자명"
                     placeholder="홍길동"
                   />

@@ -58,7 +58,7 @@ export default function AdminPostsPage() {
               <option value="">전체 카테고리</option>
               {categories?.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name} ({category.post_count || 0})
+                  {category.name} ({category.postCount || 0})
                 </option>
               ))}
             </select>
@@ -109,12 +109,12 @@ export default function AdminPostsPage() {
                       <div className="text-sm font-medium text-gray-900">{post.title}</div>
                       <div className="text-xs text-gray-500">
                         /{post.slug}
-                        {post.og_image_url}
+                        {post.ogImageUrl}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-900">
-                        {post.category_name || '-'}
+                        {post.categoryName || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -129,7 +129,7 @@ export default function AdminPostsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                      {new Date(post.createdAt).toLocaleDateString('ko-KR')}
                     </td>
                   </tr>
                 ))}

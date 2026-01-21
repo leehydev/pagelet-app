@@ -52,26 +52,28 @@ export interface User {
 export interface Post {
   id: string;
   title: string;
+  subtitle: string;
   slug: string;
   content: string;
   status: PostStatus;
-  published_at: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  og_image_url: string | null;
-  created_at: string;
-  updated_at: string;
+  publishedAt: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PublicPost {
   id: string;
   title: string;
+  subtitle: string;
   slug: string;
   content: string;
-  published_at: string;
-  seo_title: string | null;
-  seo_description: string | null;
-  og_image_url: string | null;
+  publishedAt: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
 }
 
 export interface SiteSettings {
@@ -79,60 +81,61 @@ export interface SiteSettings {
   name: string;
   slug: string;
   // 브랜딩
-  logo_image_url: string | null;
-  favicon_url: string | null;
+  logoImageUrl: string | null;
+  faviconUrl: string | null;
   // SEO
-  og_image_url: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  seo_keywords: string | null;
-  canonical_base_url: string | null;
-  robots_index: boolean;
+  ogImageUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  seoKeywords: string | null;
+  canonicalBaseUrl: string | null;
+  robotsIndex: boolean;
   // 연락처
-  contact_email: string | null;
-  contact_phone: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
   address: string | null;
   // 소셜 링크
-  kakao_channel_url: string | null;
-  naver_map_url: string | null;
-  instagram_url: string | null;
+  kakaoChannelUrl: string | null;
+  naverMapUrl: string | null;
+  instagramUrl: string | null;
   // 사업자 정보
-  business_number: string | null;
-  business_name: string | null;
-  representative_name: string | null;
+  businessNumber: string | null;
+  businessName: string | null;
+  representativeName: string | null;
 }
 
 export interface UpdateSiteSettingsRequest {
-  logo_image_url?: string | null;
-  favicon_url?: string | null;
-  og_image_url?: string | null;
-  seo_title?: string | null;
-  seo_description?: string | null;
-  seo_keywords?: string | null;
-  canonical_base_url?: string | null;
-  robots_index?: boolean;
-  contact_email?: string | null;
-  contact_phone?: string | null;
+  logoImageUrl?: string | null;
+  faviconUrl?: string | null;
+  ogImageUrl?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoKeywords?: string | null;
+  canonicalBaseUrl?: string | null;
+  robotsIndex?: boolean;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   address?: string | null;
-  kakao_channel_url?: string | null;
-  naver_map_url?: string | null;
-  instagram_url?: string | null;
-  business_number?: string | null;
-  business_name?: string | null;
-  representative_name?: string | null;
+  kakaoChannelUrl?: string | null;
+  naverMapUrl?: string | null;
+  instagramUrl?: string | null;
+  businessNumber?: string | null;
+  businessName?: string | null;
+  representativeName?: string | null;
 }
 
 export interface PostListItem {
   id: string;
   title: string;
+  subtitle: string;
   slug: string;
   status: PostStatus;
-  published_at: string | null;
-  seo_description: string | null;
-  og_image_url: string | null;
-  created_at: string;
-  category_id: string | null;
-  category_name: string | null;
+  publishedAt: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  createdAt: string;
+  categoryId: string | null;
+  categoryName: string | null;
 }
 
 export interface ApiResponse<T> {
@@ -177,13 +180,14 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
 
 export interface CreatePostRequest {
   title: string;
+  subtitle: string;
   content: string;
   slug?: string;
   status?: PostStatus;
-  seo_title?: string;
-  seo_description?: string;
-  og_image_url?: string;
-  category_id?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImageUrl?: string;
+  categoryId?: string;
 }
 
 export async function createPost(data: CreatePostRequest): Promise<void> {
@@ -207,7 +211,7 @@ export async function createAdminPost(data: CreatePostRequest): Promise<Post> {
 
 export async function getAdminPosts(categoryId?: string): Promise<PostListItem[]> {
   const response = await api.get<ApiResponse<PostListItem[]>>('/admin/posts', {
-    params: categoryId ? { category_id: categoryId } : {},
+    params: categoryId ? { categoryId: categoryId } : {},
   });
   return response.data.data;
 }
@@ -227,9 +231,9 @@ export async function checkPostSlugAvailability(slug: string): Promise<boolean> 
 // ===== Public Post API =====
 
 export async function getPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
-  const params: { site_slug: string; category_slug?: string } = { site_slug: siteSlug };
+  const params: { siteSlug: string; categorySlug?: string } = { siteSlug: siteSlug };
   if (categorySlug) {
-    params.category_slug = categorySlug;
+    params.categorySlug = categorySlug;
   }
   const response = await api.get<ApiResponse<PublicPost[]>>('/public/posts', { params });
   return response.data.data;
@@ -237,16 +241,16 @@ export async function getPublicPosts(siteSlug: string, categorySlug?: string): P
 
 export async function getPublicPostBySlug(siteSlug: string, postSlug: string): Promise<PublicPost> {
   const response = await api.get<ApiResponse<PublicPost>>(`/public/posts/${postSlug}`, {
-    params: { site_slug: siteSlug },
+    params: { siteSlug: siteSlug },
   });
   return response.data.data;
 }
 
 // Server-side fetch for ISR (without axios interceptors)
 export async function fetchPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
-  const params = new URLSearchParams({ site_slug: siteSlug });
+  const params = new URLSearchParams({ siteSlug: siteSlug });
   if (categorySlug) {
-    params.append('category_slug', categorySlug);
+    params.append('categorySlug', categorySlug);
   }
   const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
     next: { revalidate: 60 }, // ISR: 60초
@@ -357,35 +361,35 @@ export async function abortUpload(data: AbortUploadRequest): Promise<void> {
 
 export interface Category {
   id: string;
-  site_id: string;
+  siteId: string;
   slug: string;
   name: string;
   description: string | null;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-  post_count?: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  postCount?: number;
 }
 
 export interface PublicCategory {
   slug: string;
   name: string;
   description: string | null;
-  post_count?: number;
+  postCount?: number;
 }
 
 export interface CreateCategoryRequest {
   slug: string;
   name: string;
   description?: string;
-  sort_order?: number;
+  sortOrder?: number;
 }
 
 export interface UpdateCategoryRequest {
   slug?: string;
   name?: string;
   description?: string;
-  sort_order?: number;
+  sortOrder?: number;
 }
 
 // ===== Admin Category API =====
@@ -413,7 +417,7 @@ export async function deleteCategory(id: string): Promise<void> {
 
 export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
   const response = await api.get<ApiResponse<PublicCategory[]>>('/public/categories', {
-    params: { site_slug: siteSlug },
+    params: { siteSlug: siteSlug },
   });
   return response.data.data;
 }
@@ -421,7 +425,7 @@ export async function getPublicCategories(siteSlug: string): Promise<PublicCateg
 // Server-side fetch for ISR (without axios interceptors)
 export async function fetchPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
   const res = await fetch(
-    `${API_BASE_URL}/public/categories?site_slug=${encodeURIComponent(siteSlug)}`,
+    `${API_BASE_URL}/public/categories?siteSlug=${encodeURIComponent(siteSlug)}`,
     {
       next: { revalidate: 60 }, // ISR: 60초
     }
