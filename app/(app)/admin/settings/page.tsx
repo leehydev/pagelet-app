@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,17 @@ import { useMySiteSettings, useUpdateSiteSettings } from '@/hooks/use-site-setti
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
 import { ValidationTextarea } from '@/components/form/ValidationTextarea';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { useAdminHeaderStore } from '@/stores/admin-header-store';
+import { cn } from '@/lib/utils';
+
+// 섹션 정의
+const SECTIONS = [
+  { id: 'branding', label: '브랜딩' },
+  { id: 'seo', label: 'SEO 설정' },
+  { id: 'contact', label: '연락처' },
+  { id: 'social', label: '소셜 링크' },
+  { id: 'business', label: '사업자 정보' },
+] as const;
 
 // Zod 스키마 정의
 const siteSettingsSchema = z.object({
@@ -122,43 +132,98 @@ export default function SiteSettingsPage() {
     }
   }, [settings, reset]);
 
-  // robotsIndex 필드 값 구독
+  // 필드 값 구독
   const robotsIndex = useWatch({
     control: methods.control,
     name: 'robotsIndex',
     defaultValue: false,
   });
 
-  const onSubmit = async (data: SiteSettingsFormData) => {
-    try {
-      // 빈 문자열을 null로 변환
-      const payload = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [key, value === '' ? null : value]),
-      );
-      await updateSettings.mutateAsync(payload);
-    } catch {
-      // 에러는 mutation에서 처리
+  const logoImageUrl = useWatch({ control: methods.control, name: 'logoImageUrl' });
+  const faviconUrl = useWatch({ control: methods.control, name: 'faviconUrl' });
+  const ogImageUrl = useWatch({ control: methods.control, name: 'ogImageUrl' });
+
+  // 폼 제출 핸들러
+  const onSubmit = useCallback(
+    async (data: SiteSettingsFormData) => {
+      try {
+        // 빈 문자열을 null로 변환
+        const payload = Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, value === '' ? null : value]),
+        );
+        await updateSettings.mutateAsync(payload);
+      } catch {
+        // 에러는 mutation에서 처리
+      }
+    },
+    [updateSettings],
+  );
+
+  // 헤더 설정
+  const setHeader = useAdminHeaderStore((s) => s.setHeader);
+  const clearHeader = useAdminHeaderStore((s) => s.clearHeader);
+
+  useEffect(() => {
+    setHeader({
+      breadcrumb: 'Management',
+      title: 'Site Settings',
+      extra: settings ? (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => reset()}
+            disabled={!isDirty || isSubmitting}
+          >
+            초기화
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={isSubmitting || updateSettings.isPending}
+            onClick={handleSubmit(onSubmit)}
+          >
+            {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
+          </Button>
+        </div>
+      ) : undefined,
+    });
+  }, [
+    settings,
+    isDirty,
+    isSubmitting,
+    updateSettings.isPending,
+    setHeader,
+    reset,
+    handleSubmit,
+    onSubmit,
+  ]);
+
+  useEffect(() => {
+    return () => clearHeader();
+  }, [clearHeader]);
+
+  // 섹션으로 스크롤
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   if (isLoading) {
     return (
-      <div>
-        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
-        <div className="flex items-center justify-center h-full">
-          <div className="text-gray-500">로딩 중...</div>
-        </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-500">로딩 중...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div>
-        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
-        <div className="flex items-center justify-center h-full">
-          <div className="text-red-500">설정을 불러오는데 실패했습니다.</div>
-        </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-500">설정을 불러오는데 실패했습니다.</div>
       </div>
     );
   }
@@ -166,16 +231,13 @@ export default function SiteSettingsPage() {
   // 사이트가 없는 경우 (온보딩 미완료)
   if (!settings) {
     return (
-      <div>
-        <AdminPageHeader breadcrumb="Management" title="Site Settings" />
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="text-gray-400 text-6xl mb-4">🏠</div>
-            <h2 className="text-xl font-medium text-gray-600 mb-2">
-              사이트가 아직 생성되지 않았습니다
-            </h2>
-            <p className="text-gray-400">먼저 온보딩을 완료해주세요.</p>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-gray-400 text-6xl mb-4">🏠</div>
+          <h2 className="text-xl font-medium text-gray-600 mb-2">
+            사이트가 아직 생성되지 않았습니다
+          </h2>
+          <p className="text-gray-400">먼저 온보딩을 완료해주세요.</p>
         </div>
       </div>
     );
@@ -183,177 +245,231 @@ export default function SiteSettingsPage() {
 
   return (
     <div>
-      <AdminPageHeader breadcrumb="Management" title="Site Settings" />
       <div className="p-6">
-        <div className="max-w-7xl">
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-sm text-gray-500">
-              {settings.name} ({settings.slug})
-            </span>
+        <div className="flex gap-6">
+          {/* 메인 콘텐츠 */}
+          <div className="flex-1 max-w-7xl">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-sm text-gray-500">
+                {settings.name} ({settings.slug})
+              </span>
+            </div>
+
+            {/* 성공/에러 메시지 */}
+            {updateSettings.isSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+                설정이 저장되었습니다.
+              </div>
+            )}
+            {updateSettings.isError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                저장에 실패했습니다. 다시 시도해주세요.
+              </div>
+            )}
+
+            <FormProvider {...methods}>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                {/* 브랜딩 섹션 */}
+                <section
+                  id="branding"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <ValidationInput
+                          name="logoImageUrl"
+                          label="로고 이미지 URL"
+                          type="url"
+                          placeholder="https://example.com/logo.png"
+                        />
+                        {logoImageUrl && <ImagePreview src={logoImageUrl} alt="로고 미리보기" />}
+                      </div>
+                      <div className="space-y-2">
+                        <ValidationInput
+                          name="faviconUrl"
+                          label="파비콘 URL"
+                          type="url"
+                          placeholder="https://example.com/favicon.ico"
+                        />
+                        {faviconUrl && (
+                          <ImagePreview src={faviconUrl} alt="파비콘 미리보기" size="small" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SEO 섹션 */}
+                <section
+                  id="seo"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <ValidationInput
+                        name="ogImageUrl"
+                        label="OG 이미지 URL"
+                        description="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
+                        type="url"
+                        placeholder="https://example.com/og-image.jpg"
+                      />
+                      {ogImageUrl && (
+                        <ImagePreview src={ogImageUrl} alt="OG 이미지 미리보기" size="large" />
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <ValidationInput
+                        name="seoTitle"
+                        label="SEO 제목"
+                        description="최대 120자"
+                        placeholder="사이트 제목"
+                        maxLength={120}
+                      />
+                      <ValidationInput
+                        name="seoKeywords"
+                        label="SEO 키워드"
+                        description="쉼표로 구분하여 입력"
+                        placeholder="키워드1, 키워드2, 키워드3"
+                      />
+                    </div>
+                    <ValidationTextarea
+                      name="seoDescription"
+                      label="SEO 설명"
+                      placeholder="검색 결과에 표시될 사이트 설명"
+                      rows={3}
+                    />
+                    <ValidationInput
+                      name="canonicalBaseUrl"
+                      label="Canonical 기본 URL"
+                      type="url"
+                      placeholder="https://yourdomain.com"
+                    />
+                    <SwitchField
+                      label="검색 엔진 인덱싱 허용"
+                      hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
+                      checked={robotsIndex}
+                      onChange={(checked) =>
+                        setValue('robotsIndex', checked, { shouldDirty: true })
+                      }
+                    />
+                  </div>
+                </section>
+
+                {/* 연락처 섹션 */}
+                <section
+                  id="contact"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처</h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <ValidationInput
+                        name="contactEmail"
+                        label="이메일"
+                        type="email"
+                        placeholder="contact@example.com"
+                      />
+                      <ValidationInput
+                        name="contactPhone"
+                        label="전화번호"
+                        type="tel"
+                        placeholder="02-1234-5678"
+                      />
+                    </div>
+                    <ValidationTextarea
+                      name="address"
+                      label="주소"
+                      placeholder="서울시 강남구..."
+                      rows={2}
+                    />
+                  </div>
+                </section>
+
+                {/* 소셜 링크 섹션 */}
+                <section
+                  id="social"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">소셜 링크</h2>
+                  <div className="space-y-4">
+                    <ValidationInput
+                      name="kakaoChannelUrl"
+                      label="카카오 채널 URL"
+                      type="url"
+                      placeholder="https://pf.kakao.com/..."
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <ValidationInput
+                        name="naverMapUrl"
+                        label="네이버 지도 URL"
+                        type="url"
+                        placeholder="https://naver.me/..."
+                      />
+                      <ValidationInput
+                        name="instagramUrl"
+                        label="인스타그램 URL"
+                        type="url"
+                        placeholder="https://instagram.com/..."
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* 사업자 정보 섹션 */}
+                <section
+                  id="business"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">사업자 정보</h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <ValidationInput
+                        name="businessNumber"
+                        label="사업자등록번호"
+                        placeholder="123-45-67890"
+                      />
+                      <ValidationInput
+                        name="businessName"
+                        label="상호명"
+                        placeholder="(주)예시회사"
+                      />
+                    </div>
+                    <ValidationInput
+                      name="representativeName"
+                      label="대표자명"
+                      placeholder="홍길동"
+                      className="max-w-[calc(50%-0.5rem)]"
+                    />
+                  </div>
+                </section>
+              </form>
+            </FormProvider>
           </div>
 
-          {/* 성공/에러 메시지 */}
-          {updateSettings.isSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
-              설정이 저장되었습니다.
-            </div>
-          )}
-          {updateSettings.isError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-              저장에 실패했습니다. 다시 시도해주세요.
-            </div>
-          )}
-
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-              {/* 브랜딩 섹션 */}
-              <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
-                <div className="space-y-4">
-                  <ValidationInput
-                    name="logoImageUrl"
-                    label="로고 이미지 URL"
-                    type="url"
-                    placeholder="https://example.com/logo.png"
-                  />
-                  <ValidationInput
-                    name="faviconUrl"
-                    label="파비콘 URL"
-                    type="url"
-                    placeholder="https://example.com/favicon.ico"
-                  />
-                </div>
-              </section>
-
-              {/* SEO 섹션 */}
-              <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
-                <div className="space-y-4">
-                  <ValidationInput
-                    name="ogImageUrl"
-                    label="OG 이미지 URL"
-                    description="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
-                    type="url"
-                    placeholder="https://example.com/og-image.jpg"
-                  />
-                  <ValidationInput
-                    name="seoTitle"
-                    label="SEO 제목"
-                    description="최대 120자"
-                    placeholder="사이트 제목"
-                    maxLength={120}
-                  />
-                  <ValidationTextarea
-                    name="seoDescription"
-                    label="SEO 설명"
-                    placeholder="검색 결과에 표시될 사이트 설명"
-                    rows={3}
-                  />
-                  <ValidationInput
-                    name="seoKeywords"
-                    label="SEO 키워드"
-                    description="쉼표로 구분하여 입력"
-                    placeholder="키워드1, 키워드2, 키워드3"
-                  />
-                  <ValidationInput
-                    name="canonicalBaseUrl"
-                    label="Canonical 기본 URL"
-                    type="url"
-                    placeholder="https://yourdomain.com"
-                  />
-                  <SwitchField
-                    label="검색 엔진 인덱싱 허용"
-                    hint="비활성화 시 검색 엔진에서 사이트가 노출되지 않습니다"
-                    checked={robotsIndex}
-                    onChange={(checked) => setValue('robotsIndex', checked, { shouldDirty: true })}
-                  />
-                </div>
-              </section>
-
-              {/* 연락처 섹션 */}
-              <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처</h2>
-                <div className="space-y-4">
-                  <ValidationInput
-                    name="contactEmail"
-                    label="이메일"
-                    type="email"
-                    placeholder="contact@example.com"
-                  />
-                  <ValidationInput
-                    name="contactPhone"
-                    label="전화번호"
-                    type="tel"
-                    placeholder="02-1234-5678"
-                  />
-                  <ValidationTextarea
-                    name="address"
-                    label="주소"
-                    placeholder="서울시 강남구..."
-                    rows={2}
-                  />
-                </div>
-              </section>
-
-              {/* 소셜 링크 섹션 */}
-              <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">소셜 링크</h2>
-                <div className="space-y-4">
-                  <ValidationInput
-                    name="kakaoChannelUrl"
-                    label="카카오 채널 URL"
-                    type="url"
-                    placeholder="https://pf.kakao.com/..."
-                  />
-                  <ValidationInput
-                    name="naverMapUrl"
-                    label="네이버 지도 URL"
-                    type="url"
-                    placeholder="https://naver.me/..."
-                  />
-                  <ValidationInput
-                    name="instagramUrl"
-                    label="인스타그램 URL"
-                    type="url"
-                    placeholder="https://instagram.com/..."
-                  />
-                </div>
-              </section>
-
-              {/* 사업자 정보 섹션 */}
-              <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">사업자 정보</h2>
-                <div className="space-y-4">
-                  <ValidationInput
-                    name="businessNumber"
-                    label="사업자등록번호"
-                    placeholder="123-45-67890"
-                  />
-                  <ValidationInput name="businessName" label="상호명" placeholder="(주)예시회사" />
-                  <ValidationInput
-                    name="representativeName"
-                    label="대표자명"
-                    placeholder="홍길동"
-                  />
-                </div>
-              </section>
-
-              {/* 저장 버튼 */}
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => reset()}
-                  disabled={!isDirty || isSubmitting}
-                >
-                  초기화
-                </Button>
-                <Button type="submit" disabled={isSubmitting || updateSettings.isPending}>
-                  {isSubmitting || updateSettings.isPending ? '저장 중...' : '저장하기'}
-                </Button>
-              </div>
-            </form>
-          </FormProvider>
+          {/* 오른쪽 섹션 네비게이션 */}
+          <aside className="hidden lg:block w-48 shrink-0">
+            <nav className="sticky top-24">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                섹션
+              </p>
+              <ul className="space-y-1">
+                {SECTIONS.map((section) => (
+                  <li key={section.id}>
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection(section.id)}
+                      className="w-full text-left px-3 py-2 text-sm rounded-md transition-colors text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                    >
+                      {section.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </aside>
         </div>
       </div>
     </div>
@@ -391,6 +507,57 @@ function SwitchField({ label, hint, checked, onChange }: SwitchFieldProps) {
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+interface ImagePreviewProps {
+  src: string;
+  alt: string;
+  size?: 'small' | 'medium' | 'large';
+}
+
+function ImagePreview({ src, alt, size = 'medium' }: ImagePreviewProps) {
+  const sizeClasses = {
+    small: 'h-8 w-8',
+    medium: 'h-16 w-16',
+    large: 'h-32 w-full max-w-md',
+  };
+
+  return (
+    <div className="mt-2">
+      {size === 'large' ? (
+        <div className="mb-8">
+          <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt={alt}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            'aspect-video rounded-md border border-gray-200 bg-gray-50 overflow-hidden',
+            sizeClasses[size],
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className={cn('object-contain', 'w-full h-full')}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

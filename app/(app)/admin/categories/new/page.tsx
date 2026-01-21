@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { CreateCategoryRequest } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -20,6 +20,8 @@ export default function NewCategoryPage() {
     name: '',
     description: '',
   });
+
+  useAdminHeader({ breadcrumb: 'Management', title: 'New Category' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,6 @@ export default function NewCategoryPage() {
 
   return (
     <div>
-      <AdminPageHeader breadcrumb="Management" title="New Category" />
       <div className="p-6">
         <div className="max-w-2xl">
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">

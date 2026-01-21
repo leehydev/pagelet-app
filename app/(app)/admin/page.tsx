@@ -1,9 +1,12 @@
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+'use client';
+
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 
 export default function AdminDashboardPage() {
+  useAdminHeader({ breadcrumb: 'Management', title: 'Dashboard' });
+
   return (
     <div>
-      <AdminPageHeader breadcrumb="Management" title="Dashboard" />
       <div className="p-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="text-center text-gray-500">
@@ -18,3 +21,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

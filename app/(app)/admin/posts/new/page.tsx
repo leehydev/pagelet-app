@@ -18,7 +18,7 @@ import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 import { toast } from 'sonner';
 
 // Zod 스키마 정의
@@ -157,10 +157,11 @@ export default function NewPostPage() {
     }, 150);
   };
 
+  useAdminHeader({ breadcrumb: 'Management', title: 'New Post' });
+
   return (
     <FormProvider {...methods}>
       <div>
-        <AdminPageHeader breadcrumb="Management" title="New Post" />
         <div className="p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">

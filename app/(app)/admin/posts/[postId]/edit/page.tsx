@@ -19,7 +19,7 @@ import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 import { toast } from 'sonner';
 import { updateAdminPost } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -268,27 +268,28 @@ export default function EditPostPage() {
     );
   }
 
+  useAdminHeader({
+    breadcrumb: 'Management',
+    title: 'Edit Post',
+    extra: (
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        {isSaving && <span className="text-blue-600">저장 중...</span>}
+        {!isSaving && lastSavedAt && (
+          <span>
+            마지막 저장:{' '}
+            {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        {hasUnsavedChanges && !isSaving && (
+          <span className="text-orange-600">저장되지 않은 변경사항</span>
+        )}
+      </div>
+    ),
+  });
+
   return (
     <FormProvider {...methods}>
       <div>
-        <AdminPageHeader
-          breadcrumb="Management"
-          title="Edit Post"
-          extra={
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              {isSaving && <span className="text-blue-600">저장 중...</span>}
-              {!isSaving && lastSavedAt && (
-                <span>
-                  마지막 저장:{' '}
-                  {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              )}
-              {hasUnsavedChanges && !isSaving && (
-                <span className="text-orange-600">저장되지 않은 변경사항</span>
-              )}
-            </div>
-          }
-        />
         <div className="p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
