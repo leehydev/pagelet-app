@@ -23,6 +23,7 @@ import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 // Zod 스키마 정의
 const postSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요').max(500, '제목은 500자 이하여야 합니다').trim(),
+  subtitle: z.string().min(1, '부제목을 입력해주세요').max(500, '부제목은 500자 이하여야 합니다').trim(),
   slug: z
     .string()
     .max(255, 'slug는 255자 이하여야 합니다')
@@ -30,14 +31,14 @@ const postSchema = z.object({
     .optional()
     .or(z.literal('')),
   content: z.string().min(1, '내용을 입력해주세요').trim(),
-  category_id: z.string().optional().or(z.literal('')),
-  seo_title: z.string().max(255, 'SEO 제목은 255자 이하여야 합니다').optional().or(z.literal('')),
-  seo_description: z
+  categoryId: z.string().optional().or(z.literal('')),
+  seoTitle: z.string().max(255, 'SEO 제목은 255자 이하여야 합니다').optional().or(z.literal('')),
+  seoDescription: z
     .string()
     .max(500, 'SEO 설명은 500자 이하여야 합니다')
     .optional()
     .or(z.literal('')),
-  og_image_url: z.string().url('올바른 URL 형식이어야 합니다').optional().or(z.literal('')),
+  ogImageUrl: z.string().url('올바른 URL 형식이어야 합니다').optional().or(z.literal('')),
 });
 
 type PostFormData = z.infer<typeof postSchema>;
@@ -58,12 +59,13 @@ export default function NewPostPage() {
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: '',
+      subtitle: '',
       slug: '',
       content: '',
-      category_id: defaultCategory?.id || '',
-      seo_title: '',
-      seo_description: '',
-      og_image_url: '',
+      categoryId: defaultCategory?.id || '',
+      seoTitle: '',
+      seoDescription: '',
+      ogImageUrl: '',
     },
   });
 
@@ -74,13 +76,14 @@ export default function NewPostPage() {
       const data = methods.getValues();
       await createPost.mutateAsync({
         title: data.title.trim(),
+        subtitle: data.subtitle.trim(),
         slug: data.slug?.trim() || undefined,
         content: data.content.trim(),
         status,
-        category_id: data.category_id?.trim() || undefined,
-        seo_title: data.seo_title?.trim() || undefined,
-        seo_description: data.seo_description?.trim() || undefined,
-        og_image_url: ogImageUrl.trim() || undefined,
+        categoryId: data.categoryId?.trim() || undefined,
+        seoTitle: data.seoTitle?.trim() || undefined,
+        seoDescription: data.seoDescription?.trim() || undefined,
+        ogImageUrl: ogImageUrl.trim() || undefined,
       });
 
       router.push('/admin/posts');
@@ -137,6 +140,16 @@ export default function NewPostPage() {
                   required
                 />
 
+                {/* 부제목 */}
+                <ValidationInput
+                  name="subtitle"
+                  label="부제목"
+                  type="text"
+                  placeholder="게시글 부제목을 입력하세요"
+                  maxLength={500}
+                  required
+                />
+
                 {/* Slug */}
                 <Controller
                   name="slug"
@@ -178,15 +191,15 @@ export default function NewPostPage() {
 
                 {/* 카테고리 선택 */}
                 <Controller
-                  name="category_id"
+                  name="categoryId"
                   control={methods.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={!!fieldState.error}>
-                      <FieldLabel htmlFor="category_id">카테고리</FieldLabel>
+                      <FieldLabel htmlFor="categoryId">카테고리</FieldLabel>
                       <div className="flex flex-col gap-1.5">
                         <select
                           {...field}
-                          id="category_id"
+                          id="categoryId"
                           disabled={categoriesLoading}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-invalid={!!fieldState.error}
@@ -227,14 +240,14 @@ export default function NewPostPage() {
                   {showSeo && (
                     <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
                       <ValidationInput
-                        name="seo_title"
+                        name="seoTitle"
                         label="SEO 제목"
                         type="text"
                         placeholder="검색 엔진에 표시될 제목"
                         maxLength={255}
                       />
                       <ValidationTextarea
-                        name="seo_description"
+                        name="seoDescription"
                         label="SEO 설명"
                         placeholder="검색 결과에 표시될 설명"
                         rows={3}

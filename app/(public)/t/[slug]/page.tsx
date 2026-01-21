@@ -34,27 +34,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   // 환경에 따른 robots 설정
   const isProd = process.env.NODE_ENV === 'production';
-  const allowIndex = isProd && settings?.robots_index;
+  const allowIndex = isProd && settings?.robotsIndex;
 
-  const title = settings?.seo_title || settings?.name || `${slug} 블로그`;
-  const description = settings?.seo_description || `${slug}의 블로그입니다.`;
+  const title = settings?.seoTitle || settings?.name || `${slug} 블로그`;
+  const description = settings?.seoDescription || `${slug}의 블로그입니다.`;
 
   return {
     title,
     description,
-    keywords: settings?.seo_keywords || undefined,
+    keywords: settings?.seoKeywords || undefined,
     robots: allowIndex ? { index: true, follow: true } : { index: false, follow: false },
     openGraph: {
       title,
       description,
-      images: settings?.og_image_url ? [settings.og_image_url] : undefined,
+      images: settings?.ogImageUrl ? [settings.ogImageUrl] : undefined,
     },
-    ...(settings?.canonical_base_url && {
+    ...(settings?.canonicalBaseUrl && {
       alternates: {
-        canonical: `${settings.canonical_base_url}`,
+        canonical: `${settings.canonicalBaseUrl}`,
       },
     }),
-    icons: settings?.favicon_url ? { icon: settings.favicon_url } : undefined,
+    icons: settings?.faviconUrl ? { icon: settings.faviconUrl } : undefined,
   };
 }
 
@@ -79,9 +79,9 @@ async function getCategories(siteSlug: string): Promise<PublicCategory[]> {
 // 소셜 링크 아이콘 컴포넌트
 function SocialLinks({ settings }: { settings: SiteSettings }) {
   const links = [
-    { url: settings.kakao_channel_url, label: '카카오 채널', icon: '💬' },
-    { url: settings.naver_map_url, label: '네이버 지도', icon: '📍' },
-    { url: settings.instagram_url, label: '인스타그램', icon: '📷' },
+    { url: settings.kakaoChannelUrl, label: '카카오 채널', icon: '💬' },
+    { url: settings.naverMapUrl, label: '네이버 지도', icon: '📍' },
+    { url: settings.instagramUrl, label: '인스타그램', icon: '📷' },
   ].filter((link) => link.url);
 
   if (links.length === 0) return null;
@@ -106,22 +106,22 @@ function SocialLinks({ settings }: { settings: SiteSettings }) {
 
 // 연락처 정보 컴포넌트
 function ContactInfo({ settings }: { settings: SiteSettings }) {
-  const hasContact = settings.contact_email || settings.contact_phone || settings.address;
+  const hasContact = settings.contactEmail || settings.contactPhone || settings.address;
   if (!hasContact) return null;
 
   return (
     <div className="text-sm text-gray-500 space-y-1">
-      {settings.contact_email && (
+      {settings.contactEmail && (
         <p>
-          <a href={`mailto:${settings.contact_email}`} className="hover:text-gray-700">
-            {settings.contact_email}
+          <a href={`mailto:${settings.contactEmail}`} className="hover:text-gray-700">
+            {settings.contactEmail}
           </a>
         </p>
       )}
-      {settings.contact_phone && (
+      {settings.contactPhone && (
         <p>
-          <a href={`tel:${settings.contact_phone}`} className="hover:text-gray-700">
-            {settings.contact_phone}
+          <a href={`tel:${settings.contactPhone}`} className="hover:text-gray-700">
+            {settings.contactPhone}
           </a>
         </p>
       )}
@@ -133,47 +133,83 @@ function ContactInfo({ settings }: { settings: SiteSettings }) {
 // 사업자 정보 컴포넌트
 function BusinessInfo({ settings }: { settings: SiteSettings }) {
   const hasBusinessInfo =
-    settings.business_name || settings.business_number || settings.representative_name;
+    settings.businessName || settings.businessNumber || settings.representativeName;
   if (!hasBusinessInfo) return null;
 
   return (
     <div className="text-xs text-gray-400 pt-3 border-t border-gray-100">
       <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
-        {settings.business_name && <span>상호: {settings.business_name}</span>}
-        {settings.representative_name && <span>대표: {settings.representative_name}</span>}
-        {settings.business_number && <span>사업자등록번호: {settings.business_number}</span>}
+        {settings.businessName && <span>상호: {settings.businessName}</span>}
+        {settings.representativeName && <span>대표: {settings.representativeName}</span>}
+        {settings.businessNumber && <span>사업자등록번호: {settings.businessNumber}</span>}
       </div>
     </div>
   );
 }
 
 function PostCard({ post, siteSlug }: { post: PublicPost; siteSlug: string }) {
+  const formattedDate = new Date(post.publishedAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).toUpperCase();
+
   return (
-    <article className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-      {post.og_image_url && (
-        <div className="aspect-video bg-gray-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.og_image_url} alt={post.title} className="w-full h-full object-cover" />
+    <Link href={`/t/${siteSlug}/posts/${post.slug}`}>
+      <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all cursor-pointer h-full flex flex-col">
+        {/* 썸네일 이미지 */}
+        <div className="aspect-video bg-gray-200 relative overflow-hidden rounded-t-lg">
+          {post.ogImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.ogImageUrl}
+              alt={post.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <svg
+                className="w-16 h-16 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+          )}
         </div>
-      )}
-      <div className="p-5">
-        <Link href={`/t/${siteSlug}/posts/${post.slug}`}>
-          <h2 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2">
+
+        <div className="p-5 flex-1 flex flex-col">
+          {/* 제목 */}
+          <h2 className="text-xl font-bold text-gray-900 mb-1 line-clamp-2 hover:text-blue-600 transition-colors">
             {post.title}
           </h2>
-        </Link>
-        {post.seo_description && (
-          <p className="text-gray-600 text-sm line-clamp-2 mb-3">{post.seo_description}</p>
-        )}
-        <time className="text-xs text-gray-400">
-          {new Date(post.published_at).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </time>
-      </div>
-    </article>
+
+          {/* 부제목 */}
+          <h3 className="text-base text-gray-600 mb-2 line-clamp-1">
+            {post.subtitle}
+          </h3>
+
+          {/* 설명/요약 */}
+          {post.seoDescription && (
+            <p className="text-gray-600 text-sm line-clamp-2 mb-4 flex-1">
+              {post.seoDescription}
+            </p>
+          )}
+
+          {/* 작성일 */}
+          <time className="text-xs text-gray-400 mt-auto">
+            {formattedDate}
+          </time>
+        </div>
+      </article>
+    </Link>
   );
 }
 
@@ -191,20 +227,20 @@ export default async function TenantHomePage({ params }: PageProps) {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center gap-4">
-            {settings?.logo_image_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={settings.logo_image_url}
-                alt={siteName}
-                className="h-12 w-auto object-contain"
-              />
-            )}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{siteName}</h1>
-              <p className="text-gray-500 mt-1">{slug}.pagelet-dev.kr</p>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {settings?.logoImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={settings.logoImageUrl}
+                  alt={siteName}
+                  className="h-10 w-auto object-contain"
+                />
+              )}
+              <h1 className="text-2xl font-bold text-gray-900">{siteName}</h1>
             </div>
+            {/* 검색 기능은 나중에 추가 가능 */}
           </div>
         </div>
       </header>
@@ -212,16 +248,31 @@ export default async function TenantHomePage({ params }: PageProps) {
       {/* 카테고리 탭 */}
       {categories.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-4xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-4">
             <CategoryTabs categories={categories} siteSlug={slug} />
           </div>
         </div>
       )}
 
+      {/* 전체 게시글 섹션 헤더 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="mb-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              ALL POSTS
+            </span>
+          </div>
+          <h2 className="text-4xl font-bold text-gray-900 mb-3">All Posts</h2>
+          <p className="text-gray-600 text-lg max-w-3xl">
+            모든 게시글을 확인하세요.
+          </p>
+        </div>
+      </div>
+
       {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 py-8 flex-1">
+      <main className="max-w-7xl mx-auto px-4 py-8 flex-1">
         {posts.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} siteSlug={slug} />
             ))}
@@ -237,7 +288,7 @@ export default async function TenantHomePage({ params }: PageProps) {
 
       {/* 푸터 */}
       <footer className="border-t border-gray-200 bg-white mt-auto">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+        <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
           {settings && (
             <>
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
