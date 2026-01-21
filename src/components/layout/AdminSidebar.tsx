@@ -44,6 +44,8 @@ export function AdminSidebar() {
               width={80}
               height={80}
               className="h-12 w-auto"
+              priority
+              loading="eager"
             />
             <div className="text-xs text-stone-400 font-semibold flex self-end pb-1 pl-0.5">
               <span>Admin</span>

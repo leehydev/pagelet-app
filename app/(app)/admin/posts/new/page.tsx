@@ -18,6 +18,7 @@ import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
 
 // Zod 스키마 정의
 const postSchema = z.object({
@@ -114,174 +115,178 @@ export default function NewPostPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="p-8">
-        <div className="max-w-3xl">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">새 게시글 작성</h1>
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-                {error}
-              </div>
-            )}
+      <div>
+        <AdminPageHeader breadcrumb="Management" title="New Post" />
+        <div className="p-6">
+          <div className="max-w-3xl">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
 
-            <div className="space-y-6">
-              {/* 제목 */}
-              <ValidationInput
-                name="title"
-                label="제목"
-                type="text"
-                placeholder="게시글 제목을 입력하세요"
-                maxLength={500}
-                required
-              />
+              <div className="space-y-6">
+                {/* 제목 */}
+                <ValidationInput
+                  name="title"
+                  label="제목"
+                  type="text"
+                  placeholder="게시글 제목을 입력하세요"
+                  maxLength={500}
+                  required
+                />
 
-              {/* Slug */}
-              <Controller
-                name="slug"
-                control={methods.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={!!fieldState.error}>
-                    <FieldLabel htmlFor="slug">URL Slug</FieldLabel>
-                    <div className="flex flex-col gap-1.5">
-                      <Input
-                        {...field}
-                        id="slug"
+                {/* Slug */}
+                <Controller
+                  name="slug"
+                  control={methods.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={!!fieldState.error}>
+                      <FieldLabel htmlFor="slug">URL Slug</FieldLabel>
+                      <div className="flex flex-col gap-1.5">
+                        <Input
+                          {...field}
+                          id="slug"
+                          type="text"
+                          value={field.value ?? ''}
+                          onChange={(e) => {
+                            const value = e.target.value.toLowerCase();
+                            field.onChange(value);
+                          }}
+                          placeholder="url-friendly-slug (선택사항, 비워두면 자동 생성)"
+                          maxLength={255}
+                          aria-invalid={!!fieldState.error}
+                        />
+                        <FieldDescription>
+                          영소문자, 숫자, 하이픈만 사용 가능합니다.
+                        </FieldDescription>
+                        <FieldError>{fieldState.error?.message || ''}</FieldError>
+                      </div>
+                    </Field>
+                  )}
+                />
+
+                {/* 내용 */}
+                <ValidationTextarea
+                  name="content"
+                  label="내용"
+                  placeholder="게시글 내용을 입력하세요"
+                  rows={12}
+                  required
+                />
+
+                {/* 카테고리 선택 */}
+                <Controller
+                  name="category_id"
+                  control={methods.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={!!fieldState.error}>
+                      <FieldLabel htmlFor="category_id">카테고리</FieldLabel>
+                      <div className="flex flex-col gap-1.5">
+                        <select
+                          {...field}
+                          id="category_id"
+                          disabled={categoriesLoading}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-invalid={!!fieldState.error}
+                        >
+                          {categoriesLoading ? (
+                            <option>카테고리 불러오는 중...</option>
+                          ) : (
+                            <>
+                              <option value="">선택 안 함 (기본 카테고리 사용)</option>
+                              {categories?.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        <FieldDescription>
+                          카테고리를 선택하지 않으면 기본 카테고리(미분류)가 할당됩니다.
+                        </FieldDescription>
+                        <FieldError>{fieldState.error?.message || ''}</FieldError>
+                      </div>
+                    </Field>
+                  )}
+                />
+
+                {/* SEO 섹션 (토글) */}
+                <div className="border-t pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowSeo(!showSeo)}
+                    className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    <span className="mr-2">{showSeo ? '▼' : '▶'}</span>
+                    SEO 설정 (선택)
+                  </button>
+
+                  {showSeo && (
+                    <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
+                      <ValidationInput
+                        name="seo_title"
+                        label="SEO 제목"
                         type="text"
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value.toLowerCase();
-                          field.onChange(value);
-                        }}
-                        placeholder="url-friendly-slug (선택사항, 비워두면 자동 생성)"
+                        placeholder="검색 엔진에 표시될 제목"
                         maxLength={255}
-                        aria-invalid={!!fieldState.error}
                       />
-                      <FieldDescription>영소문자, 숫자, 하이픈만 사용 가능합니다.</FieldDescription>
-                      <FieldError>{fieldState.error?.message || ''}</FieldError>
-                    </div>
-                  </Field>
-                )}
-              />
-
-              {/* 내용 */}
-              <ValidationTextarea
-                name="content"
-                label="내용"
-                placeholder="게시글 내용을 입력하세요"
-                rows={12}
-                required
-              />
-
-              {/* 카테고리 선택 */}
-              <Controller
-                name="category_id"
-                control={methods.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={!!fieldState.error}>
-                    <FieldLabel htmlFor="category_id">카테고리</FieldLabel>
-                    <div className="flex flex-col gap-1.5">
-                      <select
-                        {...field}
-                        id="category_id"
-                        disabled={categoriesLoading}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-invalid={!!fieldState.error}
-                      >
-                        {categoriesLoading ? (
-                          <option>카테고리 불러오는 중...</option>
-                        ) : (
-                          <>
-                            <option value="">선택 안 함 (기본 카테고리 사용)</option>
-                            {categories?.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </>
-                        )}
-                      </select>
-                      <FieldDescription>
-                        카테고리를 선택하지 않으면 기본 카테고리(미분류)가 할당됩니다.
-                      </FieldDescription>
-                      <FieldError>{fieldState.error?.message || ''}</FieldError>
-                    </div>
-                  </Field>
-                )}
-              />
-
-              {/* SEO 섹션 (토글) */}
-              <div className="border-t pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowSeo(!showSeo)}
-                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  <span className="mr-2">{showSeo ? '▼' : '▶'}</span>
-                  SEO 설정 (선택)
-                </button>
-
-                {showSeo && (
-                  <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
-                    <ValidationInput
-                      name="seo_title"
-                      label="SEO 제목"
-                      type="text"
-                      placeholder="검색 엔진에 표시될 제목"
-                      maxLength={255}
-                    />
-                    <ValidationTextarea
-                      name="seo_description"
-                      label="SEO 설명"
-                      placeholder="검색 결과에 표시될 설명"
-                      rows={3}
-                      maxLength={500}
-                    />
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        썸네일 이미지
-                      </label>
-                      <ThumbnailInput
-                        value={ogImageUrl}
-                        onChange={(url) => setOgImageUrl(url || '')}
-                        disabled={createPost.isPending}
+                      <ValidationTextarea
+                        name="seo_description"
+                        label="SEO 설명"
+                        placeholder="검색 결과에 표시될 설명"
+                        rows={3}
+                        maxLength={500}
                       />
-                      <p className="mt-2 text-xs text-gray-500">
-                        게시글 썸네일로 사용됩니다. URL 입력 또는 직접 업로드가 가능합니다.
-                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          썸네일 이미지
+                        </label>
+                        <ThumbnailInput
+                          value={ogImageUrl}
+                          onChange={(url) => setOgImageUrl(url || '')}
+                          disabled={createPost.isPending}
+                        />
+                        <p className="mt-2 text-xs text-gray-500">
+                          게시글 썸네일로 사용됩니다. URL 입력 또는 직접 업로드가 가능합니다.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* 버튼 */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                  disabled={createPost.isPending}
-                >
-                  취소
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    methods.handleSubmit(() => handleSubmit(PostStatus.DRAFT), onError)();
-                  }}
-                  disabled={createPost.isPending}
-                >
-                  {createPost.isPending ? '저장 중...' : '임시 저장'}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    methods.handleSubmit(() => handleSubmit(PostStatus.PUBLISHED), onError)();
-                  }}
-                  disabled={createPost.isPending}
-                >
-                  {createPost.isPending ? '발행 중...' : '발행하기'}
-                </Button>
+                {/* 버튼 */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    disabled={createPost.isPending}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      methods.handleSubmit(() => handleSubmit(PostStatus.DRAFT), onError)();
+                    }}
+                    disabled={createPost.isPending}
+                  >
+                    {createPost.isPending ? '저장 중...' : '임시 저장'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      methods.handleSubmit(() => handleSubmit(PostStatus.PUBLISHED), onError)();
+                    }}
+                    disabled={createPost.isPending}
+                  >
+                    {createPost.isPending ? '발행 중...' : '발행하기'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

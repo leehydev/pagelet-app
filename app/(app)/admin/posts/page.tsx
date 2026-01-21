@@ -77,6 +77,9 @@ export default function AdminPostsPage() {
                     제목
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    카테고리
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     상태
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -108,6 +111,11 @@ export default function AdminPostsPage() {
                         /{post.slug}
                         {post.og_image_url}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-900">
+                        {post.category_name || '-'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span

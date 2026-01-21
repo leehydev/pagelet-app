@@ -5,6 +5,8 @@ import { useAdminCategories, useDeleteCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Category } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
+import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { Plus } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
   const { data: categories, isLoading, error } = useAdminCategories();
@@ -25,10 +27,21 @@ export default function AdminCategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div>
+        <AdminPageHeader
+          breadcrumb="Management"
+          title="Categories"
+          action={{
+            label: 'New Category',
+            href: '/admin/categories/new',
+            icon: Plus,
+          }}
+        />
+        <div className="p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
@@ -36,66 +49,81 @@ export default function AdminCategoriesPage() {
 
   if (error) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          카테고리를 불러오는데 실패했습니다.
+      <div>
+        <AdminPageHeader
+          breadcrumb="Management"
+          title="Categories"
+          action={{
+            label: 'New Category',
+            href: '/admin/categories/new',
+            icon: Plus,
+          }}
+        />
+        <div className="p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            카테고리를 불러오는데 실패했습니다.
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">카테고리 관리</h1>
-          <Link href="/admin/categories/new">
-            <Button>+ 카테고리 추가</Button>
-          </Link>
+    <div>
+      <AdminPageHeader
+        breadcrumb="Management"
+        title="Categories"
+        action={{
+          label: 'New Category',
+          href: '/admin/categories/new',
+          icon: Plus,
+        }}
+      />
+      <div className="p-6">
+        <div className="max-w-4xl">
+          {/* 카테고리 목록 */}
+          {categories && categories.length > 0 ? (
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      이름
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Slug
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      게시글 수
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      설명
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      작업
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {categories.map((category) => (
+                    <CategoryRow
+                      key={category.id}
+                      category={category}
+                      onDelete={() => handleDelete(category.id, category.name)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
+              <p className="text-gray-500 mb-4">아직 카테고리가 없습니다.</p>
+              <Link href="/admin/categories/new">
+                <Button>첫 카테고리 만들기</Button>
+              </Link>
+            </div>
+          )}
         </div>
-
-        {/* 카테고리 목록 */}
-        {categories && categories.length > 0 ? (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이름
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Slug
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    게시글 수
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    설명
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {categories.map((category) => (
-                  <CategoryRow
-                    key={category.id}
-                    category={category}
-                    onDelete={() => handleDelete(category.id, category.name)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
-            <p className="text-gray-500 mb-4">아직 카테고리가 없습니다.</p>
-            <Link href="/admin/categories/new">
-              <Button>첫 카테고리 만들기</Button>
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );

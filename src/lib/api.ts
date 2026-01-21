@@ -131,6 +131,8 @@ export interface PostListItem {
   seo_description: string | null;
   og_image_url: string | null;
   created_at: string;
+  category_id: string | null;
+  category_name: string | null;
 }
 
 export interface ApiResponse<T> {
