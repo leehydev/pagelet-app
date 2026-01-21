@@ -6,18 +6,28 @@ import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { PostsPageHeader } from '@/components/layout/PostsPageHeader';
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 import Image from 'next/image';
+import { Plus } from 'lucide-react';
 
 export default function AdminPostsPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const { data: posts, isLoading, error } = useAdminPosts(selectedCategoryId || undefined);
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
 
+  useAdminHeader({
+    breadcrumb: 'Management',
+    title: 'All Posts',
+    action: {
+      label: 'New Post',
+      href: '/admin/posts/new',
+      icon: Plus,
+    },
+  });
+
   if (isLoading) {
     return (
       <div>
-        <PostsPageHeader />
         <div className="p-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
@@ -31,7 +41,6 @@ export default function AdminPostsPage() {
   if (error) {
     return (
       <div>
-        <PostsPageHeader />
         <div className="p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
             게시글을 불러오는데 실패했습니다.
@@ -43,7 +52,6 @@ export default function AdminPostsPage() {
 
   return (
     <div>
-      <PostsPageHeader />
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>

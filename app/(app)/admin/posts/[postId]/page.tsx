@@ -7,8 +7,9 @@ import { PostContent } from '@/components/post/PostContent';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPostDate } from '@/lib/date-utils';
-import { ArrowLeftIcon } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { useAdminHeader } from '@/components/layout/AdminPageHeader';
 
 export default function AdminPostDetailPage() {
   const params = useParams<{ postId: string }>();
@@ -23,6 +24,43 @@ export default function AdminPostDetailPage() {
     queryKey: ['admin', 'post', postId],
     queryFn: () => getAdminPost(postId),
     enabled: !!postId,
+  });
+
+  const formattedDate = post ? formatPostDate(post.createdAt) : '';
+  const publishedDate = post?.publishedAt ? formatPostDate(post.publishedAt) : null;
+
+  useAdminHeader({
+    breadcrumb: 'Posts',
+    title: post?.title || 'Post Detail',
+    action: post
+      ? {
+          label: '편집',
+          href: `/admin/posts/${postId}/edit`,
+          icon: Pencil,
+        }
+      : undefined,
+    extra: post ? (
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Badge
+          variant={post.status === PostStatus.PUBLISHED ? 'default' : 'secondary'}
+          className={
+            post.status === PostStatus.PUBLISHED
+              ? 'bg-green-100 text-green-800 hover:bg-green-100'
+              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+          }
+        >
+          {post.status === PostStatus.PUBLISHED ? '발행됨' : '임시저장'}
+        </Badge>
+        <span>·</span>
+        <span>작성: {formattedDate}</span>
+        {publishedDate && (
+          <>
+            <span>·</span>
+            <span>발행: {publishedDate}</span>
+          </>
+        )}
+      </div>
+    ) : undefined,
   });
 
   if (isLoading) {
@@ -51,57 +89,8 @@ export default function AdminPostDetailPage() {
     );
   }
 
-  const formattedDate = formatPostDate(post.createdAt);
-  const publishedDate = post.publishedAt ? formatPostDate(post.publishedAt) : null;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/admin/posts"
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <ArrowLeftIcon className="w-5 h-5" />
-              </Link>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900 line-clamp-1">
-                  {post.title || <span className="text-gray-400">(제목없음)</span>}
-                </h1>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Badge
-                    variant={post.status === PostStatus.PUBLISHED ? 'default' : 'secondary'}
-                    className={
-                      post.status === PostStatus.PUBLISHED
-                        ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-                    }
-                  >
-                    {post.status === PostStatus.PUBLISHED ? '발행됨' : '임시저장'}
-                  </Badge>
-                  <span>·</span>
-                  <span>작성: {formattedDate}</span>
-                  {publishedDate && (
-                    <>
-                      <span>·</span>
-                      <span>발행: {publishedDate}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href={`/admin/posts/${postId}/edit`}>
-                <Button variant="outline">편집</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="bg-gray-50">
       {/* 메인 콘텐츠 */}
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* 메타 정보 카드 */}
@@ -158,3 +147,4 @@ export default function AdminPostDetailPage() {
     </div>
   );
 }
+

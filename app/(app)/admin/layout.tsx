@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AdminPageHeaderFromStore } from '@/components/layout/AdminPageHeader';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
 
@@ -38,11 +38,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <SidebarProvider>
-      <AdminSidebar />
-      <SidebarInset>
-        <div className="flex-1 bg-[#f7f7f7]">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="flex flex-col h-screen w-full max-w-7xl mx-auto">
+      {/* Header - 전체 너비 */}
+      <AdminPageHeaderFromStore />
+
+      {/* Sidebar + Main 영역 */}
+      <div className="flex flex-1 overflow-hidden">
+        <AdminSidebar />
+        <main className="flex-1 bg-[#f7f7f7] overflow-auto">{children}</main>
+      </div>
+    </div>
   );
 }
