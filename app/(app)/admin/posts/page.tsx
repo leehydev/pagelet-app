@@ -92,10 +92,10 @@ export default function AdminPostsPage() {
                   <tr key={post.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {post.og_image_url && (
+                        {post.ogImageUrl && (
                           <div className="w-16 h-16 rounded-md overflow-hidden">
                             <Image
-                              src={post.og_image_url}
+                              src={post.ogImageUrl}
                               alt={post.title}
                               width={64}
                               height={64}
@@ -113,9 +113,7 @@ export default function AdminPostsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {post.categoryName || '-'}
-                      </span>
+                      <span className="text-sm text-gray-900">{post.categoryName || '-'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span

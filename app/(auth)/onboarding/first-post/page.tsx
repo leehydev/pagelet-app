@@ -32,7 +32,12 @@ export default function FirstPostPage() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: FirstPostFormData) => {
-      await createPost({ title: data.title.trim(), content: data.content.trim() });
+      await createPost({
+        title: data.title.trim(),
+        content: data.content.trim(),
+        categoryId: 'uncategorized',
+        subtitle: '',
+      });
       await completeOnboarding();
     },
     onSuccess: () => {
@@ -88,9 +93,7 @@ export default function FirstPostPage() {
 
         {(createPostMutation.error || skipMutation.error) && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">
-              오류가 발생했습니다. 다시 시도해주세요.
-            </p>
+            <p className="text-sm text-red-600">오류가 발생했습니다. 다시 시도해주세요.</p>
           </div>
         )}
 

@@ -74,6 +74,8 @@ export interface PublicPost {
   seoTitle: string | null;
   seoDescription: string | null;
   ogImageUrl: string | null;
+  categoryName: string | null;
+  categorySlug: string | null;
 }
 
 export interface SiteSettings {

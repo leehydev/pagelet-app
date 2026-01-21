@@ -34,9 +34,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col
-        bg-background-light dark:bg-background-dark`}
-        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen h-full flex flex-col`}
       >
         <RootProviders>
           {/* 네비게이션 스택 추적 비활성화 (필요시 주석 해제) */}

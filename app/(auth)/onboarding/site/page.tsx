@@ -31,7 +31,11 @@ function useDebounce<T>(value: T, delay: number): T {
 
 // Zod 스키마 정의
 const siteSchema = z.object({
-  name: z.string().min(1, '사이트 이름을 입력해주세요').trim(),
+  name: z
+    .string()
+    .min(1, '사이트 이름을 입력해주세요')
+    .max(20, '사이트 이름은 최대 20자까지 입력 가능합니다')
+    .trim(),
   slug: z
     .string()
     .min(1, 'slug를 입력해주세요')
@@ -152,6 +156,7 @@ export default function SitePage() {
             label="사이트 이름"
             type="text"
             placeholder="내 블로그"
+            maxLength={20}
             required
           />
 

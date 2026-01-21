@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <div className="flex flex-1 flex-col gap-4">{children}</div>
+        <div className="flex-1 bg-[#f7f7f7]">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
