@@ -13,12 +13,13 @@ interface AdminPageHeaderProps {
     href: string;
     icon?: LucideIcon;
   };
+  extra?: React.ReactNode;
 }
 
-export function AdminPageHeader({ breadcrumb, title, action }: AdminPageHeaderProps) {
+export function AdminPageHeader({ breadcrumb, title, action, extra }: AdminPageHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b backdrop-blur supports-backdrop-filter:bg-white/60">
-      <div className="container flex h-16 items-center gap-4 px-4">
+      <div className="flex h-16 items-center gap-4 px-4">
         <SidebarTrigger />
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">{breadcrumb}</span>
@@ -30,6 +31,7 @@ export function AdminPageHeader({ breadcrumb, title, action }: AdminPageHeaderPr
 
         <div className="flex flex-1 items-center justify-end">
           <div className="flex items-center gap-3">
+            {extra}
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <Bell className="h-4 w-4 text-muted-foreground" />
               <span className="sr-only">알림</span>
