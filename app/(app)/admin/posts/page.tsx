@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAdminPosts } from '@/hooks/use-posts';
+import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { PostsPageHeader } from '@/components/layout/PostsPageHeader';
 import Image from 'next/image';
 
 export default function AdminPostsPage() {
-  const { data: posts, isLoading, error } = useAdminPosts();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const { data: posts, isLoading, error } = useAdminPosts(selectedCategoryId || undefined);
+  const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
 
   if (isLoading) {
     return (
@@ -41,7 +45,25 @@ export default function AdminPostsPage() {
     <div>
       <PostsPageHeader />
       <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Posts</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
+          <div className="flex items-center gap-3">
+            {/* 카테고리 필터 */}
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              disabled={categoriesLoading}
+              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">전체 카테고리</option>
+              {categories?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name} ({category.post_count || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         {/* 썸네일 이미지 추가 */}
         {posts && posts.length > 0 ? (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">

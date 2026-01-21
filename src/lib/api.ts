@@ -181,6 +181,7 @@ export interface CreatePostRequest {
   seo_title?: string;
   seo_description?: string;
   og_image_url?: string;
+  category_id?: string;
 }
 
 export async function createPost(data: CreatePostRequest): Promise<void> {
@@ -202,8 +203,10 @@ export async function createAdminPost(data: CreatePostRequest): Promise<Post> {
   return response.data.data;
 }
 
-export async function getAdminPosts(): Promise<PostListItem[]> {
-  const response = await api.get<ApiResponse<PostListItem[]>>('/admin/posts');
+export async function getAdminPosts(categoryId?: string): Promise<PostListItem[]> {
+  const response = await api.get<ApiResponse<PostListItem[]>>('/admin/posts', {
+    params: categoryId ? { category_id: categoryId } : {},
+  });
   return response.data.data;
 }
 
@@ -221,10 +224,12 @@ export async function checkPostSlugAvailability(slug: string): Promise<boolean> 
 
 // ===== Public Post API =====
 
-export async function getPublicPosts(siteSlug: string): Promise<PublicPost[]> {
-  const response = await api.get<ApiResponse<PublicPost[]>>('/public/posts', {
-    params: { site_slug: siteSlug },
-  });
+export async function getPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
+  const params: { site_slug: string; category_slug?: string } = { site_slug: siteSlug };
+  if (categorySlug) {
+    params.category_slug = categorySlug;
+  }
+  const response = await api.get<ApiResponse<PublicPost[]>>('/public/posts', { params });
   return response.data.data;
 }
 
@@ -236,8 +241,12 @@ export async function getPublicPostBySlug(siteSlug: string, postSlug: string): P
 }
 
 // Server-side fetch for ISR (without axios interceptors)
-export async function fetchPublicPosts(siteSlug: string): Promise<PublicPost[]> {
-  const res = await fetch(`${API_BASE_URL}/public/posts?site_slug=${encodeURIComponent(siteSlug)}`, {
+export async function fetchPublicPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
+  const params = new URLSearchParams({ site_slug: siteSlug });
+  if (categorySlug) {
+    params.append('category_slug', categorySlug);
+  }
+  const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
     next: { revalidate: 60 }, // ISR: 60초
   });
   
@@ -340,4 +349,86 @@ export async function completeUpload(data: CompleteUploadRequest): Promise<Compl
  */
 export async function abortUpload(data: AbortUploadRequest): Promise<void> {
   await api.post('/uploads/abort', data);
+}
+
+// ===== Category API =====
+
+export interface Category {
+  id: string;
+  site_id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  post_count?: number;
+}
+
+export interface PublicCategory {
+  slug: string;
+  name: string;
+  description: string | null;
+  post_count?: number;
+}
+
+export interface CreateCategoryRequest {
+  slug: string;
+  name: string;
+  description?: string;
+  sort_order?: number;
+}
+
+export interface UpdateCategoryRequest {
+  slug?: string;
+  name?: string;
+  description?: string;
+  sort_order?: number;
+}
+
+// ===== Admin Category API =====
+
+export async function getAdminCategories(): Promise<Category[]> {
+  const response = await api.get<ApiResponse<Category[]>>('/admin/categories');
+  return response.data.data;
+}
+
+export async function createCategory(data: CreateCategoryRequest): Promise<Category> {
+  const response = await api.post<ApiResponse<Category>>('/admin/categories', data);
+  return response.data.data;
+}
+
+export async function updateCategory(id: string, data: UpdateCategoryRequest): Promise<Category> {
+  const response = await api.put<ApiResponse<Category>>(`/admin/categories/${id}`, data);
+  return response.data.data;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await api.delete(`/admin/categories/${id}`);
+}
+
+// ===== Public Category API =====
+
+export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
+  const response = await api.get<ApiResponse<PublicCategory[]>>('/public/categories', {
+    params: { site_slug: siteSlug },
+  });
+  return response.data.data;
+}
+
+// Server-side fetch for ISR (without axios interceptors)
+export async function fetchPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/public/categories?site_slug=${encodeURIComponent(siteSlug)}`,
+    {
+      next: { revalidate: 60 }, // ISR: 60초
+    }
+  );
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch categories: ${res.status}`);
+  }
+  
+  const data: ApiResponse<PublicCategory[]> = await res.json();
+  return data.data;
 }

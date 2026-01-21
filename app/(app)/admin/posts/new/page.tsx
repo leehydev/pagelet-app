@@ -6,6 +6,7 @@ import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePost } from '@/hooks/use-posts';
+import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
@@ -27,6 +28,7 @@ const postSchema = z.object({
     .optional()
     .or(z.literal('')),
   content: z.string().min(1, '내용을 입력해주세요').trim(),
+  category_id: z.string().optional().or(z.literal('')),
   seo_title: z.string().max(255, 'SEO 제목은 255자 이하여야 합니다').optional().or(z.literal('')),
   seo_description: z
     .string()
@@ -41,10 +43,14 @@ type PostFormData = z.infer<typeof postSchema>;
 export default function NewPostPage() {
   const router = useRouter();
   const createPost = useCreatePost();
+  const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
 
   const [showSeo, setShowSeo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ogImageUrl, setOgImageUrl] = useState('');
+
+  // 기본 카테고리 찾기 (미분류)
+  const defaultCategory = categories?.find((c) => c.slug === 'uncategorized');
 
   const methods = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -52,6 +58,7 @@ export default function NewPostPage() {
       title: '',
       slug: '',
       content: '',
+      category_id: defaultCategory?.id || '',
       seo_title: '',
       seo_description: '',
       og_image_url: '',
@@ -68,6 +75,7 @@ export default function NewPostPage() {
         slug: data.slug?.trim() || undefined,
         content: data.content.trim(),
         status,
+        category_id: data.category_id?.trim() || undefined,
         seo_title: data.seo_title?.trim() || undefined,
         seo_description: data.seo_description?.trim() || undefined,
         og_image_url: ogImageUrl.trim() || undefined,
@@ -158,6 +166,43 @@ export default function NewPostPage() {
                 placeholder="게시글 내용을 입력하세요"
                 rows={12}
                 required
+              />
+
+              {/* 카테고리 선택 */}
+              <Controller
+                name="category_id"
+                control={methods.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={!!fieldState.error}>
+                    <FieldLabel htmlFor="category_id">카테고리</FieldLabel>
+                    <div className="flex flex-col gap-1.5">
+                      <select
+                        {...field}
+                        id="category_id"
+                        disabled={categoriesLoading}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-invalid={!!fieldState.error}
+                      >
+                        {categoriesLoading ? (
+                          <option>카테고리 불러오는 중...</option>
+                        ) : (
+                          <>
+                            <option value="">선택 안 함 (기본 카테고리 사용)</option>
+                            {categories?.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </>
+                        )}
+                      </select>
+                      <FieldDescription>
+                        카테고리를 선택하지 않으면 기본 카테고리(미분류)가 할당됩니다.
+                      </FieldDescription>
+                      <FieldError>{fieldState.error?.message || ''}</FieldError>
+                    </div>
+                  </Field>
+                )}
               />
 
               {/* SEO 섹션 (토글) */}

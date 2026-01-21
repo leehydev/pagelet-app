@@ -25,10 +25,10 @@ export const postKeys = {
 /**
  * Admin 게시글 목록 조회 훅
  */
-export function useAdminPosts() {
+export function useAdminPosts(categoryId?: string) {
   return useQuery<PostListItem[], AxiosError>({
-    queryKey: postKeys.adminList(),
-    queryFn: getAdminPosts,
+    queryKey: [...postKeys.adminList(), categoryId || 'all'],
+    queryFn: () => getAdminPosts(categoryId),
   });
 }
 
@@ -56,10 +56,10 @@ export function useCreatePost() {
 /**
  * Public 게시글 목록 조회 훅 (CSR용)
  */
-export function usePublicPosts(siteSlug: string) {
+export function usePublicPosts(siteSlug: string, categorySlug?: string) {
   return useQuery<PublicPost[], AxiosError>({
-    queryKey: postKeys.publicList(siteSlug),
-    queryFn: () => getPublicPosts(siteSlug),
+    queryKey: [...postKeys.publicList(siteSlug), categorySlug || 'all'],
+    queryFn: () => getPublicPosts(siteSlug, categorySlug),
     enabled: !!siteSlug,
   });
 }
