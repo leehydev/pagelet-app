@@ -8,8 +8,8 @@ import { useMySiteSettings, useUpdateSiteSettings } from '@/hooks/use-site-setti
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
 import { ValidationTextarea } from '@/components/form/ValidationTextarea';
+import { BrandingUploader } from '@/components/settings/BrandingUploader';
 import { useAdminHeaderStore } from '@/stores/admin-header-store';
-import { cn } from '@/lib/utils';
 
 // 섹션 정의
 const SECTIONS = [
@@ -20,18 +20,9 @@ const SECTIONS = [
   { id: 'business', label: '사업자 정보' },
 ] as const;
 
-// Zod 스키마 정의
+// Zod 스키마 정의 (브랜딩 URL은 별도 업로드로 관리)
 const siteSettingsSchema = z.object({
-  // 브랜딩
-  logoImageUrl: z
-    .string()
-    .url('올바른 URL 형식이어야 합니다')
-    .max(500)
-    .nullable()
-    .or(z.literal('')),
-  faviconUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   // SEO
-  ogImageUrl: z.string().url('올바른 URL 형식이어야 합니다').max(500).nullable().or(z.literal('')),
   seoTitle: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
   seoDescription: z.string().nullable().or(z.literal('')),
   seoKeywords: z.string().max(500).nullable().or(z.literal('')),
@@ -80,9 +71,6 @@ export default function SiteSettingsPage() {
   const methods = useForm<SiteSettingsFormData>({
     resolver: zodResolver(siteSettingsSchema),
     defaultValues: {
-      logoImageUrl: '',
-      faviconUrl: '',
-      ogImageUrl: '',
       seoTitle: '',
       seoDescription: '',
       seoKeywords: '',
@@ -107,13 +95,10 @@ export default function SiteSettingsPage() {
     setValue,
   } = methods;
 
-  // 설정 로드 시 폼에 반영
+  // 설정 로드 시 폼에 반영 (브랜딩 URL은 별도 관리)
   useEffect(() => {
     if (settings) {
       reset({
-        logoImageUrl: settings.logoImageUrl || '',
-        faviconUrl: settings.faviconUrl || '',
-        ogImageUrl: settings.ogImageUrl || '',
         seoTitle: settings.seoTitle || '',
         seoDescription: settings.seoDescription || '',
         seoKeywords: settings.seoKeywords || '',
@@ -138,10 +123,6 @@ export default function SiteSettingsPage() {
     name: 'robotsIndex',
     defaultValue: false,
   });
-
-  const logoImageUrl = useWatch({ control: methods.control, name: 'logoImageUrl' });
-  const faviconUrl = useWatch({ control: methods.control, name: 'faviconUrl' });
-  const ogImageUrl = useWatch({ control: methods.control, name: 'ogImageUrl' });
 
   // 폼 제출 핸들러
   const onSubmit = useCallback(
@@ -267,40 +248,39 @@ export default function SiteSettingsPage() {
               </div>
             )}
 
+            {/* 브랜딩 섹션 (폼 밖에서 독립적으로 관리) */}
+            <section
+              id="branding"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20 mb-8"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
+              <div className="divide-y divide-gray-100">
+                <BrandingUploader
+                  type="logo"
+                  title="로고"
+                  description="권장: 가로형 200×60px 이상, PNG/JPG/SVG/WebP"
+                  currentUrl={settings.logoImageUrl}
+                  updatedAt={settings.updatedAt}
+                />
+                <BrandingUploader
+                  type="favicon"
+                  title="파비콘"
+                  description="브라우저 탭에 표시되는 아이콘. 권장: 32×32px, PNG/ICO"
+                  currentUrl={settings.faviconUrl}
+                  updatedAt={settings.updatedAt}
+                />
+                <BrandingUploader
+                  type="og"
+                  title="OG 이미지"
+                  description="소셜 미디어 공유 시 표시될 이미지. 권장: 1200×630px, PNG/JPG/WebP"
+                  currentUrl={settings.ogImageUrl}
+                  updatedAt={settings.updatedAt}
+                />
+              </div>
+            </section>
+
             <FormProvider {...methods}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 브랜딩 섹션 */}
-                <section
-                  id="branding"
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 scroll-mt-20"
-                >
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">브랜딩</h2>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <ValidationInput
-                          name="logoImageUrl"
-                          label="로고 이미지 URL"
-                          type="url"
-                          placeholder="https://example.com/logo.png"
-                        />
-                        {logoImageUrl && <ImagePreview src={logoImageUrl} alt="로고 미리보기" />}
-                      </div>
-                      <div className="space-y-2">
-                        <ValidationInput
-                          name="faviconUrl"
-                          label="파비콘 URL"
-                          type="url"
-                          placeholder="https://example.com/favicon.ico"
-                        />
-                        {faviconUrl && (
-                          <ImagePreview src={faviconUrl} alt="파비콘 미리보기" size="small" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
                 {/* SEO 섹션 */}
                 <section
                   id="seo"
@@ -308,18 +288,6 @@ export default function SiteSettingsPage() {
                 >
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO 설정</h2>
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <ValidationInput
-                        name="ogImageUrl"
-                        label="OG 이미지 URL"
-                        description="소셜 미디어 공유 시 표시될 이미지 (권장: 1200x630px)"
-                        type="url"
-                        placeholder="https://example.com/og-image.jpg"
-                      />
-                      {ogImageUrl && (
-                        <ImagePreview src={ogImageUrl} alt="OG 이미지 미리보기" size="large" />
-                      )}
-                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <ValidationInput
                         name="seoTitle"
@@ -507,57 +475,6 @@ function SwitchField({ label, hint, checked, onChange }: SwitchFieldProps) {
           }`}
         />
       </button>
-    </div>
-  );
-}
-
-interface ImagePreviewProps {
-  src: string;
-  alt: string;
-  size?: 'small' | 'medium' | 'large';
-}
-
-function ImagePreview({ src, alt, size = 'medium' }: ImagePreviewProps) {
-  const sizeClasses = {
-    small: 'h-8 w-8',
-    medium: 'h-16 w-16',
-    large: 'h-32 w-full max-w-md',
-  };
-
-  return (
-    <div className="mt-2">
-      {size === 'large' ? (
-        <div className="mb-8">
-          <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt={alt}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            'aspect-video rounded-md border border-gray-200 bg-gray-50 overflow-hidden',
-            sizeClasses[size],
-          )}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            className={cn('object-contain', 'w-full h-full')}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 }

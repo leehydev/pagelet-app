@@ -91,6 +91,7 @@ export interface SiteSettings {
   id: string;
   name: string;
   slug: string;
+  updatedAt: string;
   // 브랜딩
   logoImageUrl: string | null;
   faviconUrl: string | null;
@@ -423,6 +424,59 @@ export async function completeUpload(data: CompleteUploadRequest): Promise<Compl
  */
 export async function abortUpload(data: AbortUploadRequest): Promise<void> {
   await api.post('/uploads/abort', data);
+}
+
+// ===== Branding Asset API =====
+
+export type BrandingType = 'logo' | 'favicon' | 'og';
+
+export interface BrandingPresignRequest {
+  type: BrandingType;
+  filename: string;
+  size: number;
+  mimeType: string;
+}
+
+export interface BrandingPresignResponse {
+  uploadUrl: string;
+  tmpPublicUrl: string;
+  tmpKey: string;
+}
+
+export interface BrandingCommitRequest {
+  type: BrandingType;
+  tmpKey: string;
+}
+
+export interface BrandingCommitResponse {
+  publicUrl: string;
+  updatedAt: string;
+}
+
+/**
+ * 브랜딩 에셋 Presigned URL 생성
+ */
+export async function presignBrandingUpload(
+  data: BrandingPresignRequest,
+): Promise<BrandingPresignResponse> {
+  const response = await api.post<ApiResponse<BrandingPresignResponse>>(
+    '/admin/assets/branding/presign',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * 브랜딩 에셋 업로드 확정
+ */
+export async function commitBrandingUpload(
+  data: BrandingCommitRequest,
+): Promise<BrandingCommitResponse> {
+  const response = await api.post<ApiResponse<BrandingCommitResponse>>(
+    '/admin/assets/branding/commit',
+    data,
+  );
+  return response.data.data;
 }
 
 // ===== Category API =====
