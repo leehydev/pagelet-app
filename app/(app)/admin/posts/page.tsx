@@ -100,7 +100,7 @@ export default function AdminPostsPage() {
                           <div className="w-16 h-16 rounded-md overflow-hidden">
                             <Image
                               src={post.ogImageUrl}
-                              alt={post.title}
+                              alt={post.title || '썸네일'}
                               width={64}
                               height={64}
                               className="w-full h-full object-cover"
@@ -115,7 +115,7 @@ export default function AdminPostsPage() {
                         className="text-sm font-medium text-gray-900 hover:text-blue-600"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {post.title}
+                        {post.title || <span className="text-gray-400">(제목없음)</span>}
                       </Link>
                       <div className="text-xs text-gray-500">/{post.slug}</div>
                     </td>

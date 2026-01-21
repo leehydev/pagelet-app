@@ -68,7 +68,9 @@ export default function AdminPostDetailPage() {
                 <ArrowLeftIcon className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900 line-clamp-1">{post.title}</h1>
+                <h1 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                  {post.title || <span className="text-gray-400">(제목없음)</span>}
+                </h1>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Badge
                     variant={post.status === PostStatus.PUBLISHED ? 'default' : 'secondary'}
@@ -92,10 +94,9 @@ export default function AdminPostDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* TODO: 편집 버튼 추가 */}
-              <Button variant="outline" disabled>
-                편집 (준비 중)
-              </Button>
+              <Link href={`/admin/posts/${postId}/edit`}>
+                <Button variant="outline">편집</Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -135,14 +136,16 @@ export default function AdminPostDetailPage() {
           <div className="mb-8">
             <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.ogImageUrl} alt={post.title} className="w-full h-full object-cover" />
+              <img src={post.ogImageUrl} alt={post.title || '썸네일'} className="w-full h-full object-cover" />
             </div>
           </div>
         )}
 
         {/* 제목 및 부제목 */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{post.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {post.title || <span className="text-gray-400">(제목없음)</span>}
+          </h1>
           {post.subtitle && <p className="text-lg text-gray-600">{post.subtitle}</p>}
         </div>
 

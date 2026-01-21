@@ -65,6 +65,7 @@ export interface Post {
   seoTitle: string | null;
   seoDescription: string | null;
   ogImageUrl: string | null;
+  categoryId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -203,6 +204,21 @@ export interface CreatePostRequest {
   categoryId?: string;
 }
 
+export interface UpdatePostRequest {
+  title?: string;
+  subtitle?: string;
+  content?: string; // Deprecated: 하위 호환성
+  contentJson?: Record<string, unknown>;
+  contentHtml?: string;
+  contentText?: string;
+  slug?: string;
+  status?: PostStatus;
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImageUrl?: string;
+  categoryId?: string;
+}
+
 export async function createPost(data: CreatePostRequest): Promise<void> {
   await api.post('/posts', data);
 }
@@ -242,6 +258,11 @@ export async function checkPostSlugAvailability(slug: string): Promise<boolean> 
 
 export async function getAdminPost(postId: string): Promise<Post> {
   const response = await api.get<ApiResponse<Post>>(`/admin/posts/${postId}`);
+  return response.data.data;
+}
+
+export async function updateAdminPost(postId: string, data: UpdatePostRequest): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(`/admin/posts/${postId}`, data);
   return response.data.data;
 }
 
