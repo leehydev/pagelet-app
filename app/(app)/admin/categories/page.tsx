@@ -142,7 +142,7 @@ function CategoryRow({ category, onDelete }: { category: Category; onDelete: () 
         <div className="text-sm text-gray-500">{category.slug}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">{category.post_count || 0}</div>
+        <div className="text-sm text-gray-900">{category.postCount || 0}</div>
       </td>
       <td className="px-6 py-4">
         <div className="text-sm text-gray-500">{category.description || '-'}</div>
@@ -159,7 +159,7 @@ function CategoryRow({ category, onDelete }: { category: Category; onDelete: () 
               variant="outline"
               size="sm"
               onClick={onDelete}
-              disabled={!!category.post_count && category.post_count > 0}
+              disabled={!!category.postCount && category.postCount > 0}
             >
               삭제
             </Button>
