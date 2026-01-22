@@ -85,8 +85,8 @@ export default function AdminPostsPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
-          <div className="flex items-center gap-3">
-            {/* 카테고리 필터 */}
+          {/* 카테고리 필터 */}
+          {/* <div className="flex items-center gap-3">
             <select
               value={selectedCategoryId}
               onChange={(e) => {
@@ -106,7 +106,7 @@ export default function AdminPostsPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
         {/* 썸네일 이미지 추가 */}
         {posts && posts.length > 0 ? (
