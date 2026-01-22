@@ -208,6 +208,33 @@ export async function updateAdminPost(
   return response.data.data;
 }
 
+export async function deleteAdminPost(siteId: string, postId: string): Promise<void> {
+  await api.delete(`/admin/sites/${siteId}/posts/${postId}`);
+}
+
+// ===== Revalidation API =====
+
+/**
+ * ISR 캐시 무효화 요청
+ * 게시글 상태 변경, 삭제 시 호출
+ */
+export async function revalidatePost(siteSlug: string, postSlug?: string): Promise<void> {
+  try {
+    await fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siteSlug,
+        postSlug,
+        secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET,
+      }),
+    });
+  } catch (error) {
+    // Revalidation 실패해도 주요 작업에는 영향 없음
+    console.warn('Failed to revalidate:', error);
+  }
+}
+
 // ===== Public Post API (클라이언트) =====
 
 export async function getPublicPosts(

@@ -105,9 +105,7 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
         )}
 
         {/* 리사이징 중일 때 오버레이 */}
-        {isResizing && (
-          <div className="absolute inset-0 bg-blue-500/10 pointer-events-none" />
-        )}
+        {isResizing && <div className="absolute inset-0 bg-blue-500/10 pointer-events-none" />}
       </div>
     </NodeViewWrapper>
   );

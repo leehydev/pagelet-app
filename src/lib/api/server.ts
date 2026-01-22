@@ -19,7 +19,12 @@ export async function fetchPublicPosts(
     params.append('categorySlug', categorySlug);
   }
   const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
-    next: { revalidate: 60 }, // ISR: 60초
+    next: {
+      revalidate: 60,
+      tags: [`posts-${siteSlug}`, categorySlug ? `posts-${siteSlug}-${categorySlug}` : ''].filter(
+        Boolean,
+      ),
+    },
   });
 
   if (!res.ok) {
@@ -39,7 +44,10 @@ export async function fetchPublicPostBySlug(
       siteSlug,
     )}`,
     {
-      next: { revalidate: 60 }, // ISR: 60초
+      next: {
+        revalidate: 60,
+        tags: [`post-${siteSlug}-${postSlug}`, `posts-${siteSlug}`],
+      },
     },
   );
 

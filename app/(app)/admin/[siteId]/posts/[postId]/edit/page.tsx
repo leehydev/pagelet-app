@@ -6,8 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getAdminPost, PostStatus, UpdatePostRequest } from '@/lib/api';
+import { getAdminPost, PostStatus, UpdatePostRequest, revalidatePost } from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
+import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
@@ -73,6 +74,9 @@ export default function EditPostPage() {
 
   // 카테고리 목록
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+
+  // 사이트 설정 (revalidation용)
+  const { data: siteSettings } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
   const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged } = useAutoSave({
@@ -221,10 +225,15 @@ export default function EditPostPage() {
         return;
       }
 
-      await updateMutation.mutateAsync({
+      const updatedPost = await updateMutation.mutateAsync({
         ...formData,
         status,
       });
+
+      // 발행 또는 상태 변경 시 ISR 캐시 무효화
+      if (siteSettings?.slug && updatedPost.slug) {
+        await revalidatePost(siteSettings.slug, updatedPost.slug);
+      }
 
       if (status === PostStatus.PUBLISHED) {
         toast.success('게시글이 발행되었습니다');
