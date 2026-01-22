@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
 import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
@@ -114,19 +115,19 @@ export default function AdminPostsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 w-24 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       썸네일
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       제목
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 w-40 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       카테고리
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 w-32 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       상태
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 w-36 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       작성일
                     </th>
                   </tr>
@@ -135,19 +136,19 @@ export default function AdminPostsPage() {
                   {posts.map((post) => (
                     <tr
                       key={post.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="h-20 hover:bg-gray-50 cursor-pointer"
                       onClick={() => (window.location.href = `/admin/${siteId}/posts/${post.id}`)}
                     >
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center">
                           {post.ogImageUrl && (
-                            <div className="w-16 h-16 rounded-md overflow-hidden">
+                            <div className="aspect-video h-14 rounded-md overflow-hidden">
                               <Image
                                 src={post.ogImageUrl}
                                 alt={post.title || '썸네일'}
                                 width={64}
                                 height={64}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             </div>
                           )}
@@ -184,7 +185,7 @@ export default function AdminPostsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(post.createdAt).toLocaleDateString('ko-KR')}
+                        {dayjs(post.createdAt).format('YYYY-MM-DD')}
                       </td>
                     </tr>
                   ))}

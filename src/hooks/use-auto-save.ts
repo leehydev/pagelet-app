@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { updateAdminPost, UpdatePostRequest } from '@/lib/api';
 
 interface UseAutoSaveOptions {
@@ -42,7 +43,7 @@ export function useAutoSave({
     onSuccess: () => {
       setState((prev) => ({
         ...prev,
-        lastSavedAt: new Date(),
+        lastSavedAt: dayjs().toDate(),
         isSaving: false,
         hasUnsavedChanges: false,
       }));

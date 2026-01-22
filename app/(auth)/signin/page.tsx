@@ -1,5 +1,6 @@
 'use client';
 
+import dayjs from 'dayjs';
 import { KeyRound } from 'lucide-react';
 
 import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
@@ -46,7 +47,7 @@ export default function SignInPage() {
 
       {/* 푸터 */}
       <p className="mt-8 text-sm text-gray-400">
-        © {new Date().getFullYear()} Pagelet. All rights reserved.
+        © {dayjs().year()} Pagelet. All rights reserved.
       </p>
     </div>
   );
