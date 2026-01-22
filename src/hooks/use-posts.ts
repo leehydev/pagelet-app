@@ -5,7 +5,10 @@ import {
   createAdminPost,
   getAdminPosts,
   getPublicPosts,
+  deleteAdminPost,
+  updateAdminPost,
   CreatePostRequest,
+  UpdatePostRequest,
   PostListItem,
   PublicPost,
 } from '@/lib/api';
@@ -48,6 +51,43 @@ export function useCreatePost(siteId: string) {
     onError: (error: AxiosError<{ message?: string; code?: string }>) => {
       // 에러는 컴포넌트에서 처리
       console.error('Failed to create post:', error.response?.data);
+    },
+  });
+}
+
+/**
+ * 게시글 삭제 mutation 훅
+ */
+export function useDeletePost(siteId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (postId: string) => deleteAdminPost(siteId, postId),
+    onSuccess: () => {
+      // 게시글 목록 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: postKeys.adminList(siteId) });
+    },
+    onError: (error: AxiosError<{ message?: string; code?: string }>) => {
+      console.error('Failed to delete post:', error.response?.data);
+    },
+  });
+}
+
+/**
+ * 게시글 상태 변경 mutation 훅
+ */
+export function useUpdatePostStatus(siteId: string, postId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePostRequest) => updateAdminPost(siteId, postId, data),
+    onSuccess: () => {
+      // 게시글 목록 및 단일 게시글 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: postKeys.adminList(siteId) });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+    },
+    onError: (error: AxiosError<{ message?: string; code?: string }>) => {
+      console.error('Failed to update post status:', error.response?.data);
     },
   });
 }

@@ -15,6 +15,7 @@ export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
 export const PostStatus = {
   DRAFT: 'DRAFT',
   PUBLISHED: 'PUBLISHED',
+  PRIVATE: 'PRIVATE', // 발행했지만 비공개
 } as const;
 
 export type PostStatus = (typeof PostStatus)[keyof typeof PostStatus];

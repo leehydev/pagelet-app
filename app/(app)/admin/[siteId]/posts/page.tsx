@@ -144,10 +144,16 @@ export default function AdminPostsPage() {
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           post.status === PostStatus.PUBLISHED
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            : post.status === PostStatus.PRIVATE
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
-                        {post.status === PostStatus.PUBLISHED ? '발행됨' : '임시저장'}
+                        {post.status === PostStatus.PUBLISHED
+                          ? '발행됨'
+                          : post.status === PostStatus.PRIVATE
+                            ? '비공개'
+                            : '임시저장'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">

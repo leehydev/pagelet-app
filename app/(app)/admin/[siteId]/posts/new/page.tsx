@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePost } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
-import { PostStatus } from '@/lib/api';
+import { useAdminSiteSettings } from '@/hooks/use-site-settings';
+import { PostStatus, revalidatePost } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/form/ValidationInput';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,7 @@ export default function NewPostPage() {
 
   const createPost = useCreatePost(siteId);
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+  const { data: siteSettings } = useAdminSiteSettings(siteId);
   const editorRef = useRef<TiptapEditorRef>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export default function NewPostPage() {
         return;
       }
 
-      await createPost.mutateAsync({
+      const createdPost = await createPost.mutateAsync({
         title: data.title.trim(),
         subtitle: data.subtitle.trim(),
         slug: data.slug?.trim() || undefined,
@@ -129,6 +131,11 @@ export default function NewPostPage() {
         seoDescription: data.seoDescription?.trim() || undefined,
         ogImageUrl: ogImageUrl.trim() || undefined,
       });
+
+      // 발행 시 ISR 캐시 무효화
+      if (status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
+        await revalidatePost(siteSettings.slug, createdPost.slug);
+      }
 
       router.push(`/admin/${siteId}/posts`);
     } catch (err) {
@@ -299,7 +306,9 @@ export default function NewPostPage() {
                         maxLength={255}
                         aria-invalid={!!fieldState.error}
                       />
-                      <p className="text-xs text-gray-500">영소문자, 숫자, 하이픈만 사용 (비워두면 자동 생성)</p>
+                      <p className="text-xs text-gray-500">
+                        영소문자, 숫자, 하이픈만 사용 (비워두면 자동 생성)
+                      </p>
                       {fieldState.error && (
                         <p className="text-sm text-red-500">{fieldState.error.message}</p>
                       )}
