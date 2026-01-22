@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
-import { LayoutDashboard, FileText, Settings, FolderTree } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, FolderTree, ExternalLink, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
+import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { SiteSwitcher } from './SiteSwitcher';
+import { api } from '@/lib/api';
 
 const menuItems = [
   { path: '', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,9 +22,24 @@ export function AdminSidebar() {
   const params = useParams();
   const siteId = params.siteId as string;
   const isSidebarOpen = useAdminSidebarStore((s) => s.isSidebarOpen);
+  const { data: siteSettings } = useAdminSiteSettings(siteId);
 
   // 기본 경로 prefix
   const baseHref = `/admin/${siteId}`;
+
+  // 블로그 full URL 생성 (https://[slug].pagelet-dev.kr 또는 https://[slug].pagelet.kr)
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
+  const blogUrl = siteSettings?.slug
+    ? `https://${siteSettings.slug}.${tenantDomain}`
+    : null;
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      window.location.href = '/signin';
+    }
+  };
 
   const isActive = (path: string) => {
     const fullPath = `${baseHref}${path}`;
@@ -37,14 +54,14 @@ export function AdminSidebar() {
     <aside
       className={cn(
         'h-full bg-white border-r flex flex-col transition-all duration-300 ease-in-out',
-        isSidebarOpen ? 'w-60' : 'w-0 overflow-hidden border-r-0'
+        isSidebarOpen ? 'w-60' : 'w-0 overflow-hidden border-r-0',
       )}
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-center border-b px-4">
         <Link href={baseHref} className="flex items-center">
           <Image
-            src="/admin_logo_200.png"
+            src="/images/logos/admin_logo_200.png"
             alt="Pagelet"
             width={200}
             height={200}
@@ -75,7 +92,7 @@ export function AdminSidebar() {
                     'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                     active
                       ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -86,6 +103,34 @@ export function AdminSidebar() {
           })}
         </ul>
       </nav>
+
+      {/* 내 블로그 보기 + 로그아웃 */}
+      <div className="px-3 py-3 border-t space-y-1">
+        {blogUrl && (
+          <a
+            href={blogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" />
+            <span className="whitespace-nowrap">내 블로그 보기</span>
+          </a>
+        )}
+        <button
+          onClick={handleLogout}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+            'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span className="whitespace-nowrap">로그아웃</span>
+        </button>
+      </div>
 
       {/* Footer */}
       <div className="px-4 py-3 border-t">

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -10,18 +10,80 @@ export const api = axios.create({
   },
 });
 
+// 토큰 리프레시 상태 관리
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
 
-// Response interceptor for handling common errors
+// 대기 중인 요청들 처리
+const processQueue = (error: Error | null) => {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
+// Response interceptor - 401 에러 시 토큰 리프레시 후 재시도
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // 401 에러 시 로그인 페이지로 리다이렉트
-    if (error.response?.status === 401) {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    // 401 에러가 아니거나, 이미 재시도한 요청이면 에러 반환
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    // /auth/refresh 요청 자체가 실패한 경우 로그인 페이지로 이동
+    if (originalRequest.url?.includes('/auth/refresh')) {
       if (typeof window !== 'undefined') {
         window.location.href = '/signin';
       }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // 이미 리프레시 중이면 대기열에 추가
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then(() => api(originalRequest))
+        .catch((err) => Promise.reject(err));
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      // 토큰 리프레시 요청
+      await api.post('/auth/refresh');
+
+      // 대기 중인 요청들 성공 처리
+      processQueue(null);
+
+      // 원래 요청 재시도
+      return api(originalRequest);
+    } catch (refreshError) {
+      // 리프레시 실패 시 대기 중인 요청들 실패 처리
+      processQueue(refreshError as Error);
+
+      // 로그인 페이지로 이동
+      if (typeof window !== 'undefined') {
+        window.location.href = '/signin';
+      }
+
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   },
 );
 
@@ -353,7 +415,10 @@ export async function updateAdminSiteSettings(
   siteId: string,
   data: UpdateSiteSettingsRequest,
 ): Promise<SiteSettings> {
-  const response = await api.put<ApiResponse<SiteSettings>>(`/admin/sites/${siteId}/settings`, data);
+  const response = await api.put<ApiResponse<SiteSettings>>(
+    `/admin/sites/${siteId}/settings`,
+    data,
+  );
   return response.data.data;
 }
 
@@ -549,7 +614,10 @@ export async function getAdminCategories(siteId: string): Promise<Category[]> {
   return response.data.data;
 }
 
-export async function createCategory(siteId: string, data: CreateCategoryRequest): Promise<Category> {
+export async function createCategory(
+  siteId: string,
+  data: CreateCategoryRequest,
+): Promise<Category> {
   const response = await api.post<ApiResponse<Category>>(`/admin/sites/${siteId}/categories`, data);
   return response.data.data;
 }
