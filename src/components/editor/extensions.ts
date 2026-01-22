@@ -1,10 +1,10 @@
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyleKit } from '@tiptap/extension-text-style';
 import { Placeholder, CharacterCount, Dropcursor } from '@tiptap/extensions';
-import Image from '@tiptap/extension-image';
 import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
 import Youtube from '@tiptap/extension-youtube';
 import { linkExtension } from './config/link-config';
+import { ResizableImage } from './extensions/ResizableImage';
 
 export const extensions = [
   TextStyleKit,
@@ -13,7 +13,7 @@ export const extensions = [
     placeholder: '내용을 입력해주세요.',
   }),
   CharacterCount.configure({}),
-  Image,
+  ResizableImage,
   Dropcursor,
   Emoji.configure({
     emojis: gitHubEmojis,

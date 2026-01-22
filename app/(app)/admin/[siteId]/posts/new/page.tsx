@@ -198,7 +198,7 @@ export default function NewPostPage() {
                 {/* 내용 */}
                 <Field>
                   <FieldLabel>내용</FieldLabel>
-                  <TiptapEditor ref={editorRef} />
+                  <TiptapEditor ref={editorRef} siteId={siteId} />
                 </Field>
               </div>
             </div>
