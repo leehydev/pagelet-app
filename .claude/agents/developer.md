@@ -25,6 +25,7 @@
 1. 태스크 파일 확인: `.tasks/backlog/[이슈번호]-[업무-이름].md`
 2. 태스크 파일을 `in-progress/`로 이동
 3. 브랜치 생성
+4. GitHub 이슈 스테이터스를 "In Progress"로 변경
 
 ```bash
 # main 브랜치에서 최신 코드 pull
@@ -33,6 +34,9 @@ git pull origin main
 
 # 새 브랜치 생성
 git checkout -b feature/[이슈번호]-[간단한-설명]
+
+# GitHub 프로젝트 스테이터스 변경 (In Progress: 47fc9ee4)
+gh api graphql -f query='mutation { updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwHODhZUJs4BNL9F" itemId: "PVTI_아이템ID" fieldId: "PVTSSF_lAHODhZUJs4BNL9Fzg8QUyw" value: {singleSelectOptionId: "47fc9ee4"}}) { projectV2Item { id } } }'
 ```
 
 **브랜치 명명 규칙:**
@@ -136,14 +140,29 @@ EOF
 
 ### 6. 태스크 상태 업데이트
 
-PR 생성 후 태스크 파일을 `review/`로 이동:
+PR 생성 후:
+1. 태스크 파일을 `review/`로 이동
+2. GitHub 이슈 스테이터스를 "pr"로 변경
 
 ```bash
+# 태스크 파일 이동
 mv .tasks/in-progress/42-post-pagination.md .tasks/review/
 git add .tasks/
 git commit -m "chore: 태스크 상태 업데이트 - review"
 git push
+
+# GitHub 프로젝트 스테이터스 변경 (pr: 9ef8707a)
+gh api graphql -f query='mutation { updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwHODhZUJs4BNL9F" itemId: "PVTI_아이템ID" fieldId: "PVTSSF_lAHODhZUJs4BNL9Fzg8QUyw" value: {singleSelectOptionId: "9ef8707a"}}) { projectV2Item { id } } }'
 ```
+
+## GitHub 프로젝트 Status 옵션 ID
+
+| Status      | Option ID  |
+| ----------- | ---------- |
+| Todo        | `f75ad846` |
+| In Progress | `47fc9ee4` |
+| pr          | `9ef8707a` |
+| Done        | `98236657` |
 
 ## PR 템플릿
 
