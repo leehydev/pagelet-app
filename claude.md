@@ -416,3 +416,37 @@ gh issue create \
 3. **이미지 업로드**: Pre-signed URL 방식 사용 (`use-upload.ts`, `use-branding-upload.ts`)
 4. **HTML Sanitization**: 사용자 입력 HTML은 `src/lib/sanitize.ts`의 `sanitizeHtml` 사용
 5. **날짜 처리**: `dayjs` 라이브러리 사용, 포맷팅은 `src/lib/date-utils.ts`
+
+## 서브에이전트
+
+프로젝트 작업은 두 개의 서브에이전트로 분리하여 진행합니다.
+
+### Architect (`.claude/agents/architect.md`)
+
+요구사항을 분석하고 작업을 계획하는 에이전트입니다.
+
+- 요구사항 분석 및 작업 분해
+- GitHub 이슈 생성 (프로젝트: `pagelet`)
+- 태스크 파일 생성: `.tasks/backlog/[이슈번호]-[업무-이름].md`
+
+**사용 시점**: 새로운 기능 요청, 버그 리포트, 작업 계획이 필요할 때
+
+### Developer (`.claude/agents/developer.md`)
+
+정의된 태스크를 구현하는 에이전트입니다.
+
+- 브랜치 생성: `feature/[이슈번호]-[간단한-설명]`
+- 코드 구현 및 테스트
+- 빌드/린트 검증 후 PR 생성
+
+**사용 시점**: 태스크 파일이 준비된 후 실제 구현이 필요할 때
+
+### 태스크 관리 구조
+
+```
+.tasks/
+├── backlog/        # 대기 중 (Architect가 생성)
+├── in-progress/    # 진행 중 (Developer가 작업 중)
+├── review/         # PR 리뷰 대기
+└── done/           # 완료
+```
