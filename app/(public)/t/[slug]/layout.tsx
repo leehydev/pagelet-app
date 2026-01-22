@@ -1,5 +1,6 @@
 import { CategoryTabs } from '@/components/public/CategoryTabs';
-import { PublicCategory, SiteSettings, fetchPublicCategories, fetchSiteSettings } from '@/lib/api';
+import type { PublicCategory, SiteSettings } from '@/lib/api';
+import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import { SocialLinks } from '@/components/public/SocialLinks';
 import { ContactInfo } from '@/components/public/ContactInfo';

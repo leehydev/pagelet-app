@@ -1,4 +1,39 @@
+'use client';
+
+/**
+ * 클라이언트 사이드 API
+ * axios 인스턴스 + 토큰 리프레시 interceptor
+ * 브라우저에서만 사용됨
+ */
+
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import type {
+  ApiResponse,
+  User,
+  Post,
+  PostListItem,
+  PublicPost,
+  SiteSettings,
+  Category,
+  PublicCategory,
+  AdminSite,
+  UpdateProfileRequest,
+  CreateSiteRequest,
+  CreatePostRequest,
+  UpdatePostRequest,
+  UpdateSiteSettingsRequest,
+  PresignUploadRequest,
+  PresignUploadResponse,
+  CompleteUploadRequest,
+  CompleteUploadResponse,
+  AbortUploadRequest,
+  BrandingPresignRequest,
+  BrandingPresignResponse,
+  BrandingCommitRequest,
+  BrandingCommitResponse,
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+} from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -10,14 +45,15 @@ export const api = axios.create({
   },
 });
 
-// 토큰 리프레시 상태 관리
+// ===== 토큰 리프레시 로직 (클라이언트 전용) =====
+// 브라우저 탭당 하나의 인스턴스이므로 모듈 레벨 변수 사용 가능
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
 }> = [];
 
-// 대기 중인 요청들 처리
 const processQueue = (error: Error | null) => {
   failedQueue.forEach((promise) => {
     if (error) {
@@ -87,155 +123,17 @@ api.interceptors.response.use(
   },
 );
 
-// Types
-export const AccountStatus = {
-  ONBOARDING: 'ONBOARDING',
-  ACTIVE: 'ACTIVE',
-  SUSPENDED: 'SUSPENDED', // 서비스 이용불가
-  WITHDRAWN: 'WITHDRAWN', // 탈퇴
-} as const;
+// ===== Auth API =====
 
-export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
-
-export const PostStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
-} as const;
-
-export type PostStatus = (typeof PostStatus)[keyof typeof PostStatus];
-
-export interface User {
-  id: string;
-  email: string | null;
-  name: string | null;
-  accountStatus: AccountStatus;
-  onboardingStep: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Post {
-  id: string;
-  title: string;
-  subtitle: string;
-  slug: string;
-  content: string | null; // Deprecated: 하위 호환성
-  contentJson: Record<string, unknown> | null;
-  contentHtml: string | null;
-  contentText: string | null;
-  status: PostStatus;
-  publishedAt: string | null;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  ogImageUrl: string | null;
-  categoryId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PublicPost {
-  id: string;
-  title: string;
-  subtitle: string;
-  slug: string;
-  content: string | null; // Deprecated: 하위 호환성
-  contentJson: Record<string, unknown> | null;
-  contentHtml: string | null;
-  contentText: string | null;
-  publishedAt: string;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  ogImageUrl: string | null;
-  categoryName: string | null;
-  categorySlug: string | null;
-}
-
-export interface SiteSettings {
-  id: string;
-  name: string;
-  slug: string;
-  updatedAt: string;
-  // 브랜딩
-  logoImageUrl: string | null;
-  faviconUrl: string | null;
-  // SEO
-  ogImageUrl: string | null;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  seoKeywords: string | null;
-  canonicalBaseUrl: string | null;
-  robotsIndex: boolean;
-  // 연락처
-  contactEmail: string | null;
-  contactPhone: string | null;
-  address: string | null;
-  // 소셜 링크
-  kakaoChannelUrl: string | null;
-  naverMapUrl: string | null;
-  instagramUrl: string | null;
-  // 사업자 정보
-  businessNumber: string | null;
-  businessName: string | null;
-  representativeName: string | null;
-}
-
-export interface UpdateSiteSettingsRequest {
-  logoImageUrl?: string | null;
-  faviconUrl?: string | null;
-  ogImageUrl?: string | null;
-  seoTitle?: string | null;
-  seoDescription?: string | null;
-  seoKeywords?: string | null;
-  canonicalBaseUrl?: string | null;
-  robotsIndex?: boolean;
-  contactEmail?: string | null;
-  contactPhone?: string | null;
-  address?: string | null;
-  kakaoChannelUrl?: string | null;
-  naverMapUrl?: string | null;
-  instagramUrl?: string | null;
-  businessNumber?: string | null;
-  businessName?: string | null;
-  representativeName?: string | null;
-}
-
-export interface PostListItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  slug: string;
-  status: PostStatus;
-  publishedAt: string | null;
-  seoDescription: string | null;
-  ogImageUrl: string | null;
-  createdAt: string;
-  categoryId: string | null;
-  categoryName: string | null;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
-
-// API functions
 export async function getMe(): Promise<User> {
   const response = await api.get<ApiResponse<User>>('/auth/me');
   return response.data.data;
 }
 
-export interface UpdateProfileRequest {
-  name: string;
-  email: string;
-}
+// ===== Onboarding API =====
 
 export async function updateProfile(data: UpdateProfileRequest): Promise<void> {
   await api.post('/onboarding/profile', data);
-}
-
-export interface CreateSiteRequest {
-  name: string;
-  slug: string;
 }
 
 export async function createSite(data: CreateSiteRequest): Promise<void> {
@@ -251,36 +149,6 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-export interface CreatePostRequest {
-  title: string;
-  subtitle: string;
-  content?: string; // Deprecated: 하위 호환성
-  contentJson: Record<string, unknown>;
-  contentHtml?: string;
-  contentText?: string;
-  slug?: string;
-  status?: PostStatus;
-  seoTitle?: string;
-  seoDescription?: string;
-  ogImageUrl?: string;
-  categoryId?: string;
-}
-
-export interface UpdatePostRequest {
-  title?: string;
-  subtitle?: string;
-  content?: string; // Deprecated: 하위 호환성
-  contentJson?: Record<string, unknown>;
-  contentHtml?: string;
-  contentText?: string;
-  slug?: string;
-  status?: PostStatus;
-  seoTitle?: string;
-  seoDescription?: string;
-  ogImageUrl?: string;
-  categoryId?: string;
 }
 
 export async function createPost(data: CreatePostRequest): Promise<void> {
@@ -340,7 +208,7 @@ export async function updateAdminPost(
   return response.data.data;
 }
 
-// ===== Public Post API =====
+// ===== Public Post API (클라이언트) =====
 
 export async function getPublicPosts(
   siteSlug: string,
@@ -359,49 +227,6 @@ export async function getPublicPostBySlug(siteSlug: string, postSlug: string): P
     params: { siteSlug: siteSlug },
   });
   return response.data.data;
-}
-
-// Server-side fetch for ISR (without axios interceptors)
-export async function fetchPublicPosts(
-  siteSlug: string,
-  categorySlug?: string,
-): Promise<PublicPost[]> {
-  const params = new URLSearchParams({ siteSlug: siteSlug });
-  if (categorySlug) {
-    params.append('categorySlug', categorySlug);
-  }
-  const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
-    next: { revalidate: 60 }, // ISR: 60초
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch posts: ${res.status}`);
-  }
-
-  const data: ApiResponse<PublicPost[]> = await res.json();
-  return data.data;
-}
-
-// Server-side fetch for ISR - 게시글 단건 조회 (slug 기반)
-export async function fetchPublicPostBySlug(
-  siteSlug: string,
-  postSlug: string,
-): Promise<PublicPost> {
-  const res = await fetch(
-    `${API_BASE_URL}/public/posts/${encodeURIComponent(postSlug)}?siteSlug=${encodeURIComponent(
-      siteSlug,
-    )}`,
-    {
-      next: { revalidate: 60 }, // ISR: 60초
-    },
-  );
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch post: ${res.status}`);
-  }
-
-  const data: ApiResponse<PublicPost> = await res.json();
-  return data.data;
 }
 
 // ===== Site Settings API (Admin) =====
@@ -429,62 +254,8 @@ export async function getSiteSettingsBySlug(slug: string): Promise<SiteSettings>
   return response.data.data;
 }
 
-// Server-side fetch for ISR (without axios interceptors)
-// X-Site-Slug 헤더를 사용하여 /public/site-settings 호출
-export async function fetchSiteSettings(slug: string): Promise<SiteSettings> {
-  const res = await fetch(`${API_BASE_URL}/public/site-settings`, {
-    headers: {
-      'X-Site-Slug': slug,
-    },
-    next: { revalidate: 60 }, // ISR: 60초
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch site settings: ${res.status}`);
-  }
-
-  const data: ApiResponse<SiteSettings> = await res.json();
-  return data.data;
-}
-
 // ===== Upload API =====
 
-export type PostImageType = 'THUMBNAIL' | 'CONTENT' | 'GALLERY';
-
-export interface PresignUploadRequest {
-  filename: string;
-  size: number;
-  mimeType: string;
-  imageType?: PostImageType;
-  postId?: string;
-}
-
-export interface PresignUploadResponse {
-  uploadUrl: string;
-  publicUrl: string;
-  s3Key: string;
-  maxSize: number;
-  imageId: string;
-}
-
-export interface CompleteUploadRequest {
-  s3Key: string;
-  postId?: string;
-  imageType?: PostImageType;
-}
-
-export interface CompleteUploadResponse {
-  imageId: string;
-  publicUrl: string;
-}
-
-export interface AbortUploadRequest {
-  s3Key: string;
-}
-
-/**
- * Presigned URL 생성 요청
- */
 export async function presignUpload(
   siteId: string,
   data: PresignUploadRequest,
@@ -496,9 +267,6 @@ export async function presignUpload(
   return response.data.data;
 }
 
-/**
- * 업로드 완료 확정
- */
 export async function completeUpload(
   siteId: string,
   data: CompleteUploadRequest,
@@ -510,43 +278,12 @@ export async function completeUpload(
   return response.data.data;
 }
 
-/**
- * 업로드 중단
- */
 export async function abortUpload(siteId: string, data: AbortUploadRequest): Promise<void> {
   await api.post(`/admin/sites/${siteId}/uploads/abort`, data);
 }
 
 // ===== Branding Asset API =====
 
-export type BrandingType = 'logo' | 'favicon' | 'og';
-
-export interface BrandingPresignRequest {
-  type: BrandingType;
-  filename: string;
-  size: number;
-  mimeType: string;
-}
-
-export interface BrandingPresignResponse {
-  uploadUrl: string;
-  tmpPublicUrl: string;
-  tmpKey: string;
-}
-
-export interface BrandingCommitRequest {
-  type: BrandingType;
-  tmpKey: string;
-}
-
-export interface BrandingCommitResponse {
-  publicUrl: string;
-  updatedAt: string;
-}
-
-/**
- * 브랜딩 에셋 Presigned URL 생성
- */
 export async function presignBrandingUpload(
   siteId: string,
   data: BrandingPresignRequest,
@@ -558,9 +295,6 @@ export async function presignBrandingUpload(
   return response.data.data;
 }
 
-/**
- * 브랜딩 에셋 업로드 확정
- */
 export async function commitBrandingUpload(
   siteId: string,
   data: BrandingCommitRequest,
@@ -570,41 +304,6 @@ export async function commitBrandingUpload(
     data,
   );
   return response.data.data;
-}
-
-// ===== Category API =====
-
-export interface Category {
-  id: string;
-  siteId: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  postCount?: number;
-}
-
-export interface PublicCategory {
-  slug: string;
-  name: string;
-  description: string | null;
-  postCount?: number;
-}
-
-export interface CreateCategoryRequest {
-  slug: string;
-  name: string;
-  description?: string;
-  sortOrder?: number;
-}
-
-export interface UpdateCategoryRequest {
-  slug?: string;
-  name?: string;
-  description?: string;
-  sortOrder?: number;
 }
 
 // ===== Admin Category API =====
@@ -638,7 +337,7 @@ export async function deleteCategory(siteId: string, id: string): Promise<void> 
   await api.delete(`/admin/sites/${siteId}/categories/${id}`);
 }
 
-// ===== Public Category API =====
+// ===== Public Category API (클라이언트) =====
 
 export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
   const response = await api.get<ApiResponse<PublicCategory[]>>('/public/categories', {
@@ -647,30 +346,7 @@ export async function getPublicCategories(siteSlug: string): Promise<PublicCateg
   return response.data.data;
 }
 
-// Server-side fetch for ISR (without axios interceptors)
-export async function fetchPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
-  const res = await fetch(
-    `${API_BASE_URL}/public/categories?siteSlug=${encodeURIComponent(siteSlug)}`,
-    {
-      next: { revalidate: 60 }, // ISR: 60초
-    },
-  );
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch categories: ${res.status}`);
-  }
-
-  const data: ApiResponse<PublicCategory[]> = await res.json();
-  return data.data;
-}
-
 // ===== Admin Site API =====
-
-export interface AdminSite {
-  id: string;
-  name: string;
-  slug: string;
-}
 
 export async function getAdminSites(): Promise<AdminSite[]> {
   const response = await api.get<ApiResponse<AdminSite[]>>('/admin/sites');
