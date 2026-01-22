@@ -2,22 +2,43 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
 import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
+import { DataPagination } from '@/components/common/DataPagination';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 
+const ITEMS_PER_PAGE = 5;
+
 export default function AdminPostsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const siteId = params.siteId as string;
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const { data: posts, isLoading, error } = useAdminPosts(siteId, selectedCategoryId || undefined);
+  const currentPage = Number(searchParams.get('page')) || 1;
+
+  const { data, isLoading, error } = useAdminPosts(siteId, {
+    categoryId: selectedCategoryId || undefined,
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+  });
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+
+  const posts = data?.items;
+  const meta = data?.meta;
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page.toString());
+    router.push(`/admin/${siteId}/posts?${params.toString()}`);
+  };
 
   if (isLoading) {
     return (
@@ -68,7 +89,13 @@ export default function AdminPostsPage() {
             {/* 카테고리 필터 */}
             <select
               value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              onChange={(e) => {
+                setSelectedCategoryId(e.target.value);
+                // 카테고리 변경 시 페이지를 1로 리셋
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('page');
+                router.push(`/admin/${siteId}/posts?${params.toString()}`);
+              }}
               disabled={categoriesLoading}
               className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -83,87 +110,99 @@ export default function AdminPostsPage() {
         </div>
         {/* 썸네일 이미지 추가 */}
         {posts && posts.length > 0 ? (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    썸네일
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    제목
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    카테고리
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작성일
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {posts.map((post) => (
-                  <tr
-                    key={post.id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => (window.location.href = `/admin/${siteId}/posts/${post.id}`)}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {post.ogImageUrl && (
-                          <div className="w-16 h-16 rounded-md overflow-hidden">
-                            <Image
-                              src={post.ogImageUrl}
-                              alt={post.title || '썸네일'}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/${siteId}/posts/${post.id}`}
-                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {post.title || <span className="text-gray-400">(제목없음)</span>}
-                      </Link>
-                      <div className="text-xs text-gray-500">/{post.slug}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">{post.categoryName || '-'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          post.status === PostStatus.PUBLISHED
-                            ? 'bg-green-100 text-green-800'
-                            : post.status === PostStatus.PRIVATE
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {post.status === PostStatus.PUBLISHED
-                          ? '발행됨'
-                          : post.status === PostStatus.PRIVATE
-                            ? '비공개'
-                            : '임시저장'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(post.createdAt).toLocaleDateString('ko-KR')}
-                    </td>
+          <>
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 w-24 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      썸네일
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      제목
+                    </th>
+                    <th className="px-6 py-3 w-40 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      카테고리
+                    </th>
+                    <th className="px-6 py-3 w-32 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      상태
+                    </th>
+                    <th className="px-6 py-3 w-36 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      작성일
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {posts.map((post) => (
+                    <tr
+                      key={post.id}
+                      className="h-20 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => (window.location.href = `/admin/${siteId}/posts/${post.id}`)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {post.ogImageUrl && (
+                            <div className="aspect-video h-14 rounded-md overflow-hidden">
+                              <Image
+                                src={post.ogImageUrl}
+                                alt={post.title || '썸네일'}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/admin/${siteId}/posts/${post.id}`}
+                          className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {post.title || <span className="text-gray-400">(제목없음)</span>}
+                        </Link>
+                        <div className="text-xs text-gray-500">/{post.slug}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">{post.categoryName || '-'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            post.status === PostStatus.PUBLISHED
+                              ? 'bg-green-100 text-green-800'
+                              : post.status === PostStatus.PRIVATE
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {post.status === PostStatus.PUBLISHED
+                            ? '발행됨'
+                            : post.status === PostStatus.PRIVATE
+                              ? '비공개'
+                              : '임시저장'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {dayjs(post.createdAt).format('YYYY-MM-DD')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 페이지네이션 */}
+            {meta && (
+              <DataPagination
+                meta={meta}
+                onPageChange={handlePageChange}
+                itemLabel="게시글"
+                className="mt-6"
+              />
+            )}
+          </>
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-500 mb-4">아직 작성한 게시글이 없습니다.</p>

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ValidationInput } from '@/components/form/ValidationInput';
+import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { createSite, checkSlugAvailability, completeOnboarding } from '@/lib/api';

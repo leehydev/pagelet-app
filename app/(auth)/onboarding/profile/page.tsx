@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ValidationInput } from '@/components/form/ValidationInput';
+import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { updateProfile } from '@/lib/api';
 import { useUser } from '@/hooks/use-user';
 

@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatPostDate } from '@/lib/date-utils';
-import { PostContent } from '@/components/post/PostContent';
+import { PostContent } from '@/components/app/post/PostContent';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;

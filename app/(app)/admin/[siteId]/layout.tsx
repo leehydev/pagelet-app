@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { AdminSidebar } from '@/components/layout/AdminSidebar';
+import { AdminSidebar } from '@/components/app/layout/AdminSidebar';
 import { SiteProvider } from '@/contexts/site-context';
 import { useAdminSites } from '@/hooks/use-admin-sites';
 

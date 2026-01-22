@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
-import { Stepper } from '@/components/onboarding/Stepper';
+import { Stepper } from '@/components/app/onboarding/Stepper';
 
 const STEP_PATHS = {
   1: '/onboarding/profile',

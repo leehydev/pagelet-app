@@ -10,16 +10,16 @@ import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { PostStatus, revalidatePost } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { ValidationInput } from '@/components/form/ValidationInput';
+import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { ThumbnailInput } from '@/components/post/ThumbnailInput';
-import { TiptapEditor, type TiptapEditorRef } from '@/components/editor/TiptapEditor';
+import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
+import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
 
 // Zod 스키마 정의

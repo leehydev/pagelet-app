@@ -33,6 +33,7 @@ import type {
   BrandingCommitResponse,
   CreateCategoryRequest,
   UpdateCategoryRequest,
+  PaginatedResponse,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -170,10 +171,20 @@ export async function createAdminPost(siteId: string, data: CreatePostRequest): 
   return response.data.data;
 }
 
-export async function getAdminPosts(siteId: string, categoryId?: string): Promise<PostListItem[]> {
-  const response = await api.get<ApiResponse<PostListItem[]>>(`/admin/sites/${siteId}/posts`, {
-    params: categoryId ? { categoryId: categoryId } : {},
-  });
+export async function getAdminPosts(
+  siteId: string,
+  params?: { categoryId?: string; page?: number; limit?: number },
+): Promise<PaginatedResponse<PostListItem>> {
+  const response = await api.get<ApiResponse<PaginatedResponse<PostListItem>>>(
+    `/admin/sites/${siteId}/posts`,
+    {
+      params: {
+        ...(params?.categoryId && { categoryId: params.categoryId }),
+        ...(params?.page && { page: params.page }),
+        ...(params?.limit && { limit: params.limit }),
+      },
+    },
+  );
   return response.data.data;
 }
 

@@ -271,6 +271,27 @@ export interface UpdateCategoryRequest {
   sortOrder?: number;
 }
 
+// ===== Pagination Types =====
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  meta: PaginationMeta;
+}
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
 // ===== Admin Site Types =====
 
 export interface AdminSite {

@@ -9,8 +9,9 @@ import {
   updateAdminPost,
   CreatePostRequest,
   UpdatePostRequest,
-  PostListItem,
   PublicPost,
+  PaginatedResponse,
+  PostListItem,
 } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -26,12 +27,15 @@ export const postKeys = {
 // ===== Admin Hooks =====
 
 /**
- * Admin 게시글 목록 조회 훅
+ * Admin 게시글 목록 조회 훅 (페이징 지원)
  */
-export function useAdminPosts(siteId: string, categoryId?: string) {
-  return useQuery<PostListItem[], AxiosError>({
-    queryKey: [...postKeys.adminList(siteId), categoryId || 'all'],
-    queryFn: () => getAdminPosts(siteId, categoryId),
+export function useAdminPosts(
+  siteId: string,
+  params?: { categoryId?: string; page?: number; limit?: number },
+) {
+  return useQuery<PaginatedResponse<PostListItem>, AxiosError>({
+    queryKey: [...postKeys.adminList(siteId), params?.categoryId || 'all', params?.page || 1],
+    queryFn: () => getAdminPosts(siteId, params),
     enabled: !!siteId,
   });
 }
