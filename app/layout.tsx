@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Pagelet',
   description: 'Pagelet - 멀티 테넌트 플랫폼',
+  icons: {
+    icon: '/images/favicon.ico',
+  },
   openGraph: {
     title: 'Pagelet',
     description: 'Pagelet - 멀티 테넌트 플랫폼',
