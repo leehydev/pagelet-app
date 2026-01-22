@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { UpdateCategoryRequest } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 export default function EditCategoryPage() {
   const router = useRouter();

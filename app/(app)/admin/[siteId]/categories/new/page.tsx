@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { CreateCategoryRequest } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 export default function NewCategoryPage() {
   const router = useRouter();

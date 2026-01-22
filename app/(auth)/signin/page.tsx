@@ -2,7 +2,7 @@
 
 import { KeyRound } from 'lucide-react';
 
-import SocialLoginButton from '@/components/signin/SocialLoginButton';
+import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
 
 export default function SignInPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';

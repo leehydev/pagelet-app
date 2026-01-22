@@ -1,4 +1,4 @@
-import AuthHeader from '@/components/layout/AuthHeader';
+import AuthHeader from '@/components/app/layout/AuthHeader';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

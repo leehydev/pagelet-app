@@ -2,7 +2,7 @@
 
 import { Toaster } from 'sonner';
 
-import { GlobalModal } from '@/components/modal/GlobalModal';
+import { GlobalModal } from '@/components/app/modal/GlobalModal';
 
 import { ReactQueryProvider } from '@/lib/react-query';
 import { ThemeProvider } from './theme-provider';

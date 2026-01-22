@@ -6,7 +6,7 @@ import { useAdminCategories, useDeleteCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Category } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { Plus } from 'lucide-react';
 
 export default function AdminCategoriesPage() {

@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAdminPost, PostStatus, revalidatePost } from '@/lib/api';
-import { PostContent } from '@/components/post/PostContent';
+import { PostContent } from '@/components/app/post/PostContent';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -29,7 +29,7 @@ import {
   AlertTriangle,
   Lock,
 } from 'lucide-react';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useDeletePost, useUpdatePostStatus } from '@/hooks/use-posts';
 import { useState } from 'react';

@@ -7,10 +7,10 @@ import { z } from 'zod';
 import { useAdminSiteSettings, useUpdateAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useSiteId } from '@/contexts/site-context';
 import { Button } from '@/components/ui/button';
-import { ValidationInput } from '@/components/form/ValidationInput';
-import { ValidationTextarea } from '@/components/form/ValidationTextarea';
-import { BrandingUploader } from '@/components/settings/BrandingUploader';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { ValidationInput } from '@/components/app/form/ValidationInput';
+import { ValidationTextarea } from '@/components/app/form/ValidationTextarea';
+import { BrandingUploader } from '@/components/app/settings/BrandingUploader';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 // 섹션 정의
 const SECTIONS = [

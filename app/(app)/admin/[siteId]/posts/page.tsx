@@ -7,20 +7,12 @@ import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from '@/components/ui/pagination';
+import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
+import { DataPagination } from '@/components/common/DataPagination';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 export default function AdminPostsPage() {
   const params = useParams();
@@ -45,41 +37,6 @@ export default function AdminPostsPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
     router.push(`/admin/${siteId}/posts?${params.toString()}`);
-  };
-
-  // 페이지 번호 배열 생성 (현재 페이지 주변 표시)
-  const getPageNumbers = () => {
-    if (!meta) return [];
-    const pages: (number | 'ellipsis')[] = [];
-    const totalPages = meta.totalPages;
-    const current = meta.page;
-
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    pages.push(1);
-
-    if (current > 3) {
-      pages.push('ellipsis');
-    }
-
-    const start = Math.max(2, current - 1);
-    const end = Math.min(totalPages - 1, current + 1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    if (current < totalPages - 2) {
-      pages.push('ellipsis');
-    }
-
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
-
-    return pages;
   };
 
   if (isLoading) {
@@ -236,52 +193,13 @@ export default function AdminPostsPage() {
             </div>
 
             {/* 페이지네이션 */}
-            {meta && meta.totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  총 {meta.totalItems}개 중 {(meta.page - 1) * meta.limit + 1}-
-                  {Math.min(meta.page * meta.limit, meta.totalItems)}개
-                </p>
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => meta.hasPreviousPage && handlePageChange(meta.page - 1)}
-                        className={
-                          !meta.hasPreviousPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                        }
-                      />
-                    </PaginationItem>
-
-                    {getPageNumbers().map((page, index) =>
-                      page === 'ellipsis' ? (
-                        <PaginationItem key={`ellipsis-${index}`}>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            onClick={() => handlePageChange(page)}
-                            isActive={page === meta.page}
-                            className="cursor-pointer"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ),
-                    )}
-
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => meta.hasNextPage && handlePageChange(meta.page + 1)}
-                        className={
-                          !meta.hasNextPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
+            {meta && (
+              <DataPagination
+                meta={meta}
+                onPageChange={handlePageChange}
+                itemLabel="게시글"
+                className="mt-6"
+              />
             )}
           </>
         ) : (

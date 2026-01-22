@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ErrorFallback, type ErrorFallbackProps } from '@/components/ErrorFallback';
+import { ErrorFallback, type ErrorFallbackProps } from '@/components/common/ErrorFallback';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
