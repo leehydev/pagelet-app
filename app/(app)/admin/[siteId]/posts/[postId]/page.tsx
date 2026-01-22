@@ -51,7 +51,7 @@ export default function AdminPostDetailPage() {
     enabled: !!siteId && !!postId,
   });
 
-  const { data: siteSettings } = useAdminSiteSettings(siteId);
+  const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
   const deletePostMutation = useDeletePost(siteId);
   const updateStatusMutation = useUpdatePostStatus(siteId, postId);
 
@@ -59,9 +59,10 @@ export default function AdminPostDetailPage() {
   const publishedDate = post?.publishedAt ? formatPostDate(post.publishedAt) : null;
 
   // 발행된 게시글의 블로그 URL (full URL)
+  // 에러 발생 시 조용히 처리 (블로그 URL은 선택적 기능)
   const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
   const blogPostUrl =
-    post?.status === PostStatus.PUBLISHED && siteSettings?.slug && post?.slug
+    post?.status === PostStatus.PUBLISHED && siteSettings?.slug && post?.slug && !siteSettingsError
       ? `https://${siteSettings.slug}.${tenantDomain}/posts/${post.slug}`
       : null;
 
@@ -129,8 +130,14 @@ export default function AdminPostDetailPage() {
     setIsDeleting(true);
     try {
       await deletePostMutation.mutateAsync(postId);
-      // ISR 캐시 무효화
-      await revalidatePost(siteSettings.slug, post.slug);
+      // ISR 캐시 무효화 (에러 발생해도 조용히 처리)
+      if (siteSettings.slug && post.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, post.slug);
+        } catch (revalidateError) {
+          console.warn('Failed to revalidate post:', revalidateError);
+        }
+      }
       router.push(`/admin/${siteId}/posts`);
     } catch (error) {
       console.error('Failed to delete post:', error);
@@ -143,8 +150,14 @@ export default function AdminPostDetailPage() {
     if (!post || !siteSettings) return;
     try {
       await updateStatusMutation.mutateAsync({ status: newStatus });
-      // ISR 캐시 무효화
-      await revalidatePost(siteSettings.slug, post.slug);
+      // ISR 캐시 무효화 (에러 발생해도 조용히 처리)
+      if (siteSettings.slug && post.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, post.slug);
+        } catch (revalidateError) {
+          console.warn('Failed to revalidate post:', revalidateError);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
     } catch (error) {
       console.error('Failed to update status:', error);

@@ -16,7 +16,11 @@ export default function EditCategoryPage() {
   const siteId = params.siteId as string;
   const categoryId = params.id as string;
 
-  const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = useAdminCategories(siteId);
   const updateCategory = useUpdateCategory(siteId);
 
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +77,19 @@ export default function EditCategoryPage() {
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
             <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (categoriesError) {
+    return (
+      <>
+        <AdminPageHeader breadcrumb="Management" title="Edit Category" />
+        <div className="p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            카테고리 목록을 불러오는데 실패했습니다.
           </div>
         </div>
       </>

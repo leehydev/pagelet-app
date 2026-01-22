@@ -18,7 +18,7 @@ export default function AdminIndexPage() {
   const { data: sites, isLoading, isError } = useAdminSites();
 
   useEffect(() => {
-    if (isLoading || !sites) return;
+    if (isLoading || isError || !sites) return;
 
     if (sites.length === 0) {
       // 사이트 없음 → 온보딩
@@ -40,7 +40,7 @@ export default function AdminIndexPage() {
       router.replace(`/admin/${validSite.id}`);
     }
     // else: 사이트 선택 UI 표시 (아래 렌더링)
-  }, [sites, isLoading, router]);
+  }, [sites, isLoading, isError, router]);
 
   if (isLoading) {
     return (
@@ -90,4 +90,3 @@ export default function AdminIndexPage() {
 
   return null;
 }
-

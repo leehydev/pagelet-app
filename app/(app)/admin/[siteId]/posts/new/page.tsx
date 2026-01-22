@@ -54,8 +54,8 @@ export default function NewPostPage() {
   const siteId = params.siteId as string;
 
   const createPost = useCreatePost(siteId);
-  const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
-  const { data: siteSettings } = useAdminSiteSettings(siteId);
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useAdminCategories(siteId);
+  const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
   const editorRef = useRef<TiptapEditorRef>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -132,9 +132,14 @@ export default function NewPostPage() {
         ogImageUrl: ogImageUrl.trim() || undefined,
       });
 
-      // 발행 시 ISR 캐시 무효화
+      // 발행 시 ISR 캐시 무효화 (에러 발생해도 조용히 처리)
       if (status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
-        await revalidatePost(siteSettings.slug, createdPost.slug);
+        try {
+          await revalidatePost(siteSettings.slug, createdPost.slug);
+        } catch (revalidateError) {
+          // ISR revalidation 실패는 조용히 처리 (게시글 저장은 성공했으므로)
+          console.warn('Failed to revalidate post:', revalidateError);
+        }
       }
 
       router.push(`/admin/${siteId}/posts`);
@@ -252,37 +257,43 @@ export default function NewPostPage() {
               {/* 카테고리 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-3">카테고리</h3>
-                <Controller
-                  name="categoryId"
-                  control={methods.control}
-                  render={({ field, fieldState }) => (
-                    <div className="flex flex-col gap-1.5">
-                      <select
-                        {...field}
-                        id="categoryId"
-                        disabled={categoriesLoading}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-invalid={!!fieldState.error}
-                      >
-                        {categoriesLoading ? (
-                          <option>불러오는 중...</option>
-                        ) : (
-                          <>
-                            <option value="">미분류</option>
-                            {categories?.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </>
+                {categoriesError ? (
+                  <div className="text-sm text-red-500">
+                    카테고리 목록을 불러올 수 없습니다
+                  </div>
+                ) : (
+                  <Controller
+                    name="categoryId"
+                    control={methods.control}
+                    render={({ field, fieldState }) => (
+                      <div className="flex flex-col gap-1.5">
+                        <select
+                          {...field}
+                          id="categoryId"
+                          disabled={categoriesLoading}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-invalid={!!fieldState.error}
+                        >
+                          {categoriesLoading ? (
+                            <option>불러오는 중...</option>
+                          ) : (
+                            <>
+                              <option value="">미분류</option>
+                              {categories?.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {fieldState.error && (
+                          <p className="text-sm text-red-500">{fieldState.error.message}</p>
                         )}
-                      </select>
-                      {fieldState.error && (
-                        <p className="text-sm text-red-500">{fieldState.error.message}</p>
-                      )}
-                    </div>
-                  )}
-                />
+                      </div>
+                    )}
+                  />
+                )}
               </div>
 
               {/* URL Slug */}

@@ -29,7 +29,7 @@ export default function AdminPostsPage() {
     page: currentPage,
     limit: ITEMS_PER_PAGE,
   });
-  const { data: categories, isLoading: categoriesLoading } = useAdminCategories(siteId);
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useAdminCategories(siteId);
 
   const posts = data?.items;
   const meta = data?.meta;
@@ -85,6 +85,12 @@ export default function AdminPostsPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
+          {/* 카테고리 조회 에러 메시지 */}
+          {categoriesError && (
+            <div className="text-sm text-red-500">
+              카테고리 목록을 불러올 수 없습니다
+            </div>
+          )}
           {/* 카테고리 필터 */}
           {/* <div className="flex items-center gap-3">
             <select

@@ -16,7 +16,7 @@ export function SiteSwitcher() {
   const params = useParams();
   const currentSiteId = params.siteId as string;
 
-  const { data: sites, isLoading } = useAdminSites();
+  const { data: sites, isLoading, isError } = useAdminSites();
 
   const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSiteId = e.target.value;
@@ -32,6 +32,14 @@ export function SiteSwitcher() {
 
   if (isLoading || !sites) {
     return <div className="h-9 w-40 animate-pulse bg-muted rounded" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="text-sm text-red-500 px-2">
+        사이트 목록을 불러올 수 없습니다
+      </div>
+    );
   }
 
   // 사이트 1개면 이름만 표시

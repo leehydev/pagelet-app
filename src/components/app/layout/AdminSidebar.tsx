@@ -22,14 +22,15 @@ export function AdminSidebar() {
   const params = useParams();
   const siteId = params.siteId as string;
   const isSidebarOpen = useAdminSidebarStore((s) => s.isSidebarOpen);
-  const { data: siteSettings } = useAdminSiteSettings(siteId);
+  const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 기본 경로 prefix
   const baseHref = `/admin/${siteId}`;
 
   // 블로그 full URL 생성 (https://[slug].pagelet-dev.kr 또는 https://[slug].pagelet.kr)
+  // 에러 발생 시 조용히 처리 (블로그 URL은 선택적 기능)
   const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
-  const blogUrl = siteSettings?.slug
+  const blogUrl = siteSettings?.slug && !siteSettingsError
     ? `https://${siteSettings.slug}.${tenantDomain}`
     : null;
 
