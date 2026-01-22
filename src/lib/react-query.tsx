@@ -6,6 +6,8 @@ import { ReactNode, useState } from 'react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
+import { api } from './api';
+
 // Devtools는 개발 환경에서만 동적으로 로드
 const ReactQueryDevtools =
   process.env.NODE_ENV === 'development'
@@ -19,13 +21,15 @@ const ReactQueryDevtools =
     : () => null;
 
 /**
- * 로그아웃 처리 (쿠키 삭제 후 로그인 페이지로 이동)
+ * 로그아웃 처리 (서버 API 호출 후 로그인 페이지로 이동)
  */
-function logout() {
+async function logout() {
   if (typeof window !== 'undefined') {
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    window.location.href = '/signin';
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      window.location.href = '/signin';
+    }
   }
 }
 

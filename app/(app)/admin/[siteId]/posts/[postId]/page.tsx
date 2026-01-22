@@ -7,8 +7,9 @@ import { PostContent } from '@/components/post/PostContent';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPostDate } from '@/lib/date-utils';
-import { Pencil } from 'lucide-react';
+import { Pencil, ExternalLink } from 'lucide-react';
 import { AdminPageHeader } from '@/components/layout/AdminPageHeader';
+import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 
 export default function AdminPostDetailPage() {
   const params = useParams<{ siteId: string; postId: string }>();
@@ -25,8 +26,17 @@ export default function AdminPostDetailPage() {
     enabled: !!siteId && !!postId,
   });
 
+  const { data: siteSettings } = useAdminSiteSettings(siteId);
+
   const formattedDate = post ? formatPostDate(post.createdAt) : '';
   const publishedDate = post?.publishedAt ? formatPostDate(post.publishedAt) : null;
+
+  // 발행된 게시글의 블로그 URL (full URL)
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
+  const blogPostUrl =
+    post?.status === PostStatus.PUBLISHED && siteSettings?.slug && post?.slug
+      ? `https://${siteSettings.slug}.${tenantDomain}/posts/${post.slug}`
+      : null;
 
   if (isLoading) {
     return (
@@ -88,6 +98,20 @@ export default function AdminPostDetailPage() {
               <>
                 <span>·</span>
                 <span>발행: {publishedDate}</span>
+              </>
+            )}
+            {blogPostUrl && (
+              <>
+                <span>·</span>
+                <a
+                  href={blogPostUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  블로그에서 보기
+                </a>
               </>
             )}
           </div>

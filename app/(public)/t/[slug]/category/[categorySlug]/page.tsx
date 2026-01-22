@@ -1,11 +1,5 @@
-import {
-  fetchPublicPosts,
-  fetchPublicCategories,
-  fetchSiteSettings,
-  PublicPost,
-  PublicCategory,
-  SiteSettings,
-} from '@/lib/api';
+import type { PublicPost, PublicCategory, SiteSettings } from '@/lib/api';
+import { fetchPublicPosts, fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';

@@ -1,4 +1,5 @@
-import { fetchPublicPosts, fetchSiteSettings, PublicPost, SiteSettings } from '@/lib/api';
+import type { PublicPost, SiteSettings } from '@/lib/api';
+import { fetchPublicPosts, fetchSiteSettings } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';

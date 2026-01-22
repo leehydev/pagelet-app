@@ -1,4 +1,5 @@
-import { fetchPublicPostBySlug, fetchSiteSettings, PublicPost, SiteSettings } from '@/lib/api';
+import type { PublicPost, SiteSettings } from '@/lib/api';
+import { fetchPublicPostBySlug, fetchSiteSettings } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
