@@ -331,6 +331,7 @@ export default function EditPostPage() {
                   <FieldLabel>내용</FieldLabel>
                   <TiptapEditor
                     ref={editorRef}
+                    siteId={siteId}
                     content={post.contentJson || undefined}
                     onEditorReady={handleEditorReady}
                   />
