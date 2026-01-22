@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
-import { LayoutDashboard, FileText, Settings, FolderTree, ExternalLink, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, FolderTree, ExternalLink, LogOut, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
@@ -14,6 +14,7 @@ const menuItems = [
   { path: '', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/posts', label: 'Posts', icon: FileText },
   { path: '/categories', label: 'Categories', icon: FolderTree },
+  { path: '/banners', label: 'Banners', icon: ImageIcon },
   { path: '/settings', label: 'Site Settings', icon: Settings },
 ];
 

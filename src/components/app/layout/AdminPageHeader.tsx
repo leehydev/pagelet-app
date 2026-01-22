@@ -10,7 +10,8 @@ export interface AdminPageHeaderProps {
   title: string;
   action?: {
     label: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
     icon?: LucideIcon;
   };
   extra?: React.ReactNode;
@@ -55,12 +56,19 @@ export function AdminPageHeader({ breadcrumb, title, action, extra }: AdminPageH
           <div className="flex items-center gap-3">
             {extra}
             {action && (
-              <Link href={action.href}>
-                <Button className="gap-2">
+              action.href ? (
+                <Link href={action.href}>
+                  <Button className="gap-2">
+                    {action.icon && <action.icon className="h-4 w-4" />}
+                    {action.label}
+                  </Button>
+                </Link>
+              ) : (
+                <Button className="gap-2" onClick={action.onClick}>
                   {action.icon && <action.icon className="h-4 w-4" />}
                   {action.label}
                 </Button>
-              </Link>
+              )
             )}
           </div>
         </div>

@@ -299,3 +299,71 @@ export interface AdminSite {
   name: string;
   slug: string;
 }
+
+// ===== Banner Types =====
+
+export type DeviceType = 'desktop' | 'mobile';
+
+export interface Banner {
+  id: string;
+  siteId: string;
+  imageUrl: string;
+  linkUrl: string | null;
+  openInNewTab: boolean;
+  isActive: boolean;
+  startAt: string | null;
+  endAt: string | null;
+  displayOrder: number;
+  altText: string | null;
+  deviceType: DeviceType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicBanner {
+  id: string;
+  imageUrl: string;
+  linkUrl: string | null;
+  openInNewTab: boolean;
+  altText: string | null;
+  displayOrder: number;
+}
+
+export interface BannerPresignRequest {
+  filename: string;
+  size: number;
+  mimeType: string;
+}
+
+export interface BannerPresignResponse {
+  uploadUrl: string;
+  publicUrl: string;
+}
+
+export interface CreateBannerRequest {
+  imageUrl: string;
+  linkUrl?: string;
+  openInNewTab?: boolean;
+  isActive?: boolean;
+  startAt?: string;
+  endAt?: string;
+  displayOrder?: number;
+  altText?: string;
+  deviceType: DeviceType;
+}
+
+export interface UpdateBannerRequest {
+  imageUrl?: string;
+  linkUrl?: string | null;
+  openInNewTab?: boolean;
+  isActive?: boolean;
+  startAt?: string | null;
+  endAt?: string | null;
+  displayOrder?: number;
+  altText?: string | null;
+}
+
+export interface BannerOrderRequest {
+  bannerIds: string[];
+  deviceType: DeviceType;
+}

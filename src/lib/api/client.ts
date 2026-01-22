@@ -34,6 +34,13 @@ import type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
   PaginatedResponse,
+  Banner,
+  DeviceType,
+  BannerPresignRequest,
+  BannerPresignResponse,
+  CreateBannerRequest,
+  UpdateBannerRequest,
+  BannerOrderRequest,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -388,5 +395,62 @@ export async function getPublicCategories(siteSlug: string): Promise<PublicCateg
 
 export async function getAdminSites(): Promise<AdminSite[]> {
   const response = await api.get<ApiResponse<AdminSite[]>>('/admin/sites');
+  return response.data.data;
+}
+
+// ===== Admin Banner API =====
+
+export async function presignBannerUpload(
+  siteId: string,
+  data: BannerPresignRequest,
+): Promise<BannerPresignResponse> {
+  const response = await api.post<ApiResponse<BannerPresignResponse>>(
+    `/admin/sites/${siteId}/banners/presign`,
+    data,
+  );
+  return response.data.data;
+}
+
+export async function createBanner(siteId: string, data: CreateBannerRequest): Promise<Banner> {
+  const response = await api.post<ApiResponse<Banner>>(`/admin/sites/${siteId}/banners`, data);
+  return response.data.data;
+}
+
+export async function getAdminBanners(siteId: string, deviceType?: DeviceType): Promise<Banner[]> {
+  const response = await api.get<ApiResponse<Banner[]>>(`/admin/sites/${siteId}/banners`, {
+    params: deviceType ? { deviceType } : undefined,
+  });
+  return response.data.data;
+}
+
+export async function getAdminBanner(siteId: string, bannerId: string): Promise<Banner> {
+  const response = await api.get<ApiResponse<Banner>>(`/admin/sites/${siteId}/banners/${bannerId}`);
+  return response.data.data;
+}
+
+export async function updateBanner(
+  siteId: string,
+  bannerId: string,
+  data: UpdateBannerRequest,
+): Promise<Banner> {
+  const response = await api.put<ApiResponse<Banner>>(
+    `/admin/sites/${siteId}/banners/${bannerId}`,
+    data,
+  );
+  return response.data.data;
+}
+
+export async function deleteBanner(siteId: string, bannerId: string): Promise<void> {
+  await api.delete(`/admin/sites/${siteId}/banners/${bannerId}`);
+}
+
+export async function updateBannerOrder(
+  siteId: string,
+  data: BannerOrderRequest,
+): Promise<Banner[]> {
+  const response = await api.put<ApiResponse<Banner[]>>(
+    `/admin/sites/${siteId}/banners/order`,
+    data,
+  );
   return response.data.data;
 }
