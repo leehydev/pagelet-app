@@ -108,7 +108,6 @@ export interface UpdateSiteSettingsRequest {
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
-  canonicalBaseUrl?: string | null;
   robotsIndex?: boolean;
   contactEmail?: string | null;
   contactPhone?: string | null;

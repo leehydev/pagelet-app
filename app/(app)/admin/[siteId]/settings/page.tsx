@@ -28,12 +28,6 @@ const siteSettingsSchema = z.object({
   seoTitle: z.string().max(120, '최대 120자까지 입력 가능합니다').nullable().or(z.literal('')),
   seoDescription: z.string().nullable().or(z.literal('')),
   seoKeywords: z.string().max(500).nullable().or(z.literal('')),
-  canonicalBaseUrl: z
-    .string()
-    .url('올바른 URL 형식이어야 합니다')
-    .max(500)
-    .nullable()
-    .or(z.literal('')),
   robotsIndex: z.boolean(),
   // 연락처
   contactEmail: z
@@ -77,7 +71,6 @@ export default function SiteSettingsPage() {
       seoTitle: '',
       seoDescription: '',
       seoKeywords: '',
-      canonicalBaseUrl: '',
       robotsIndex: false,
       contactEmail: '',
       contactPhone: '',
@@ -105,7 +98,6 @@ export default function SiteSettingsPage() {
         seoTitle: settings.seoTitle || '',
         seoDescription: settings.seoDescription || '',
         seoKeywords: settings.seoKeywords || '',
-        canonicalBaseUrl: settings.canonicalBaseUrl || '',
         robotsIndex: settings.robotsIndex || false,
         contactEmail: settings.contactEmail || '',
         contactPhone: settings.contactPhone || '',
@@ -303,12 +295,6 @@ export default function SiteSettingsPage() {
                       label="SEO 설명"
                       placeholder="검색 결과에 표시될 사이트 설명"
                       rows={3}
-                    />
-                    <ValidationInput
-                      name="canonicalBaseUrl"
-                      label="Canonical 기본 URL"
-                      type="url"
-                      placeholder="https://yourdomain.com"
                     />
                     <SwitchField
                       label="검색 엔진 인덱싱 허용"
