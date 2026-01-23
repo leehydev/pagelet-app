@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getAdminSiteSettings,
   updateAdminSiteSettings,
+  revalidateSiteSettings,
   SiteSettings,
   UpdateSiteSettingsRequest,
 } from '@/lib/api';
@@ -30,6 +31,8 @@ export function useUpdateAdminSiteSettings(siteId: string) {
       queryClient.setQueryData(siteSettingsKeys.admin(siteId), data);
       // slug별 캐시도 무효화
       queryClient.invalidateQueries({ queryKey: siteSettingsKeys.bySlug(data.slug) });
+      // ISR 캐시 무효화 (공개 블로그에 즉시 반영)
+      revalidateSiteSettings(data.slug);
     },
   });
 }

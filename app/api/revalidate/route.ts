@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       // 데이터 캐시 태그
       tagsToRevalidate.push(`posts-${siteSlug}`);
       tagsToRevalidate.push(`banners-${siteSlug}`);
+      tagsToRevalidate.push(`site-settings-${siteSlug}`);
     }
 
     // 데이터 캐시 무효화 (태그 기반)
