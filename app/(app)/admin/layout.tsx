@@ -24,6 +24,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (isLoading) return;
 
+    // PENDING 상태면 대기 페이지로 리다이렉트
+    if (user?.accountStatus === AccountStatus.PENDING) {
+      router.replace('/waiting');
+      return;
+    }
+
     // 온보딩 상태면 온보딩 페이지로 리다이렉트
     if (user?.accountStatus === AccountStatus.ONBOARDING) {
       const step = user.onboardingStep || 1;
@@ -32,8 +38,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [user, isLoading, router]);
 
-  // 로딩 중이거나 온보딩 상태면 로딩 UI 표시
-  if (isLoading || user?.accountStatus === AccountStatus.ONBOARDING) {
+  // 로딩 중이거나 온보딩/PENDING 상태면 로딩 UI 표시
+  if (isLoading || user?.accountStatus === AccountStatus.ONBOARDING || user?.accountStatus === AccountStatus.PENDING) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
