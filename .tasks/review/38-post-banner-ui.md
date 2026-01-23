@@ -85,36 +85,40 @@
 ## 구현 체크리스트
 
 ### API/타입
-- [ ] API 타입 정의 수정 (Banner, PublicBanner, CreateBannerRequest 등)
-- [ ] 게시글 검색 API 훅 추가
-- [ ] 배너 관련 API 훅 수정 (deviceType 제거)
-- [ ] DeviceType 관련 코드 제거
+- [x] API 타입 정의 수정 (Banner, PublicBanner, CreateBannerRequest 등)
+- [x] 게시글 검색 API 훅 추가
+- [x] 배너 관련 API 훅 수정 (deviceType 제거)
+- [x] DeviceType 관련 코드 제거
 
 ### 컴포넌트 신규
-- [ ] PostSearchAutocomplete 컴포넌트
-- [ ] PostBannerCard 컴포넌트 (가로형 레이아웃)
-- [ ] PostBannerSlider 컴포넌트
+- [x] PostSearchAutocomplete 컴포넌트
+- [x] PostBannerCard 컴포넌트 (가로형 레이아웃)
+- [x] PostBannerSlider 컴포넌트
 
 ### 컴포넌트 수정
-- [ ] BannerList 수정 (탭 제거)
-- [ ] BannerFormSheet 수정 (게시글 선택)
-- [ ] BannerCard 수정 또는 제거
-- [ ] BannerUploader 제거
+- [x] BannerList 수정 (탭 제거)
+- [x] BannerFormSheet 수정 (게시글 선택)
+- [x] BannerCard 수정 또는 제거
+- [x] BannerUploader 제거
 
 ### 페이지
-- [ ] 어드민 배너 관리 페이지 수정
-- [ ] 공개 블로그 페이지 배너 섹션 수정
+- [x] 어드민 배너 관리 페이지 수정
+- [x] 공개 블로그 페이지 배너 섹션 수정
 
 ## 영향받는 파일
 
 ### 수정
 - `src/lib/api/types.ts`
+- `src/lib/api/client.ts`
+- `src/lib/api/server.ts`
 - `src/hooks/use-banners.ts`
 - `src/hooks/use-posts.ts`
 - `src/components/app/banners/BannerList.tsx`
 - `src/components/app/banners/BannerFormSheet.tsx`
 - `src/components/app/banners/BannerCard.tsx`
-- `src/components/public/BannerSlider.tsx`
+- `src/components/app/banners/index.ts`
+- `app/(app)/admin/[siteId]/banners/page.tsx`
+- `app/(public)/t/[slug]/page.tsx`
 
 ### 신규
 - `src/components/app/banners/PostSearchAutocomplete.tsx`
@@ -123,3 +127,5 @@
 
 ### 삭제
 - `src/components/app/banners/BannerUploader.tsx`
+- `src/components/public/BannerSlider.tsx`
+- `src/hooks/use-banner-upload.ts`

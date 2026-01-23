@@ -302,68 +302,72 @@ export interface AdminSite {
 
 // ===== Banner Types =====
 
-export type DeviceType = 'desktop' | 'mobile';
+export interface BannerPost {
+  id: string;
+  title: string;
+  subtitle: string;
+  slug: string;
+  ogImageUrl: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  publishedAt: string | null;
+}
 
 export interface Banner {
   id: string;
-  siteId: string;
-  imageUrl: string;
-  linkUrl: string | null;
-  openInNewTab: boolean;
+  postId: string;
+  post: BannerPost;
   isActive: boolean;
   startAt: string | null;
   endAt: string | null;
   displayOrder: number;
-  altText: string | null;
-  deviceType: DeviceType;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface PublicBannerPost {
+  title: string;
+  subtitle: string;
+  slug: string;
+  ogImageUrl: string | null;
+  categoryName: string | null;
+  publishedAt: string | null;
+}
+
 export interface PublicBanner {
   id: string;
-  imageUrl: string;
-  linkUrl: string | null;
-  openInNewTab: boolean;
-  altText: string | null;
+  post: PublicBannerPost;
   displayOrder: number;
 }
 
-export interface BannerPresignRequest {
-  filename: string;
-  size: number;
-  mimeType: string;
-}
-
-export interface BannerPresignResponse {
-  uploadUrl: string;
-  publicUrl: string;
-}
-
 export interface CreateBannerRequest {
-  imageUrl: string;
-  linkUrl?: string;
-  openInNewTab?: boolean;
+  postId: string;
   isActive?: boolean;
   startAt?: string;
   endAt?: string;
   displayOrder?: number;
-  altText?: string;
-  deviceType: DeviceType;
 }
 
 export interface UpdateBannerRequest {
-  imageUrl?: string;
-  linkUrl?: string | null;
-  openInNewTab?: boolean;
+  postId?: string;
   isActive?: boolean;
   startAt?: string | null;
   endAt?: string | null;
   displayOrder?: number;
-  altText?: string | null;
 }
 
 export interface BannerOrderRequest {
   bannerIds: string[];
-  deviceType: DeviceType;
+}
+
+// ===== Post Search Types =====
+
+export interface PostSearchResult {
+  id: string;
+  title: string;
+  subtitle: string;
+  ogImageUrl: string | null;
+  categoryName: string | null;
+  publishedAt: string | null;
+  status: string;
 }

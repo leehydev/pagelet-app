@@ -35,12 +35,10 @@ import type {
   UpdateCategoryRequest,
   PaginatedResponse,
   Banner,
-  DeviceType,
-  BannerPresignRequest,
-  BannerPresignResponse,
   CreateBannerRequest,
   UpdateBannerRequest,
   BannerOrderRequest,
+  PostSearchResult,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -400,26 +398,13 @@ export async function getAdminSites(): Promise<AdminSite[]> {
 
 // ===== Admin Banner API =====
 
-export async function presignBannerUpload(
-  siteId: string,
-  data: BannerPresignRequest,
-): Promise<BannerPresignResponse> {
-  const response = await api.post<ApiResponse<BannerPresignResponse>>(
-    `/admin/sites/${siteId}/banners/presign`,
-    data,
-  );
-  return response.data.data;
-}
-
 export async function createBanner(siteId: string, data: CreateBannerRequest): Promise<Banner> {
   const response = await api.post<ApiResponse<Banner>>(`/admin/sites/${siteId}/banners`, data);
   return response.data.data;
 }
 
-export async function getAdminBanners(siteId: string, deviceType?: DeviceType): Promise<Banner[]> {
-  const response = await api.get<ApiResponse<Banner[]>>(`/admin/sites/${siteId}/banners`, {
-    params: deviceType ? { deviceType } : undefined,
-  });
+export async function getAdminBanners(siteId: string): Promise<Banner[]> {
+  const response = await api.get<ApiResponse<Banner[]>>(`/admin/sites/${siteId}/banners`);
   return response.data.data;
 }
 
@@ -451,6 +436,22 @@ export async function updateBannerOrder(
   const response = await api.put<ApiResponse<Banner[]>>(
     `/admin/sites/${siteId}/banners/order`,
     data,
+  );
+  return response.data.data;
+}
+
+// ===== Post Search API =====
+
+export async function searchPosts(
+  siteId: string,
+  query: string,
+  limit: number = 10,
+): Promise<PostSearchResult[]> {
+  const response = await api.get<ApiResponse<PostSearchResult[]>>(
+    `/admin/sites/${siteId}/posts/search`,
+    {
+      params: { q: query, limit },
+    },
   );
   return response.data.data;
 }

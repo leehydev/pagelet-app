@@ -7,11 +7,13 @@ import {
   getPublicPosts,
   deleteAdminPost,
   updateAdminPost,
+  searchPosts,
   CreatePostRequest,
   UpdatePostRequest,
   PublicPost,
   PaginatedResponse,
   PostListItem,
+  PostSearchResult,
 } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -106,5 +108,19 @@ export function usePublicPosts(siteSlug: string, categorySlug?: string) {
     queryKey: [...postKeys.publicList(siteSlug), categorySlug || 'all'],
     queryFn: () => getPublicPosts(siteSlug, categorySlug),
     enabled: !!siteSlug,
+  });
+}
+
+// ===== Search Hooks =====
+
+/**
+ * 게시글 검색 훅 (배너 등록용)
+ */
+export function useSearchPosts(siteId: string, query: string, enabled: boolean = true) {
+  return useQuery<PostSearchResult[], AxiosError>({
+    queryKey: [...postKeys.admin(siteId), 'search', query],
+    queryFn: () => searchPosts(siteId, query, 10),
+    enabled: !!siteId && !!query && query.length >= 1 && enabled,
+    staleTime: 30000, // 30초간 캐시 유지
   });
 }

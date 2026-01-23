@@ -1,7 +1,8 @@
-import type { PublicPost, SiteSettings } from '@/lib/api';
-import { fetchPublicPosts, fetchSiteSettings } from '@/lib/api/server';
+import type { PublicPost, PublicBanner, SiteSettings } from '@/lib/api';
+import { fetchPublicPosts, fetchSiteSettings, fetchPublicBanners } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
+import { PostBannerSlider } from '@/components/public/PostBannerSlider';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -71,15 +72,35 @@ async function getPosts(siteSlug: string, limit?: number): Promise<PublicPost[]>
   }
 }
 
+async function getBanners(siteSlug: string): Promise<PublicBanner[]> {
+  try {
+    return await fetchPublicBanners(siteSlug);
+  } catch (error) {
+    // 배너는 부가 데이터이므로 에러 로깅 후 빈 배열 반환 (graceful degradation)
+    console.error('Failed to fetch banners:', error);
+    return [];
+  }
+}
+
 export default async function TenantHomePage({ params }: PageProps) {
   const { slug } = await params;
-  const [settings, recentPosts] = await Promise.all([
+  const [settings, recentPosts, banners] = await Promise.all([
     getSiteSettings(slug),
     getPosts(slug, 6), // 최신 게시글 6개만
+    getBanners(slug),
   ]);
 
   return (
     <>
+      {/* 배너 섹션 */}
+      {banners.length > 0 && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-5xl mx-auto px-4 py-8">
+            <PostBannerSlider banners={banners} siteSlug={slug} />
+          </div>
+        </div>
+      )}
+
       {/* 히어로 섹션 */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-16">

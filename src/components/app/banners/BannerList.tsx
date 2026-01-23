@@ -16,10 +16,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminBanners, useUpdateBannerOrder, useDeleteBanner } from '@/hooks/use-banners';
-import { Banner, DeviceType } from '@/lib/api';
+import { Banner } from '@/lib/api';
 import { BannerCard } from './BannerCard';
 import { BannerFormSheet } from './BannerFormSheet';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
@@ -37,14 +36,12 @@ import {
 
 interface BannerListProps {
   siteId: string;
-  activeTab: DeviceType;
-  onTabChange: (tab: DeviceType) => void;
 }
 
 const MAX_BANNERS = 5;
 
-export function BannerList({ siteId, activeTab, onTabChange }: BannerListProps) {
-  const { data: banners, isLoading, error } = useAdminBanners(siteId, activeTab);
+export function BannerList({ siteId }: BannerListProps) {
+  const { data: banners, isLoading, error } = useAdminBanners(siteId);
   const updateOrderMutation = useUpdateBannerOrder(siteId);
   const deleteMutation = useDeleteBanner(siteId);
 
@@ -70,10 +67,7 @@ export function BannerList({ siteId, activeTab, onTabChange }: BannerListProps) 
     const bannerIds = reordered.map((b) => b.id);
 
     try {
-      await updateOrderMutation.mutateAsync({
-        bannerIds,
-        deviceType: activeTab,
-      });
+      await updateOrderMutation.mutateAsync({ bannerIds });
       toast.success('순서가 변경되었습니다.');
     } catch (err) {
       const message = getErrorDisplayMessage(err, '순서 변경에 실패했습니다.');
@@ -106,9 +100,9 @@ export function BannerList({ siteId, activeTab, onTabChange }: BannerListProps) 
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
+        <div className="grid grid-cols-1 gap-4">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
         </div>
       </div>
     );
@@ -126,43 +120,27 @@ export function BannerList({ siteId, activeTab, onTabChange }: BannerListProps) 
 
   return (
     <div className="space-y-4">
-      <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as DeviceType)}>
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="desktop">데스크톱</TabsTrigger>
-            <TabsTrigger value="mobile">모바일</TabsTrigger>
-          </TabsList>
-          <p className="text-sm text-muted-foreground">
-            현재 {bannerCount}/{MAX_BANNERS}개 등록
-          </p>
-        </div>
+      {/* 상태 표시 */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          현재 {bannerCount}/{MAX_BANNERS}개 등록
+        </p>
+      </div>
 
-        <TabsContent value="desktop" className="mt-4">
-          <BannerListContent
-            banners={banners || []}
-            sensors={sensors}
-            onDragEnd={handleDragEnd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </TabsContent>
-
-        <TabsContent value="mobile" className="mt-4">
-          <BannerListContent
-            banners={banners || []}
-            sensors={sensors}
-            onDragEnd={handleDragEnd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* 배너 목록 */}
+      <BannerListContent
+        banners={banners || []}
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       {/* 수정 폼 */}
       <BannerFormSheet
         siteId={siteId}
-        deviceType={activeTab}
         banner={editBanner || undefined}
+        existingPostIds={(banners || []).map((b) => b.postId)}
         open={!!editBanner}
         onOpenChange={(open) => !open && setEditBanner(null)}
         onSuccess={() => setEditBanner(null)}
@@ -179,10 +157,7 @@ export function BannerList({ siteId, activeTab, onTabChange }: BannerListProps) 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
               삭제
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -200,13 +175,7 @@ interface BannerListContentProps {
   onDelete: (banner: Banner) => void;
 }
 
-function BannerListContent({
-  banners,
-  sensors,
-  onDragEnd,
-  onEdit,
-  onDelete,
-}: BannerListContentProps) {
+function BannerListContent({ banners, sensors, onDragEnd, onEdit, onDelete }: BannerListContentProps) {
   if (banners.length === 0) {
     return (
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
@@ -221,7 +190,7 @@ function BannerListContent({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={banners.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {banners.map((banner) => (
             <BannerCard
               key={banner.id}

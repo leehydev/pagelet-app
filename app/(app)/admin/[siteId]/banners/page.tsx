@@ -5,14 +5,17 @@ import { useState } from 'react';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { BannerList } from '@/components/app/banners/BannerList';
 import { BannerFormSheet } from '@/components/app/banners/BannerFormSheet';
+import { useAdminBanners } from '@/hooks/use-banners';
 import { Plus } from 'lucide-react';
-import { DeviceType } from '@/lib/api';
 
 export default function AdminBannersPage() {
   const params = useParams();
   const siteId = params.siteId as string;
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<DeviceType>('desktop');
+
+  // 기존 배너의 게시글 ID 목록 가져오기
+  const { data: banners } = useAdminBanners(siteId);
+  const existingPostIds = banners?.map((b) => b.postId) || [];
 
   const handleAddBanner = () => {
     setIsFormOpen(true);
@@ -34,15 +37,11 @@ export default function AdminBannersPage() {
         }}
       />
       <div className="p-6">
-        <BannerList
-          siteId={siteId}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <BannerList siteId={siteId} />
       </div>
       <BannerFormSheet
         siteId={siteId}
-        deviceType={activeTab}
+        existingPostIds={existingPostIds}
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSuccess={handleFormClose}
