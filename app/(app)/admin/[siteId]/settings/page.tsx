@@ -11,11 +11,13 @@ import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { ValidationTextarea } from '@/components/app/form/ValidationTextarea';
 import { BrandingUploader } from '@/components/app/settings/BrandingUploader';
 import { FontSelector } from '@/components/app/settings/FontSelector';
+import { CtaSettingsSection } from '@/components/app/settings/CtaSettingsSection';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 // 섹션 정의
 const SECTIONS = [
   { id: 'branding', label: '브랜딩' },
+  { id: 'cta', label: 'CTA 버튼' },
   { id: 'seo', label: 'SEO 설정' },
   { id: 'contact', label: '연락처' },
   { id: 'social', label: '소셜 링크' },
@@ -265,6 +267,18 @@ export default function SiteSettingsPage() {
                 <FontSelector siteId={siteId} currentFontKey={settings.fontKey} />
               </div>
             </section>
+
+            {/* CTA 버튼 섹션 (독립적으로 관리) */}
+            <div className="mb-8">
+              <CtaSettingsSection
+                siteId={siteId}
+                settings={settings}
+                onUpdate={async (updates) => {
+                  await updateSettings.mutateAsync(updates);
+                }}
+                isUpdating={updateSettings.isPending}
+              />
+            </div>
 
             <FormProvider {...methods}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

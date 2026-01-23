@@ -40,6 +40,11 @@ const VALIDATION_RULES: Record<
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
   },
+  cta: {
+    maxSize: 2 * 1024 * 1024, // 2MB
+    allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
+    accept: 'image/png,image/jpeg,image/webp',
+  },
 };
 
 export function BrandingUploader({
