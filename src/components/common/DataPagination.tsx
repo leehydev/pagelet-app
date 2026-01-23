@@ -64,6 +64,7 @@ export function DataPagination({
       <nav className="flex items-center gap-1" aria-label="Pagination">
         {/* Previous 버튼 */}
         <button
+          type="button"
           onClick={() => hasPreviousPage && onPageChange(page - 1)}
           disabled={!hasPreviousPage}
           className={cn(
@@ -82,6 +83,7 @@ export function DataPagination({
         <div className="flex items-center gap-1">
           {getPageNumbers().map((pageNum) => (
             <button
+              type="button"
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
               className={cn(
@@ -98,6 +100,7 @@ export function DataPagination({
 
         {/* Next 버튼 */}
         <button
+          type="button"
           onClick={() => hasNextPage && onPageChange(page + 1)}
           disabled={!hasNextPage}
           className={cn(

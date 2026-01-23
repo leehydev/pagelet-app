@@ -68,7 +68,7 @@ export function PostBannerSlider({
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {banners.map((banner) => (
-            <div key={banner.id} className="w-full shrink-0 h-72">
+            <div key={banner.id} className="w-full shrink-0 h-96 md:h-72">
               <PostBannerCard banner={banner} siteSlug={siteSlug} />
             </div>
           ))}
@@ -76,9 +76,10 @@ export function PostBannerSlider({
       </div>
 
       {/* 인디케이터 도트 */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center gap-2 my-4">
         {banners.map((_, index) => (
           <button
+            type="button"
             key={index}
             onClick={() => goToSlide(index)}
             className={cn(

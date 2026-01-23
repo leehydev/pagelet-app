@@ -101,6 +101,7 @@ export function BannerCard({ banner, onEdit, onDelete }: BannerCardProps) {
 
           {/* 드래그 핸들 */}
           <button
+            type="button"
             {...attributes}
             {...listeners}
             className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-md shadow-sm cursor-grab active:cursor-grabbing"

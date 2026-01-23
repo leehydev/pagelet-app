@@ -123,6 +123,7 @@ export function AdminSidebar() {
           </a>
         )}
         <button
+          type="button"
           onClick={handleLogout}
           className={cn(
             'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',

@@ -94,24 +94,12 @@ export default async function TenantHomePage({ params }: PageProps) {
     <>
       {/* 배너 섹션 */}
       {banners.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-white border-b border-gray-200 py-8">
           <div className="max-w-7xl mx-auto px-4">
             <PostBannerSlider banners={banners} siteSlug={slug} />
           </div>
         </div>
       )}
-
-      {/* 히어로 섹션 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4">{settings.name}</h1>
-            {settings.seoDescription && (
-              <p className="text-xl text-gray-600 mb-8">{settings.seoDescription}</p>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* 최신 게시글 섹션 */}
       {recentPosts.length > 0 && (

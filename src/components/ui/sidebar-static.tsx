@@ -274,6 +274,7 @@ function StaticSidebarRail({ className, ...props }: React.ComponentProps<'button
 
   return (
     <button
+      type="button"
       data-sidebar="rail"
       data-slot="static-sidebar-rail"
       aria-label="Toggle Sidebar"
