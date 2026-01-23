@@ -161,14 +161,6 @@ export async function createPost(data: CreatePostRequest): Promise<void> {
   await api.post('/posts', data);
 }
 
-export async function skipFirstPost(): Promise<void> {
-  await api.post('/onboarding/skip-first-post');
-}
-
-export async function completeOnboarding(): Promise<void> {
-  await api.post('/onboarding/complete');
-}
-
 // ===== Admin Post API =====
 
 export async function createAdminPost(siteId: string, data: CreatePostRequest): Promise<Post> {
