@@ -1,12 +1,11 @@
-import { CategoryTabs } from '@/components/public/CategoryTabs';
 import type { PublicCategory, SiteSettings } from '@/lib/api';
 import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
-import { SocialLinks } from '@/components/public/SocialLinks';
-import { ContactInfo } from '@/components/public/ContactInfo';
-import { BusinessInfo } from '@/components/public/BusinessInfo';
-import Link from 'next/link';
+import { CtaBanner } from '@/components/public/CtaBanner';
+import { CtaTracker } from '@/components/public/CtaTracker';
 import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
+import { Header } from '@/components/public/layout/Header';
+import { Footer } from '@/components/public/layout/Footer';
 
 const notoSans = Noto_Sans_KR({
   subsets: ['latin'],
@@ -66,70 +65,37 @@ export default async function PublicLayout({
 }) {
   const { slug } = await params;
   const [settings, categories] = await Promise.all([getSiteSettings(slug), getCategories(slug)]);
-  const siteName = settings.name;
   const fontClass = getFontClass(settings.fontKey);
 
   return (
-    <div className={`flex-1 ${fontClass}`} style={{ fontFamily: 'var(--font-base)' }}>
+    <div
+      className={`flex-1 ${fontClass} flex flex-col bg-gray-50`}
+      style={{ fontFamily: 'var(--font-base)' }}
+    >
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4 max-w-[40vw] overflow-hidden">
-            <Link href="/">
-              {settings.logoImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={settings.logoImageUrl}
-                  alt={siteName}
-                  className="h-10 w-auto object-contain"
-                />
-              ) : (
-                <h1
-                  className={`break-all font-bold text-gray-900`}
-                  style={{
-                    fontSize:
-                      siteName.length > 16
-                        ? '1rem'
-                        : siteName.length > 8
-                        ? '1.25rem'
-                        : siteName.length > 4
-                        ? '1.5rem'
-                        : '1.75rem',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {siteName}
-                </h1>
-              )}
-            </Link>
-          </div>
-          {/* 검색 기능은 나중에 추가 가능 */}
-        </div>
-      </header>
-
-      {/* 카테고리 탭 */}
-      {categories.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4">
-            <CategoryTabs categories={categories} siteSlug={slug} />
-          </div>
-        </div>
-      )}
+      <Header
+        logoImageUrl={settings.logoImageUrl || ''}
+        siteName={settings.name}
+        categories={categories}
+        siteSlug={slug}
+      />
 
       {/* 페이지 콘텐츠 */}
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 background-light">{children}</div>
 
-      {/* 푸터 */}
-      <footer className="border-t border-gray-200 bg-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <ContactInfo settings={settings} />
-            <SocialLinks settings={settings} />
-          </div>
-          <BusinessInfo settings={settings} />
-          <div className="text-center text-sm text-gray-500 pt-2">Powered by Pagelet</div>
-        </div>
-      </footer>
+      {/* CTA 배너 */}
+      <CtaBanner settings={settings} />
+
+      {/* 페이지뷰 추적 */}
+      <CtaTracker siteId={settings.id} />
+
+      <Footer
+        logoImageUrl={settings.logoImageUrl || ''}
+        siteSlug={slug}
+        siteName={settings.name}
+        categories={categories}
+        settings={settings}
+      />
     </div>
   );
 }

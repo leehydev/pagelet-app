@@ -70,7 +70,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
   const currentStep = user.onboardingStep || 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Pagelet 시작하기</h1>

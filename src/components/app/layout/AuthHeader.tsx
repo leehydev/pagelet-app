@@ -12,7 +12,7 @@ export default function AuthHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-50">
-      <div className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
+      <div className="h-full max-w-6xl mx-auto px-4 flex items-center justify-between">
         {/* 로고 */}
         <Link href="/" className="flex items-center">
           <Image

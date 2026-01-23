@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { PostsPageHeader } from '@/components/public/common/PostsPageHeader';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -75,20 +76,14 @@ export default async function AllPostsPage({ params }: PageProps) {
   return (
     <>
       {/* 전체 게시글 섹션 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="mb-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              ALL POSTS
-            </span>
-          </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">전체 게시글</h2>
-          <p className="text-gray-600 text-lg max-w-3xl">모든 게시글을 확인하세요.</p>
-        </div>
-      </div>
+      <PostsPageHeader
+        category="All Posts"
+        title="전체 게시글"
+        description="모든 게시글을 확인하세요."
+      />
 
       {/* 메인 콘텐츠 */}
-      <main className="mx-auto max-w-7xl h-full px-4 py-8">
+      <main className="mx-auto max-w-6xl h-full px-4 py-8">
         {posts.length > 0 ? (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (

@@ -68,7 +68,7 @@ export function PostBannerSlider({
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {banners.map((banner) => (
-            <div key={banner.id} className="w-full shrink-0 h-96 md:h-72">
+            <div key={banner.id} className="w-full shrink-0 min-h-[430px]">
               <PostBannerCard banner={banner} siteSlug={siteSlug} />
             </div>
           ))}

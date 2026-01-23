@@ -69,7 +69,12 @@ export interface PublicPost {
   ogImageUrl: string | null;
   categoryName: string | null;
   categorySlug: string | null;
+  adjacentPosts?: AdjacentPost[];
 }
+
+// ===== CTA Types =====
+
+export type CtaType = 'text' | 'image';
 
 export interface SiteSettings {
   id: string;
@@ -99,6 +104,12 @@ export interface SiteSettings {
   businessNumber: string | null;
   businessName: string | null;
   representativeName: string | null;
+  // CTA 설정
+  ctaEnabled: boolean;
+  ctaType: CtaType | null;
+  ctaText: string | null;
+  ctaImageUrl: string | null;
+  ctaLink: string | null;
 }
 
 export interface UpdateSiteSettingsRequest {
@@ -119,6 +130,12 @@ export interface UpdateSiteSettingsRequest {
   businessNumber?: string | null;
   businessName?: string | null;
   representativeName?: string | null;
+  // CTA 설정
+  ctaEnabled?: boolean;
+  ctaType?: CtaType | null;
+  ctaText?: string | null;
+  ctaImageUrl?: string | null;
+  ctaLink?: string | null;
 }
 
 export interface PostListItem {
@@ -217,7 +234,7 @@ export interface AbortUploadRequest {
 
 // ===== Branding Types =====
 
-export type BrandingType = 'logo' | 'favicon' | 'og';
+export type BrandingType = 'logo' | 'favicon' | 'og' | 'cta';
 
 export interface BrandingPresignRequest {
   type: BrandingType;
@@ -377,4 +394,41 @@ export interface PostSearchResult {
   categoryName: string | null;
   publishedAt: string | null;
   status: string;
+}
+
+// ===== Adjacent Post Types =====
+
+export interface AdjacentPost {
+  id: string;
+  title: string;
+  slug: string;
+  ogImageUrl: string | null;
+  publishedAt: string;
+  isCurrent: boolean;
+}
+
+// ===== Analytics Types =====
+
+export interface AnalyticsOverview {
+  totalViews: number;
+  uniqueVisitors: number;
+  todayVisitors: number;
+  yesterdayVisitors: number;
+  totalCtaClicks: number;
+  todayCtaClicks: number;
+}
+
+export interface PostAnalytics {
+  postId: string;
+  title: string;
+  views: number;
+  uniqueVisitors: number;
+  ctaClicks: number;
+}
+
+export interface DailyAnalytics {
+  date: string; // YYYY-MM-DD
+  views: number;
+  visitors: number;
+  ctaClicks: number;
 }
