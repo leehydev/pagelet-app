@@ -76,7 +76,7 @@ export default async function AllPostsPage({ params }: PageProps) {
     <>
       {/* 전체 게시글 섹션 헤더 */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-2">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               ALL POSTS
@@ -88,7 +88,7 @@ export default async function AllPostsPage({ params }: PageProps) {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <main className="mx-auto max-w-7xl h-full px-4 py-8">
+      <main className="mx-auto max-w-6xl h-full px-4 py-8">
         {posts.length > 0 ? (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (

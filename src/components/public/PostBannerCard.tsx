@@ -48,7 +48,7 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
             )}
 
             {/* 제목 */}
-            <h3 className="font-bold text-xl md:text-3xl text-gray-900 line-clamp-2">
+            <h3 className="font-bold text-xl break-keep md:text-4xl text-gray-900 line-clamp-2">
               {post.title}
             </h3>
 
@@ -63,6 +63,12 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
                 {dayjs(post.publishedAt).format('YYYY.MM.DD')}
               </p>
             )}
+
+            <div className="hidden md:block mt-4">
+              <Button>
+                <span>게시글 보기</span>
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
@@ -76,7 +82,9 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
             )}
           </div>
 
-          <h1 className="font-bold text-xl md:text-4xl text-gray-900 line-clamp-2">{post.title}</h1>
+          <h1 className="font-bold text-xl break-keep md:text-[40px] text-gray-900 line-clamp-2">
+            {post.title}
+          </h1>
 
           {/* 소제목 */}
           {post.subtitle && (

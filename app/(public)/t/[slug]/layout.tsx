@@ -3,8 +3,6 @@ import type { PublicCategory, SiteSettings } from '@/lib/api';
 import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import { SocialLinks } from '@/components/public/SocialLinks';
-import { ContactInfo } from '@/components/public/ContactInfo';
-import { BusinessInfo } from '@/components/public/BusinessInfo';
 import { CtaBanner } from '@/components/public/CtaBanner';
 import { CtaTracker } from '@/components/public/CtaTracker';
 import Link from 'next/link';
@@ -75,7 +73,7 @@ export default async function PublicLayout({
     <div className={`flex-1 ${fontClass}`} style={{ fontFamily: 'var(--font-base)' }}>
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 max-w-[40vw] overflow-hidden">
             <Link href="/">
               {settings.logoImageUrl ? (
@@ -93,10 +91,10 @@ export default async function PublicLayout({
                       siteName.length > 16
                         ? '1rem'
                         : siteName.length > 8
-                        ? '1.25rem'
-                        : siteName.length > 4
-                        ? '1.5rem'
-                        : '1.75rem',
+                          ? '1.25rem'
+                          : siteName.length > 4
+                            ? '1.5rem'
+                            : '1.75rem',
                     lineHeight: 1.2,
                   }}
                 >
@@ -112,7 +110,7 @@ export default async function PublicLayout({
       {/* 카테고리 탭 */}
       {categories.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-6xl mx-auto px-4">
             <CategoryTabs categories={categories} siteSlug={slug} />
           </div>
         </div>
@@ -128,14 +126,46 @@ export default async function PublicLayout({
       <CtaTracker siteId={settings.id} />
 
       {/* 푸터 */}
-      <footer className="border-t border-gray-200 bg-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <ContactInfo settings={settings} />
-            <SocialLinks settings={settings} />
+      <footer className="border-t  border-gray-200 bg-primary text-gray-500 font-semibold mt-auto">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* 왼쪽: 사업자 정보 */}
+            <div className="flex-1 space-y-1">
+              <p>
+                {settings.businessName} {settings.representativeName}
+              </p>
+              {settings.businessNumber && <p>사업자등록번호: {settings.businessNumber}</p>}
+              {settings.address && <p>{settings.address}</p>}
+            </div>
+
+            {/* 오른쪽: 연락처 및 소셜 */}
+            <div className="flex-1 flex flex-col items-start gap-3">
+              <div className="space-y-1 text-left">
+                {settings.contactEmail && (
+                  <p>
+                    <a href={`mailto:${settings.contactEmail}`} className="hover:text-gray-700">
+                      {settings.contactEmail}
+                    </a>
+                  </p>
+                )}
+                {settings.contactPhone && (
+                  <p>
+                    <a href={`tel:${settings.contactPhone}`} className="hover:text-gray-700">
+                      {settings.contactPhone}
+                    </a>
+                  </p>
+                )}
+              </div>
+              <SocialLinks settings={settings} />
+            </div>
           </div>
-          <BusinessInfo settings={settings} />
-          <div className="text-center text-sm text-gray-500 pt-2">Powered by Pagelet</div>
+
+          {/* Powered by */}
+          <div className="text-center text-sm text-gray-400 mt-8 pt-4 border-t border-gray-100">
+            <Link href={'https://' + process.env.NEXT_PUBLIC_TENANT_DOMAIN!}>
+              Powered by Pagelet
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

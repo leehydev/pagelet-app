@@ -45,7 +45,7 @@ export function CtaBanner({ settings, postId }: CtaBannerProps) {
   if (isImageType) {
     return (
       <div className="sticky bottom-0 w-full z-40 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <button onClick={handleClick} className="w-full cursor-pointer" aria-label="CTA 배너">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -66,7 +66,7 @@ export function CtaBanner({ settings, postId }: CtaBannerProps) {
 
   return (
     <div className="sticky bottom-0 w-full z-40 py-6">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-center">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-center">
         <button
           type="button"
           onClick={handleClick}

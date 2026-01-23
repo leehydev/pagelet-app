@@ -95,7 +95,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     <>
       {/* 게시글 헤더 */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 py-12">
           {/* 카테고리 */}
           {post.categoryName && (
             <div className="">
@@ -126,7 +126,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <main className="bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 py-12">
           <PostContent html={post.contentHtml} />
         </div>
       </main>
@@ -134,7 +134,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 인접 게시글 네비게이션 */}
       {post.adjacentPosts && post.adjacentPosts.length > 0 && (
         <div className="bg-gray-50 border-t border-gray-200">
-          <div className="max-w-4xl mx-auto px-4">
+          <div className="max-w-6xl mx-auto px-4">
             <AdjacentPostsNav posts={post.adjacentPosts} siteSlug={slug} />
           </div>
         </div>
@@ -142,13 +142,13 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 하단 네비게이션 */}
       <div className="bg-gray-50 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <Link
               href={`/t/${slug}/posts`}
               className="text-gray-600 hover:text-gray-900 transition-colors"
             >
-              ← 전체 게시글
+              전체 게시글
             </Link>
             <Link
               href={`/t/${slug}`}
