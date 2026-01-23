@@ -28,9 +28,9 @@
 4. GitHub 이슈 스테이터스를 "In Progress"로 변경
 
 ```bash
-# main 브랜치에서 최신 코드 pull
-git checkout main
-git pull origin main
+# development 브랜치에서 최신 코드 pull
+git checkout development
+git pull origin development
 
 # 새 브랜치 생성
 git checkout -b feature/[이슈번호]-[간단한-설명]
@@ -111,8 +111,9 @@ EOF
 # 원격 푸시
 git push -u origin feature/[이슈번호]-[간단한-설명]
 
-# PR 생성
+# PR 생성 (development 브랜치로)
 gh pr create \
+  --base development \
   --title "feat: 게시글 목록 페이지네이션 구현" \
   --body "$(cat <<'EOF'
 ## Summary
@@ -240,7 +241,7 @@ export function PostList({ siteId }: { siteId: string }) {
 
 ## 주의사항
 
-1. **main 브랜치 직접 커밋 금지**: 항상 feature 브랜치에서 작업
+1. **development/main 브랜치 직접 커밋 금지**: 항상 feature 브랜치에서 작업 후 development에 PR
 2. **빌드 실패 시 푸시 금지**: 모든 검증 통과 후 푸시
 3. **민감 정보 커밋 금지**: `.env`, credentials 등 제외
 4. **force push 금지**: `--force` 옵션 사용하지 않음
