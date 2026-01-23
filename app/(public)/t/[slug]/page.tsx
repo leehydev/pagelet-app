@@ -1,11 +1,11 @@
 import type { PublicPost, PublicBanner, SiteSettings } from '@/lib/api';
 import { fetchPublicPosts, fetchSiteSettings, fetchPublicBanners } from '@/lib/api/server';
 import { Metadata } from 'next';
-import { PostCard } from '@/components/public/PostCard';
-import { PostBannerSlider } from '@/components/public/PostBannerSlider';
 import { notFound } from 'next/navigation';
+import { PostBannerSlider } from '@/components/public/layout/PostBannerSlider';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ImprovedPostCard } from '@/components/public/common/PostCard';
+import { EmptyPostList } from '@/components/public/common/EmptyPostList';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -86,61 +86,45 @@ async function getBanners(siteSlug: string): Promise<PublicBanner[]> {
 
 export default async function TenantHomePage({ params }: PageProps) {
   const { slug } = await params;
-  const [settings, recentPosts, banners] = await Promise.all([
+  const [, recentPosts, banners] = await Promise.all([
     getSiteSettings(slug),
     getPosts(slug, 6), // 최신 게시글 6개만
     getBanners(slug),
   ]);
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {/* 배너 섹션 */}
       {banners.length > 0 && (
-        <div className="bg-white border-b border-gray-200 py-8">
-          <div className="max-w-6xl mx-auto px-4">
+        <div className="py-8">
+          <div className="max-w-6xl mx-auto">
             <PostBannerSlider banners={banners} siteSlug={slug} />
           </div>
         </div>
       )}
 
-      {/* 최신 게시글 섹션 */}
+      {/* Latest Posts Section */}
       {recentPosts.length > 0 && (
-        <div className="bg-gray-50">
-          <div className="max-w-6xl mx-auto px-4 py-12">
+        <section className="bg-gray-50 flex-1">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">최신 게시글</h2>
-                <p className="text-gray-600">최근에 올라온 게시글을 확인해보세요.</p>
+              <h2 className="text-3xl font-bold text-gray-900">Latest Posts</h2>
+              <div className="flex items-center gap-2">
+                <Link href={`/t/${slug}/posts`}>전체글 보기</Link>
               </div>
-              <Link
-                href={`/t/${slug}/posts`}
-                className="px-6 py-2 text-gray-500 rounded-md transition-colors font-medium"
-              >
-                <span>전체 보기</span> <ChevronRight size={14} className="inline-block pb-px" />
-              </Link>
             </div>
 
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {recentPosts.map((post) => (
-                <PostCard key={post.id} post={post} siteSlug={slug} />
+                <ImprovedPostCard key={post.id} post={post} siteSlug={slug} />
               ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* 게시글이 없을 때 */}
-      {recentPosts.length === 0 && (
-        <div className="bg-gray-50">
-          <div className="max-w-6xl mx-auto px-4 py-16">
-            <div className="text-center">
-              <div className="text-gray-400 text-6xl mb-4">📝</div>
-              <h2 className="text-2xl font-medium text-gray-600 mb-2">아직 게시글이 없습니다</h2>
-              <p className="text-gray-400">곧 새로운 글이 올라올 예정입니다.</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      {/* Empty State */}
+      {recentPosts.length === 0 && <EmptyPostList siteSlug={slug} showBackLink={false} />}
+    </div>
   );
 }

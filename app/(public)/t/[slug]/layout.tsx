@@ -1,12 +1,11 @@
-import { CategoryTabs } from '@/components/public/CategoryTabs';
 import type { PublicCategory, SiteSettings } from '@/lib/api';
 import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
-import { SocialLinks } from '@/components/public/SocialLinks';
 import { CtaBanner } from '@/components/public/CtaBanner';
 import { CtaTracker } from '@/components/public/CtaTracker';
-import Link from 'next/link';
 import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
+import { Header } from '@/components/public/layout/Header';
+import { Footer } from '@/components/public/layout/Footer';
 
 const notoSans = Noto_Sans_KR({
   subsets: ['latin'],
@@ -66,58 +65,23 @@ export default async function PublicLayout({
 }) {
   const { slug } = await params;
   const [settings, categories] = await Promise.all([getSiteSettings(slug), getCategories(slug)]);
-  const siteName = settings.name;
   const fontClass = getFontClass(settings.fontKey);
 
   return (
-    <div className={`flex-1 ${fontClass}`} style={{ fontFamily: 'var(--font-base)' }}>
+    <div
+      className={`flex-1 ${fontClass} flex flex-col bg-gray-50`}
+      style={{ fontFamily: 'var(--font-base)' }}
+    >
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4 max-w-[40vw] overflow-hidden">
-            <Link href="/">
-              {settings.logoImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={settings.logoImageUrl}
-                  alt={siteName}
-                  className="h-10 w-auto object-contain"
-                />
-              ) : (
-                <h1
-                  className={`break-all font-bold text-gray-900`}
-                  style={{
-                    fontSize:
-                      siteName.length > 16
-                        ? '1rem'
-                        : siteName.length > 8
-                          ? '1.25rem'
-                          : siteName.length > 4
-                            ? '1.5rem'
-                            : '1.75rem',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {siteName}
-                </h1>
-              )}
-            </Link>
-          </div>
-          {/* 검색 기능은 나중에 추가 가능 */}
-        </div>
-      </header>
-
-      {/* 카테고리 탭 */}
-      {categories.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4">
-            <CategoryTabs categories={categories} siteSlug={slug} />
-          </div>
-        </div>
-      )}
+      <Header
+        logoImageUrl={settings.logoImageUrl || ''}
+        siteName={settings.name}
+        categories={categories}
+        siteSlug={slug}
+      />
 
       {/* 페이지 콘텐츠 */}
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 background-light">{children}</div>
 
       {/* CTA 배너 */}
       <CtaBanner settings={settings} />
@@ -125,49 +89,13 @@ export default async function PublicLayout({
       {/* 페이지뷰 추적 */}
       <CtaTracker siteId={settings.id} />
 
-      {/* 푸터 */}
-      <footer className="border-t  border-gray-200 bg-primary text-gray-500 font-semibold mt-auto">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* 왼쪽: 사업자 정보 */}
-            <div className="flex-1 space-y-1">
-              <p>
-                {settings.businessName} {settings.representativeName}
-              </p>
-              {settings.businessNumber && <p>사업자등록번호: {settings.businessNumber}</p>}
-              {settings.address && <p>{settings.address}</p>}
-            </div>
-
-            {/* 오른쪽: 연락처 및 소셜 */}
-            <div className="flex-1 flex flex-col items-start gap-3">
-              <div className="space-y-1 text-left">
-                {settings.contactEmail && (
-                  <p>
-                    <a href={`mailto:${settings.contactEmail}`} className="hover:text-gray-700">
-                      {settings.contactEmail}
-                    </a>
-                  </p>
-                )}
-                {settings.contactPhone && (
-                  <p>
-                    <a href={`tel:${settings.contactPhone}`} className="hover:text-gray-700">
-                      {settings.contactPhone}
-                    </a>
-                  </p>
-                )}
-              </div>
-              <SocialLinks settings={settings} />
-            </div>
-          </div>
-
-          {/* Powered by */}
-          <div className="text-center text-sm text-gray-400 mt-8 pt-4 border-t border-gray-100">
-            <Link href={'https://' + process.env.NEXT_PUBLIC_TENANT_DOMAIN!}>
-              Powered by Pagelet
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer
+        logoImageUrl={settings.logoImageUrl || ''}
+        siteSlug={slug}
+        siteName={settings.name}
+        categories={categories}
+        settings={settings}
+      />
     </div>
   );
 }
