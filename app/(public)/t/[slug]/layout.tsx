@@ -6,6 +6,31 @@ import { SocialLinks } from '@/components/public/SocialLinks';
 import { ContactInfo } from '@/components/public/ContactInfo';
 import { BusinessInfo } from '@/components/public/BusinessInfo';
 import Link from 'next/link';
+import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
+
+const notoSans = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-base',
+  display: 'swap',
+});
+
+const notoSerif = Noto_Serif_KR({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-base',
+  display: 'swap',
+});
+
+function getFontClass(fontKey?: string | null) {
+  switch (fontKey) {
+    case 'noto_serif':
+      return notoSerif.variable;
+    case 'noto_sans':
+    default:
+      return notoSans.variable;
+  }
+}
 
 async function getSiteSettings(siteSlug: string): Promise<SiteSettings> {
   try {
@@ -42,9 +67,10 @@ export default async function PublicLayout({
   const { slug } = await params;
   const [settings, categories] = await Promise.all([getSiteSettings(slug), getCategories(slug)]);
   const siteName = settings.name;
+  const fontClass = getFontClass(settings.fontKey);
 
   return (
-    <div className="flex-1">
+    <div className={`flex-1 ${fontClass}`} style={{ fontFamily: 'var(--font-base)' }}>
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">

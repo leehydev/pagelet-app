@@ -20,6 +20,10 @@ export const PostStatus = {
 
 export type PostStatus = (typeof PostStatus)[keyof typeof PostStatus];
 
+// ===== Font Types =====
+
+export type FontKey = 'noto_sans' | 'noto_serif';
+
 export interface User {
   id: string;
   email: string | null;
@@ -74,6 +78,7 @@ export interface SiteSettings {
   // 브랜딩
   logoImageUrl: string | null;
   faviconUrl: string | null;
+  fontKey: FontKey | null;
   // SEO
   ogImageUrl: string | null;
   seoTitle: string | null;
@@ -98,6 +103,7 @@ export interface SiteSettings {
 export interface UpdateSiteSettingsRequest {
   logoImageUrl?: string | null;
   faviconUrl?: string | null;
+  fontKey?: FontKey | null;
   ogImageUrl?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
