@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ROOT_DOMAIN = 'pagelet-dev.kr';
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_TENANT_DOMAIN;
 const RESERVED = new Set(['www', 'app', 'admin']);
 
 function getHostname(req: NextRequest) {
