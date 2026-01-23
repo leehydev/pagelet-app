@@ -17,12 +17,7 @@ export function StatCard({ title, value, change, icon, className }: StatCardProp
   const formattedValue = typeof value === 'number' ? value.toLocaleString('ko-KR') : value;
 
   return (
-    <div
-      className={cn(
-        'bg-white rounded-lg shadow-sm border border-gray-200 p-6',
-        className,
-      )}
-    >
+    <div className={cn('bg-white rounded-lg shadow-sm border border-gray-200 p-6', className)}>
       <div className="flex items-center justify-between">
         <span className="text-gray-500 text-sm font-medium">{title}</span>
         {icon && <div className="text-gray-400">{icon}</div>}

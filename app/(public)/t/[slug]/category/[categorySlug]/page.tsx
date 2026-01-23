@@ -3,6 +3,8 @@ import { fetchPublicPosts, fetchPublicCategories, fetchSiteSettings } from '@/li
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
+import { PostsPageHeader } from '@/components/public/common/PostsPageHeader';
+import { EmptyPostList } from '@/components/public/common/EmptyPostList';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -88,19 +90,11 @@ export default async function CategoryPostsPage({ params }: PageProps) {
   return (
     <>
       {/* 카테고리 정보 */}
-      <div className="border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="mb-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              CATEGORY
-            </span>
-          </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">{category.name}</h2>
-          {category.description && (
-            <p className="text-gray-600 text-lg max-w-6xl">{category.description}</p>
-          )}
-        </div>
-      </div>
+      <PostsPageHeader
+        category={category.slug}
+        title={category.name}
+        description={category.description || ''}
+      />
 
       {/* 메인 콘텐츠 */}
       <main className="mx-auto max-w-6xl h-full px-4 py-8">
@@ -111,13 +105,12 @@ export default async function CategoryPostsPage({ params }: PageProps) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">📝</div>
-            <h2 className="text-xl font-medium text-gray-600 mb-2">
-              {category.name} 카테고리에 게시글이 없습니다
-            </h2>
-            <p className="text-gray-400">곧 새로운 글이 올라올 예정입니다.</p>
-          </div>
+          <EmptyPostList
+            siteSlug={slug}
+            title={`${category.name} 카테고리에 게시글이 없습니다`}
+            description="곧 새로운 글이 올라올 예정입니다."
+            showBackLink={true}
+          />
         )}
       </main>
     </>
