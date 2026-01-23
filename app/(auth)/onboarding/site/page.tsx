@@ -124,7 +124,7 @@ export default function SitePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
-      router.push('/admin');
+      router.push('/waiting');
     },
   });
 

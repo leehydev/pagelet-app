@@ -48,6 +48,9 @@ export const ErrorMessages: Record<string, string> = {
   CATEGORY_002: '이미 사용 중인 slug입니다. 다른 slug를 입력해주세요.',
   CATEGORY_003: '예약된 slug입니다. 다른 slug를 사용해주세요.',
   CATEGORY_004: '게시글이 있는 카테고리는 삭제할 수 없습니다.',
+
+  // 계정 관련 에러
+  ACCOUNT_003: '계정이 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.',
 };
 
 /**

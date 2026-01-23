@@ -13,6 +13,8 @@ const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
  * - 사이트 0개 → 온보딩으로 리다이렉트
  * - 사이트 1개 → 자동 진입
  * - 사이트 N개 → 마지막 선택 복구 또는 선택 UI 표시
+ *
+ * Note: PENDING/ONBOARDING 상태 체크는 layout.tsx에서 처리
  */
 export default function AdminIndexPage() {
   const router = useRouter();
