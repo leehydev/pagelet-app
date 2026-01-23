@@ -54,7 +54,11 @@ export default function NewPostPage() {
   const siteId = params.siteId as string;
 
   const createPost = useCreatePost(siteId);
-  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useAdminCategories(siteId);
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = useAdminCategories(siteId);
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
   const editorRef = useRef<TiptapEditorRef>(null);
 
@@ -186,7 +190,7 @@ export default function NewPostPage() {
           <div className="flex flex-col lg:flex-row gap-6 max-w-7xl">
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-6">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 {/* 제목 */}
                 <ValidationInput
                   name="title"
@@ -216,7 +220,7 @@ export default function NewPostPage() {
             </div>
 
             {/* 사이드바 */}
-            <div className="w-full lg:w-80 shrink-0 space-y-4">
+            <div className="w-full lg:w-64 shrink-0 space-y-4">
               {/* 발행 설정 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-4">발행</h3>
@@ -258,9 +262,7 @@ export default function NewPostPage() {
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-3">카테고리</h3>
                 {categoriesError ? (
-                  <div className="text-sm text-red-500">
-                    카테고리 목록을 불러올 수 없습니다
-                  </div>
+                  <div className="text-sm text-red-500">카테고리 목록을 불러올 수 없습니다</div>
                 ) : (
                   <Controller
                     name="categoryId"
