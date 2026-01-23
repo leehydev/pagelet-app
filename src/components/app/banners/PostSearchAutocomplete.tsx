@@ -60,6 +60,19 @@ export function PostSearchAutocomplete({
   // 검색 결과 필터링 (이미 등록된 배너 제외)
   const filteredResults = results?.filter((post) => !excludePostIds.includes(post.id)) || [];
 
+  // 디버깅
+  console.log('PostSearchAutocomplete 상태:', {
+    siteId,
+    query,
+    debouncedQuery,
+    isOpen,
+    isLoading,
+    results,
+    filteredResults,
+    excludePostIds,
+    enabled: isOpen && debouncedQuery.length >= 1,
+  });
+
   const handleSelect = useCallback(
     (post: PostSearchResult) => {
       onChange(post);
@@ -76,7 +89,7 @@ export function PostSearchAutocomplete({
   }, [onChange]);
 
   const handleInputFocus = () => {
-    setIsOpen(false);
+    setIsOpen(true);
   };
 
   // 선택된 게시글이 있으면 선택된 상태 표시
