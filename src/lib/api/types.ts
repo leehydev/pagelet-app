@@ -72,6 +72,10 @@ export interface PublicPost {
   adjacentPosts?: AdjacentPost[];
 }
 
+// ===== CTA Types =====
+
+export type CtaType = 'text' | 'image';
+
 export interface SiteSettings {
   id: string;
   name: string;
@@ -100,6 +104,12 @@ export interface SiteSettings {
   businessNumber: string | null;
   businessName: string | null;
   representativeName: string | null;
+  // CTA 설정
+  ctaEnabled: boolean;
+  ctaType: CtaType | null;
+  ctaText: string | null;
+  ctaImageUrl: string | null;
+  ctaLink: string | null;
 }
 
 export interface UpdateSiteSettingsRequest {
@@ -120,6 +130,12 @@ export interface UpdateSiteSettingsRequest {
   businessNumber?: string | null;
   businessName?: string | null;
   representativeName?: string | null;
+  // CTA 설정
+  ctaEnabled?: boolean;
+  ctaType?: CtaType | null;
+  ctaText?: string | null;
+  ctaImageUrl?: string | null;
+  ctaLink?: string | null;
 }
 
 export interface PostListItem {
@@ -218,7 +234,7 @@ export interface AbortUploadRequest {
 
 // ===== Branding Types =====
 
-export type BrandingType = 'logo' | 'favicon' | 'og';
+export type BrandingType = 'logo' | 'favicon' | 'og' | 'cta';
 
 export interface BrandingPresignRequest {
   type: BrandingType;

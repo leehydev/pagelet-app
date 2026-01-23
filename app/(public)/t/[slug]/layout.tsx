@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { SocialLinks } from '@/components/public/SocialLinks';
 import { ContactInfo } from '@/components/public/ContactInfo';
 import { BusinessInfo } from '@/components/public/BusinessInfo';
+import { CtaBanner } from '@/components/public/CtaBanner';
+import { CtaTracker } from '@/components/public/CtaTracker';
 import Link from 'next/link';
 import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
 
@@ -118,6 +120,12 @@ export default async function PublicLayout({
 
       {/* 페이지 콘텐츠 */}
       <div className="flex-1">{children}</div>
+
+      {/* CTA 배너 */}
+      <CtaBanner settings={settings} />
+
+      {/* 페이지뷰 추적 */}
+      <CtaTracker siteId={settings.id} />
 
       {/* 푸터 */}
       <footer className="border-t border-gray-200 bg-white mt-auto">
