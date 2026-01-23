@@ -15,7 +15,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 pt-16">
       {/* 로그인 카드 */}
-      <div className="flex flex-col items-center justify-center w-full max-w-[340px] bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+      <div className="flex flex-col items-center justify-center w-full max-w-85 bg-white rounded-2xl shadow-lg p-4 sm:p-8">
         {/* 아이콘 */}
         <div className="flex justify-center mb-6">
           <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center">
@@ -46,9 +46,7 @@ export default function SignInPage() {
       </div>
 
       {/* 푸터 */}
-      <p className="mt-8 text-sm text-gray-400">
-        © {dayjs().year()} Pagelet. All rights reserved.
-      </p>
+      <p className="mt-8 text-sm text-gray-400">© {dayjs().year()} Pagelet. All rights reserved.</p>
     </div>
   );
 }

@@ -52,8 +52,10 @@ export function BrandingUploader({
   onCommit,
 }: BrandingUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { state, upload, commit, reset, isUploading, isUploaded, isCommitting } =
-    useBrandingUpload(siteId, type);
+  const { state, upload, commit, reset, isUploading, isUploaded, isCommitting } = useBrandingUpload(
+    siteId,
+    type,
+  );
 
   const rules = VALIDATION_RULES[type];
 
@@ -192,7 +194,7 @@ export function BrandingUploader({
           'shrink-0 ml-4 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center',
           type === 'logo' && 'w-24 h-10',
           type === 'favicon' && 'w-12 h-12',
-          type === 'og' && 'w-32 h-[68px]',
+          type === 'og' && 'w-32 h-17',
         )}
       >
         {imageUrl ? (
