@@ -40,12 +40,20 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
 
           {/* 텍스트 영역 */}
           <div className="flex-1 p-5 md:py-6 md:pl-16 flex flex-col justify-center order-2">
-            {/* 카테고리 */}
-            {post.categoryName && (
-              <Badge variant="secondary" className="w-fit mb-3 text-xs">
-                {post.categoryName}
-              </Badge>
-            )}
+            <div className="flex gap-2">
+              {/* 카테고리 */}
+              {post.categoryName && (
+                <Badge variant="secondary" className="w-fit mb-2 text-xs">
+                  {post.categoryName}
+                </Badge>
+              )}
+              {/* 작성일 */}
+              {post.publishedAt && (
+                <span className="text-gray-400 text-sm">
+                  {dayjs(post.publishedAt).format('YYYY.MM.DD')}
+                </span>
+              )}
+            </div>
 
             {/* 제목 */}
             <h3 className="font-bold text-xl break-keep md:text-4xl text-gray-900 line-clamp-2">
@@ -54,13 +62,8 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
 
             {/* 소제목 */}
             {post.subtitle && (
-              <p className="text-gray-600 line-clamp-2 text-sm md:text-base">{post.subtitle}</p>
-            )}
-
-            {/* 작성일 */}
-            {post.publishedAt && (
-              <p className="text-gray-400 text-sm">
-                {dayjs(post.publishedAt).format('YYYY.MM.DD')}
+              <p className="text-gray-400 line-clamp-2 font-semibold text-sm md:text-base">
+                {post.subtitle}
               </p>
             )}
 
