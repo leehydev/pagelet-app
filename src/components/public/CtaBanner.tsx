@@ -44,18 +44,14 @@ export function CtaBanner({ settings, postId }: CtaBannerProps) {
 
   if (isImageType) {
     return (
-      <div className="sticky bottom-0 w-full bg-white border-t border-gray-200 z-40">
+      <div className="sticky bottom-0 w-full z-40 py-6">
         <div className="max-w-7xl mx-auto">
-          <button
-            onClick={handleClick}
-            className="w-full cursor-pointer transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            aria-label="CTA 배너"
-          >
+          <button onClick={handleClick} className="w-full cursor-pointer" aria-label="CTA 배너">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={settings.ctaImageUrl!}
               alt={settings.ctaText || 'CTA 배너'}
-              className="w-full h-auto object-contain max-h-24"
+              className="w-full h-auto object-contain max-h-14"
             />
           </button>
         </div>
@@ -69,11 +65,12 @@ export function CtaBanner({ settings, postId }: CtaBannerProps) {
   }
 
   return (
-    <div className="sticky bottom-0 w-full bg-primary z-40">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <div className="sticky bottom-0 w-full z-40 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-center">
         <button
+          type="button"
           onClick={handleClick}
-          className="w-full py-3 px-6 bg-white text-primary font-semibold rounded-lg shadow-sm transition-all hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
+          className="w-full py-3 px-6 max-w-80 h-14 bg-primary text-white text-xl font-semibold rounded-lg"
         >
           {settings.ctaText}
         </button>
