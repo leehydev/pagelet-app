@@ -69,6 +69,7 @@ export interface PublicPost {
   ogImageUrl: string | null;
   categoryName: string | null;
   categorySlug: string | null;
+  adjacentPosts?: AdjacentPost[];
 }
 
 export interface SiteSettings {
@@ -377,4 +378,15 @@ export interface PostSearchResult {
   categoryName: string | null;
   publishedAt: string | null;
   status: string;
+}
+
+// ===== Adjacent Post Types =====
+
+export interface AdjacentPost {
+  id: string;
+  title: string;
+  slug: string;
+  ogImageUrl: string | null;
+  publishedAt: string;
+  isCurrent: boolean;
 }

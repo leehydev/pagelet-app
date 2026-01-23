@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatPostDate } from '@/lib/date-utils';
 import { PostContent } from '@/components/app/post/PostContent';
+import { AdjacentPostsNav } from '@/components/public/AdjacentPostsNav';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -129,6 +130,15 @@ export default async function PostDetailPage({ params }: PageProps) {
           <PostContent html={post.contentHtml} />
         </div>
       </main>
+
+      {/* 인접 게시글 네비게이션 */}
+      {post.adjacentPosts && post.adjacentPosts.length > 0 && (
+        <div className="bg-gray-50 border-t border-gray-200">
+          <div className="max-w-4xl mx-auto px-4">
+            <AdjacentPostsNav posts={post.adjacentPosts} siteSlug={slug} />
+          </div>
+        </div>
+      )}
 
       {/* 하단 네비게이션 */}
       <div className="bg-gray-50 border-t border-gray-200">
