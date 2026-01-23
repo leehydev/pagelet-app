@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { ValidationTextarea } from '@/components/app/form/ValidationTextarea';
 import { BrandingUploader } from '@/components/app/settings/BrandingUploader';
+import { FontSelector } from '@/components/app/settings/FontSelector';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 // 섹션 정의
@@ -269,6 +270,7 @@ export default function SiteSettingsPage() {
                   currentUrl={settings.ogImageUrl}
                   updatedAt={settings.updatedAt}
                 />
+                <FontSelector siteId={siteId} currentFontKey={settings.fontKey} />
               </div>
             </section>
 
