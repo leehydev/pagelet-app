@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function AuthSuccessPage() {
   const router = useRouter();
@@ -32,14 +33,6 @@ export default function AuthSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
-        <h1 className="text-2xl font-bold mb-2">로그인 확인 중...</h1>
-        <p className="text-gray-500">잠시만 기다려주세요</p>
-      </div>
-    </div>
+    <LoadingSpinner fullScreen size="lg" message="로그인 확인 중..." />
   );
 }

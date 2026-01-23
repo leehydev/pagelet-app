@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Thumbnail } from './Thumbnail';
 import { useUpload } from '@/hooks/use-upload';
@@ -131,24 +131,12 @@ export function ThumbnailInput({
           {isUploading && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                {uploadProgress.status === 'presigning' && (
-                  <>
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span>업로드 준비 중...</span>
-                  </>
-                )}
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                {uploadProgress.status === 'presigning' && <span>업로드 준비 중...</span>}
                 {uploadProgress.status === 'uploading' && (
-                  <>
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span>업로드 중... {uploadProgress.progress}%</span>
-                  </>
+                  <span>업로드 중... {uploadProgress.progress}%</span>
                 )}
-                {uploadProgress.status === 'completing' && (
-                  <>
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span>업로드 완료 처리 중...</span>
-                  </>
-                )}
+                {uploadProgress.status === 'completing' && <span>업로드 완료 처리 중...</span>}
               </div>
               {uploadProgress.status === 'uploading' && (
                 <div className="w-full bg-gray-200 rounded-full h-2">

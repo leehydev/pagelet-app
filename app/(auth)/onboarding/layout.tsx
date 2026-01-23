@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
 import { Stepper } from '@/components/app/onboarding/Stepper';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 const STEP_PATHS = {
   1: '/onboarding/profile',
@@ -53,11 +54,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
   // 로딩 중
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" />;
   }
 
   // 에러 또는 사용자 없음

@@ -6,6 +6,7 @@ import { extensions } from './extensions';
 import { MenuBar } from './MenuBar';
 import { useCharacterCount } from './hooks/useCharacterCount';
 import { useUpload } from '@/hooks/use-upload';
+import { Loader2 } from 'lucide-react';
 
 export interface TiptapEditorRef {
   getEditor: () => Editor | null;
@@ -177,7 +178,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         {isUploading && (
           <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
             <div className="flex items-center gap-2 text-sm text-blue-700">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               {uploadProgress.status === 'presigning' && <span>업로드 준비 중...</span>}
               {uploadProgress.status === 'uploading' && (
                 <span>업로드 중... {uploadProgress.progress}%</span>

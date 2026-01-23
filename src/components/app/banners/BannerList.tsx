@@ -130,7 +130,8 @@ export function BannerList({ siteId }: BannerListProps) {
       {/* 안내문구 */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
         <p className="text-sm text-blue-700">
-          발행된 게시글만 블로그 메인에 배너로 표시됩니다. 임시저장 또는 비공개 상태의 게시글은 배너에 등록되어 있어도 표시되지 않습니다.
+          발행된 게시글만 블로그 메인에 배너로 표시됩니다. 임시저장 또는 비공개 상태의 게시글은
+          배너에 등록되어 있어도 표시되지 않습니다.
         </p>
       </div>
 
@@ -182,7 +183,13 @@ interface BannerListContentProps {
   onDelete: (banner: Banner) => void;
 }
 
-function BannerListContent({ banners, sensors, onDragEnd, onEdit, onDelete }: BannerListContentProps) {
+function BannerListContent({
+  banners,
+  sensors,
+  onDragEnd,
+  onEdit,
+  onDelete,
+}: BannerListContentProps) {
   if (banners.length === 0) {
     return (
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
@@ -197,7 +204,7 @@ function BannerListContent({ banners, sensors, onDragEnd, onEdit, onDelete }: Ba
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={banners.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {banners.map((banner) => (
             <BannerCard
               key={banner.id}
@@ -208,9 +215,7 @@ function BannerListContent({ banners, sensors, onDragEnd, onEdit, onDelete }: Ba
           ))}
         </div>
       </SortableContext>
-      <p className="text-xs text-muted-foreground mt-4">
-        * 드래그하여 순서를 변경할 수 있습니다.
-      </p>
+      <p className="text-xs text-muted-foreground mt-4">* 드래그하여 순서를 변경할 수 있습니다.</p>
     </DndContext>
   );
 }

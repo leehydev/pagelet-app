@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Image, Upload } from 'lucide-react';
+import { Image, Upload, Loader2 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
 import { useUpload } from '@/hooks/use-upload';
 import { cn } from '@/lib/utils';
@@ -135,7 +135,7 @@ export function ImageInsertButton({ editor, siteId }: ImageInsertButtonProps) {
                 {isUploading ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                       {uploadProgress.status === 'presigning' && <span>업로드 준비 중...</span>}
                       {uploadProgress.status === 'uploading' && (
                         <span>업로드 중... {uploadProgress.progress}%</span>

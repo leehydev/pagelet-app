@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 const ONBOARDING_PATHS = {
   1: '/onboarding/profile',
@@ -33,11 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // 로딩 중이거나 온보딩 상태면 로딩 UI 표시
   if (isLoading || user?.accountStatus === AccountStatus.ONBOARDING) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" />;
   }
 
   return <>{children}</>;

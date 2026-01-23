@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminSites } from '@/hooks/use-admin-sites';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
 
@@ -43,11 +44,7 @@ export default function AdminIndexPage() {
   }, [sites, isLoading, isError, router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" />;
   }
 
   if (isError) {
