@@ -76,7 +76,7 @@ export function PostSearchAutocomplete({
   }, [onChange]);
 
   const handleInputFocus = () => {
-    setIsOpen(true);
+    setIsOpen(false);
   };
 
   // 선택된 게시글이 있으면 선택된 상태 표시
@@ -103,9 +103,7 @@ export function PostSearchAutocomplete({
             <p className="font-medium text-sm truncate">{value.title}</p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {value.categoryName && <span>{value.categoryName}</span>}
-              {value.publishedAt && (
-                <span>{dayjs(value.publishedAt).format('YYYY.MM.DD')}</span>
-              )}
+              {value.publishedAt && <span>{dayjs(value.publishedAt).format('YYYY.MM.DD')}</span>}
             </div>
           </div>
 
@@ -190,9 +188,7 @@ export function PostSearchAutocomplete({
                 )}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                   {post.categoryName && <span>{post.categoryName}</span>}
-                  {post.publishedAt && (
-                    <span>{dayjs(post.publishedAt).format('YYYY.MM.DD')}</span>
-                  )}
+                  {post.publishedAt && <span>{dayjs(post.publishedAt).format('YYYY.MM.DD')}</span>}
                 </div>
               </div>
 

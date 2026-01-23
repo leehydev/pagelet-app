@@ -60,10 +60,7 @@ export function BannerFormSheet({
   onSuccess,
 }: BannerFormSheetProps) {
   // 시트가 열릴 때마다 새로운 key를 생성하여 폼을 완전히 리셋
-  const formKey = useMemo(
-    () => `${open}-${banner?.id || 'new'}`,
-    [open, banner?.id],
-  );
+  const formKey = useMemo(() => `${open}-${banner?.id || 'new'}`, [open, banner?.id]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -76,14 +73,16 @@ export function BannerFormSheet({
         </SheetHeader>
 
         {open && (
-          <BannerForm
-            key={formKey}
-            siteId={siteId}
-            banner={banner}
-            existingPostIds={existingPostIds}
-            onOpenChange={onOpenChange}
-            onSuccess={onSuccess}
-          />
+          <div className="p-4">
+            <BannerForm
+              key={formKey}
+              siteId={siteId}
+              banner={banner}
+              existingPostIds={existingPostIds}
+              onOpenChange={onOpenChange}
+              onSuccess={onSuccess}
+            />
+          </div>
         )}
       </SheetContent>
     </Sheet>
@@ -98,13 +97,7 @@ interface BannerFormProps {
   onSuccess: () => void;
 }
 
-function BannerForm({
-  siteId,
-  banner,
-  existingPostIds,
-  onOpenChange,
-  onSuccess,
-}: BannerFormProps) {
+function BannerForm({ siteId, banner, existingPostIds, onOpenChange, onSuccess }: BannerFormProps) {
   const isEdit = !!banner;
   const createMutation = useCreateBanner(siteId);
   const updateMutation = useUpdateBanner(siteId);
@@ -223,9 +216,7 @@ function BannerForm({
             <Input id="endAt" type="datetime-local" {...register('endAt')} />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          기간을 설정하지 않으면 항상 노출됩니다.
-        </p>
+        <p className="text-xs text-muted-foreground">기간을 설정하지 않으면 항상 노출됩니다.</p>
       </div>
 
       {/* 버튼 */}

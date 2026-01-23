@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { AdminSidebar } from '@/components/app/layout/AdminSidebar';
 import { SiteProvider } from '@/contexts/site-context';
 import { useAdminSites } from '@/hooks/use-admin-sites';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <LoadingSpinner />
       </div>
     );
   }
