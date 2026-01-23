@@ -24,6 +24,7 @@ export function PostCard({ post, siteSlug }: PostCardProps) {
             src={post.ogImageUrl || '/images/admin/no_thumbnail.png'}
             alt={post.title}
             fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-110"
           />
         </div>

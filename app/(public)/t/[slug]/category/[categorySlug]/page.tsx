@@ -89,7 +89,7 @@ export default async function CategoryPostsPage({ params }: PageProps) {
     <>
       {/* 카테고리 정보 */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-2">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               CATEGORY
@@ -97,13 +97,13 @@ export default async function CategoryPostsPage({ params }: PageProps) {
           </div>
           <h2 className="text-4xl font-bold text-gray-900 mb-3">{category.name}</h2>
           {category.description && (
-            <p className="text-gray-600 text-lg max-w-7xl">{category.description}</p>
+            <p className="text-gray-600 text-lg max-w-6xl">{category.description}</p>
           )}
         </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <main className="mx-auto max-w-7xl h-full px-4 py-8">
+      <main className="mx-auto max-w-6xl h-full px-4 py-8">
         {posts.length > 0 ? (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
