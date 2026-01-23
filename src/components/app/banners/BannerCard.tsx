@@ -2,10 +2,10 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Banner } from '@/lib/api';
+import { Banner, PostStatus } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
@@ -27,6 +27,8 @@ export function BannerCard({ banner, onEdit, onDelete }: BannerCardProps) {
 
   const isActive = banner.isActive && isWithinPeriod(banner.startAt, banner.endAt);
   const post = banner.post;
+  const isPostPublished = post.status === PostStatus.PUBLISHED;
+  const isPostHidden = !isPostPublished;
 
   return (
     <div
@@ -42,11 +44,24 @@ export function BannerCard({ banner, onEdit, onDelete }: BannerCardProps) {
         {/* 텍스트 영역 (60%) */}
         <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
           <div>
-            {/* 카테고리 */}
-            {post.categoryName && (
-              <Badge variant="secondary" className="mb-2 text-xs">
-                {post.categoryName}
+            {/* 카테고리 + 게시글 상태 */}
+            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+              {post.categoryName && (
+                <Badge variant="secondary" className="text-xs">
+                  {post.categoryName}
+                </Badge>
+              )}
+              <Badge variant={isPostPublished ? 'outline' : 'destructive'} className="text-xs">
+                {getPostStatusLabel(post.status)}
               </Badge>
+            </div>
+
+            {/* 비공개 경고 */}
+            {isPostHidden && (
+              <div className="flex items-center gap-1 text-amber-600 text-xs mb-2">
+                <AlertTriangle className="h-3 w-3" />
+                <span>게시글이 비공개 상태라 배너가 표시되지 않습니다</span>
+              </div>
             )}
 
             {/* 제목 */}
@@ -98,7 +113,9 @@ export function BannerCard({ banner, onEdit, onDelete }: BannerCardProps) {
 
       {/* 액션 버튼 영역 */}
       <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">{formatPeriod(banner.startAt, banner.endAt)}</div>
+        <div className="text-xs text-muted-foreground">
+          {formatPeriod(banner.startAt, banner.endAt)}
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="h-3 w-3 mr-1" />
@@ -138,4 +155,17 @@ function formatPeriod(startAt: string | null, endAt: string | null): string {
   const end = endAt ? dayjs(endAt).format(format) : '종료 없음';
 
   return `${start} ~ ${end}`;
+}
+
+function getPostStatusLabel(status: PostStatus): string {
+  switch (status) {
+    case PostStatus.PUBLISHED:
+      return '발행됨';
+    case PostStatus.DRAFT:
+      return '임시저장';
+    case PostStatus.PRIVATE:
+      return '비공개';
+    default:
+      return status;
+  }
 }

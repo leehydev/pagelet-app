@@ -95,7 +95,7 @@ export default async function TenantHomePage({ params }: PageProps) {
       {/* 배너 섹션 */}
       {banners.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto px-4">
             <PostBannerSlider banners={banners} siteSlug={slug} />
           </div>
         </div>

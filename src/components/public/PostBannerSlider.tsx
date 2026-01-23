@@ -62,44 +62,18 @@ export function PostBannerSlider({
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* 슬라이더 컨테이너 */}
-      <div className="overflow-hidden rounded-lg">
+      <div className="overflow-hidden">
         <div
           className="flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {banners.map((banner) => (
-            <div key={banner.id} className="w-full shrink-0">
+            <div key={banner.id} className="w-full shrink-0 h-72">
               <PostBannerCard banner={banner} siteSlug={siteSlug} />
             </div>
           ))}
         </div>
       </div>
-
-      {/* 네비게이션 버튼 */}
-      <button
-        onClick={goToPrev}
-        className={cn(
-          'absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10',
-          'p-2 md:p-3 rounded-full bg-white/90 shadow-md',
-          'hover:bg-white transition-colors',
-          'hidden sm:flex items-center justify-center',
-        )}
-        aria-label="이전 배너"
-      >
-        <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-700" />
-      </button>
-      <button
-        onClick={goToNext}
-        className={cn(
-          'absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10',
-          'p-2 md:p-3 rounded-full bg-white/90 shadow-md',
-          'hover:bg-white transition-colors',
-          'hidden sm:flex items-center justify-center',
-        )}
-        aria-label="다음 배너"
-      >
-        <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-gray-700" />
-      </button>
 
       {/* 인디케이터 도트 */}
       <div className="flex justify-center gap-2 mt-4">
@@ -109,9 +83,7 @@ export function PostBannerSlider({
             onClick={() => goToSlide(index)}
             className={cn(
               'w-2 h-2 rounded-full transition-all',
-              index === currentIndex
-                ? 'bg-gray-800 w-6'
-                : 'bg-gray-300 hover:bg-gray-400',
+              index === currentIndex ? 'bg-gray-800 w-6' : 'bg-gray-300 hover:bg-gray-400',
             )}
             aria-label={`배너 ${index + 1}번으로 이동`}
           />

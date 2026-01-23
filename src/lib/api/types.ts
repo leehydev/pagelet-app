@@ -311,6 +311,7 @@ export interface BannerPost {
   categoryId: string | null;
   categoryName: string | null;
   publishedAt: string | null;
+  status: PostStatus;
 }
 
 export interface Banner {

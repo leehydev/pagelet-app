@@ -127,6 +127,13 @@ export function BannerList({ siteId }: BannerListProps) {
         </p>
       </div>
 
+      {/* 안내문구 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+        <p className="text-sm text-blue-700">
+          발행된 게시글만 블로그 메인에 배너로 표시됩니다. 임시저장 또는 비공개 상태의 게시글은 배너에 등록되어 있어도 표시되지 않습니다.
+        </p>
+      </div>
+
       {/* 배너 목록 */}
       <BannerListContent
         banners={banners || []}
