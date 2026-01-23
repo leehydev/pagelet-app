@@ -39,6 +39,9 @@ import type {
   UpdateBannerRequest,
   BannerOrderRequest,
   PostSearchResult,
+  AnalyticsOverview,
+  PostAnalytics,
+  DailyAnalytics,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -462,6 +465,32 @@ export async function searchPosts(
     `/admin/sites/${siteId}/posts/search`,
     {
       params: { q: query, limit },
+    },
+  );
+  return response.data.data;
+}
+
+// ===== Admin Analytics API =====
+
+export async function getAnalyticsOverview(siteId: string): Promise<AnalyticsOverview> {
+  const response = await api.get<ApiResponse<AnalyticsOverview>>(
+    `/admin/sites/${siteId}/analytics/overview`,
+  );
+  return response.data.data;
+}
+
+export async function getPostsAnalytics(siteId: string): Promise<PostAnalytics[]> {
+  const response = await api.get<ApiResponse<PostAnalytics[]>>(
+    `/admin/sites/${siteId}/analytics/posts`,
+  );
+  return response.data.data;
+}
+
+export async function getDailyAnalytics(siteId: string, days: number = 7): Promise<DailyAnalytics[]> {
+  const response = await api.get<ApiResponse<DailyAnalytics[]>>(
+    `/admin/sites/${siteId}/analytics/daily`,
+    {
+      params: { days },
     },
   );
   return response.data.data;

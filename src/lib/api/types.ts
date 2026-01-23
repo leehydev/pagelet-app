@@ -406,3 +406,29 @@ export interface AdjacentPost {
   publishedAt: string;
   isCurrent: boolean;
 }
+
+// ===== Analytics Types =====
+
+export interface AnalyticsOverview {
+  totalViews: number;
+  uniqueVisitors: number;
+  todayVisitors: number;
+  yesterdayVisitors: number;
+  totalCtaClicks: number;
+  todayCtaClicks: number;
+}
+
+export interface PostAnalytics {
+  postId: string;
+  title: string;
+  views: number;
+  uniqueVisitors: number;
+  ctaClicks: number;
+}
+
+export interface DailyAnalytics {
+  date: string; // YYYY-MM-DD
+  views: number;
+  visitors: number;
+  ctaClicks: number;
+}
