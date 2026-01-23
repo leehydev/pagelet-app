@@ -17,7 +17,7 @@ export function AdjacentPostsNav({ posts, siteSlug }: AdjacentPostsNavProps) {
   return (
     <section aria-label="인접 게시글 네비게이션" className="py-8">
       <h2 className="sr-only">관련 게시글</h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+      <div className="grid grid-cols-5 gap-3 p-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
         {posts.map((post) => (
           <AdjacentPostCard key={post.id} post={post} siteSlug={siteSlug} />
         ))}
@@ -37,10 +37,10 @@ function AdjacentPostCard({ post, siteSlug }: AdjacentPostCardProps) {
   const cardContent = (
     <article
       className={cn(
-        'flex-shrink-0 w-[200px] md:w-[calc((100%-48px)/5)] snap-start',
+        'w-full shrink-0 snap-start',
         'rounded-lg overflow-hidden transition-all duration-200',
         post.isCurrent
-          ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50'
+          ? 'ring-2 ring-gray-500 ring-offset-2 bg-gray-50'
           : 'bg-white hover:shadow-md border border-gray-200',
       )}
     >
@@ -54,8 +54,8 @@ function AdjacentPostCard({ post, siteSlug }: AdjacentPostCardProps) {
           className="object-cover"
         />
         {post.isCurrent && (
-          <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center">
-            <span className="bg-blue-500 text-white text-xs font-medium px-2 py-0.5 rounded">
+          <div className="absolute inset-0 bg-gray-500/10 flex items-center justify-center">
+            <span className="bg-gray-500 text-white text-xs font-medium px-2 py-0.5 rounded">
               현재 글
             </span>
           </div>
@@ -66,15 +66,15 @@ function AdjacentPostCard({ post, siteSlug }: AdjacentPostCardProps) {
       <div className="p-3">
         <h3
           className={cn(
-            'text-sm font-medium line-clamp-2 mb-1',
-            post.isCurrent ? 'text-blue-700' : 'text-gray-900',
+            'text-sm font-medium line-clamp-2 mb-1 h-10',
+            post.isCurrent ? 'text-gray-700' : 'text-gray-900',
           )}
         >
           {post.title}
         </h3>
         <time
           dateTime={post.publishedAt}
-          className={cn('text-xs', post.isCurrent ? 'text-blue-500' : 'text-gray-400')}
+          className={cn('text-xs', post.isCurrent ? 'text-gray-500' : 'text-gray-400')}
         >
           {formattedDate}
         </time>
@@ -94,7 +94,7 @@ function AdjacentPostCard({ post, siteSlug }: AdjacentPostCardProps) {
   return (
     <Link
       href={`/t/${siteSlug}/posts/${post.slug}`}
-      className="outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
+      className="outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 rounded-lg"
     >
       {cardContent}
     </Link>
