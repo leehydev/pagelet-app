@@ -243,6 +243,25 @@ export async function revalidatePost(siteSlug: string, postSlug?: string): Promi
   }
 }
 
+/**
+ * 사이트 설정 캐시 무효화
+ * 폰트, 브랜딩 등 설정 변경 시 호출
+ */
+export async function revalidateSiteSettings(siteSlug: string): Promise<void> {
+  try {
+    await fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siteSlug,
+        secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET,
+      }),
+    });
+  } catch (error) {
+    console.warn('Failed to revalidate site settings:', error);
+  }
+}
+
 // ===== Public Post API (클라이언트) =====
 
 export async function getPublicPosts(

@@ -66,7 +66,10 @@ export async function fetchSiteSettings(slug: string): Promise<SiteSettings> {
     headers: {
       'X-Site-Slug': slug,
     },
-    next: { revalidate: 60 }, // ISR: 60초
+    next: {
+      revalidate: 60,
+      tags: [`site-settings-${slug}`],
+    },
   });
 
   if (!res.ok) {
