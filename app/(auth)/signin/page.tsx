@@ -27,21 +27,35 @@ export default function SignInPage() {
         <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">환영합니다</h1>
         <p className="text-center text-gray-500 mb-8">간편하게 로그인하고 서비스를 이용하세요</p>
 
-        {/* 카카오 로그인 버튼 */}
-        <SocialLoginButton
-          label="카카오로 계속하기"
-          iconSrc="/images/icons/icon-kakao.png"
-          iconWidth={22}
-          iconHeight={22}
-          bgColor="bg-[#FEE500] hover:bg-[#FEE500]"
-          textColor="text-[#191919]"
-          onClick={() => signin('kakao')}
-          className="w-full"
-        />
+        <div className="w-full flex flex-col gap-2">
+          {/* 카카오 로그인 버튼 */}
+          <SocialLoginButton
+            label="카카오로 계속하기"
+            iconSrc="/images/icons/icon-kakao.png"
+            iconWidth={22}
+            iconHeight={22}
+            bgColor="bg-[#FEE500] hover:bg-[#FEE500]"
+            textColor="text-[#191919]"
+            onClick={() => signin('kakao')}
+            className="w-full"
+          />
+
+          {/* 네이버 로그인 버튼 */}
+          <SocialLoginButton
+            label="네이버로 계속하기"
+            iconSrc="/images/icons/icon-naver.png"
+            iconWidth={22}
+            iconHeight={22}
+            bgColor="bg-[#03C75A] hover:bg-[#03C75A]"
+            textColor="text-white"
+            onClick={() => signin('naver')}
+            className="w-full"
+          />
+        </div>
 
         {/* 안내 문구 */}
         <p className="text-center text-xs text-gray-400 mt-4 px-4">
-          비밀번호 없이 카카오로 쉽고 빠르게 로그인하세요
+          비밀번호 없이 쉽고 빠르게 로그인하세요
         </p>
       </div>
 

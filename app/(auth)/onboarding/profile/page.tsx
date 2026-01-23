@@ -37,7 +37,7 @@ export default function ProfilePage() {
     if (user) {
       methods.reset({
         name: user.name || '',
-        email: user.email || '',
+        email: '',
       });
     }
   }, [user, methods]);
@@ -47,23 +47,15 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">
-            프로필 입력
-          </h2>
-          <p className="text-sm text-gray-500">
-            나중에 언제든지 변경할 수 있어요
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">프로필 입력</h2>
+          <p className="text-sm text-gray-500">나중에 언제든지 변경할 수 있어요</p>
         </div>
         <div className="p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-600">
             사용자 정보를 불러오는데 실패했습니다. 다시 시도해주세요.
           </p>
         </div>
-        <Button
-          type="button"
-          className="w-full"
-          onClick={() => router.push('/signin')}
-        >
+        <Button type="button" className="w-full" onClick={() => router.push('/signin')}>
           로그인 페이지로 이동
         </Button>
       </div>
@@ -75,12 +67,8 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">
-            프로필 입력
-          </h2>
-          <p className="text-sm text-gray-500">
-            나중에 언제든지 변경할 수 있어요
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">프로필 입력</h2>
+          <p className="text-sm text-gray-500">나중에 언제든지 변경할 수 있어요</p>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-10 bg-gray-200 rounded"></div>
@@ -106,22 +94,12 @@ export default function ProfilePage() {
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">
-            프로필 입력
-          </h2>
-          <p className="text-sm text-gray-500">
-            나중에 언제든지 변경할 수 있어요
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">프로필 입력</h2>
+          <p className="text-sm text-gray-500">나중에 언제든지 변경할 수 있어요</p>
         </div>
 
         <div className="space-y-4">
-          <ValidationInput
-            name="name"
-            label="이름"
-            type="text"
-            placeholder="홍길동"
-            required
-          />
+          <ValidationInput name="name" label="이름" type="text" placeholder="홍길동" required />
           <ValidationInput
             name="email"
             label="이메일"
@@ -133,17 +111,11 @@ export default function ProfilePage() {
 
         {mutation.error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">
-              오류가 발생했습니다. 다시 시도해주세요.
-            </p>
+            <p className="text-sm text-red-600">오류가 발생했습니다. 다시 시도해주세요.</p>
           </div>
         )}
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={mutation.isPending}
-        >
+        <Button type="submit" className="w-full" disabled={mutation.isPending}>
           {mutation.isPending ? '저장 중...' : '다음'}
         </Button>
       </form>

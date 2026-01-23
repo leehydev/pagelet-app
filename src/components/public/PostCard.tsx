@@ -33,16 +33,18 @@ export function PostCard({ post, siteSlug }: PostCardProps) {
         <div className="flex-1 flex flex-col px-1">
           {/* 카테고리와 날짜 */}
           <div className="flex items-center gap-2 mb-2">
-            {post.categoryName ? <Badge variant="secondary">{post.categoryName}</Badge> : <div />}
+            {post.categoryName}
             <MinusIcon className="w-4 h-4 text-gray-300" />
             <time className="text-xs text-gray-400">{formattedDate}</time>
           </div>
           {/* 제목 */}
-          <h2 className="text-xl font-bold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors">
+          <h2 className="text-2xl break-all font-bold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors">
             {post.title}
           </h2>
           {/* 부제목 */}
-          <h3 className="text-base text-gray-400 line-clamp-1">{post.subtitle}</h3>
+          <h3 className="text-base text-gray-500 font-semibold line-clamp-1 break-all">
+            {post.subtitle}
+          </h3>
         </div>
       </article>
     </Link>

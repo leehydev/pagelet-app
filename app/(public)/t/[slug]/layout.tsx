@@ -1,4 +1,5 @@
 import { CategoryTabs } from '@/components/public/CategoryTabs';
+import { MobileMenu } from '@/components/public/MobileMenu';
 import type { PublicCategory, SiteSettings } from '@/lib/api';
 import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
@@ -70,9 +71,12 @@ export default async function PublicLayout({
   const fontClass = getFontClass(settings.fontKey);
 
   return (
-    <div className={`flex-1 ${fontClass}`} style={{ fontFamily: 'var(--font-base)' }}>
+    <div
+      className={`flex-1 ${fontClass} flex flex-col bg-gray-50`}
+      style={{ fontFamily: 'var(--font-base)' }}
+    >
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="w-full bg-white border-b border-gray-200 absolute">
         <div className="max-w-6xl mx-auto px-4 h-20 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 max-w-[40vw] overflow-hidden">
             <Link href="/">
@@ -103,13 +107,21 @@ export default async function PublicLayout({
               )}
             </Link>
           </div>
-          {/* 검색 기능은 나중에 추가 가능 */}
+          {/* 모바일 메뉴 (카테고리가 있을 때만) */}
+          {categories.length > 0 && <MobileMenu categories={categories} siteSlug={slug} />}
         </div>
       </header>
 
-      {/* 카테고리 탭 */}
+      <div className="w-full pt-16 md:pt-16"></div>
+      <div className="w-full pt-4 md:pt-0"></div>
+
+      <div className="w-full max-w-6xl mx-auto px-4 pt-4 mb-4">
+        <h1 className="font-bold text-4xl md:text-6xl">{settings.name}</h1>
+      </div>
+
+      {/* 카테고리 탭 (데스크톱에서만 표시) */}
       {categories.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
+        <div className="hidden md:block">
           <div className="max-w-6xl mx-auto px-4">
             <CategoryTabs categories={categories} siteSlug={slug} />
           </div>

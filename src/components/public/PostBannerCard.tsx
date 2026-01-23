@@ -20,7 +20,7 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
   return (
     <Link
       href={`/t/${siteSlug}/posts/${post.slug}`}
-      className={cn('group block bg-white rounded-sm overflow-hidden h-96 md:h-72', className)}
+      className={cn('group block rounded-sm overflow-hidden h-96 md:h-72', className)}
     >
       {/* 가로형 레이아웃 (데스크톱) / 세로형 레이아웃 (모바일) */}
       {post.ogImageUrl ? (
@@ -39,30 +39,26 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
           )}
 
           {/* 텍스트 영역 */}
-          <div className="flex-1 p-5 md:py-6 md:pl-16 flex flex-col justify-center order-2">
+          <div className="bg-gray-200 flex-1 p-0 md:px-5 md:py-6 md:pl-16 flex flex-col justify-center order-2">
             <div className="flex gap-2">
               {/* 카테고리 */}
-              {post.categoryName && (
-                <Badge variant="secondary" className="w-fit mb-2 text-xs">
-                  {post.categoryName}
-                </Badge>
-              )}
+              {post.categoryName && <span className="text-sm">{post.categoryName}</span>}
               {/* 작성일 */}
               {post.publishedAt && (
-                <span className="text-gray-400 text-sm">
+                <span className="text-gray-600 text-sm">
                   {dayjs(post.publishedAt).format('YYYY.MM.DD')}
                 </span>
               )}
             </div>
 
             {/* 제목 */}
-            <h3 className="font-bold text-xl break-keep md:text-4xl text-gray-900 line-clamp-2">
+            <h3 className="font-bold text-xl break-all md:text-4xl text-gray-900 line-clamp-2 mb-1">
               {post.title}
             </h3>
 
             {/* 소제목 */}
             {post.subtitle && (
-              <p className="text-gray-400 line-clamp-2 font-semibold text-sm md:text-base">
+              <p className="text-gray-600 line-clamp-2 font-semibold text-sm md:text-base">
                 {post.subtitle}
               </p>
             )}
@@ -85,7 +81,7 @@ export function PostBannerCard({ banner, siteSlug, className }: PostBannerCardPr
             )}
           </div>
 
-          <h1 className="font-bold text-xl break-keep md:text-[40px] text-gray-900 line-clamp-2">
+          <h1 className="font-bold text-xl break-all md:text-[40px] text-gray-900 line-clamp-2 mb-1">
             {post.title}
           </h1>
 

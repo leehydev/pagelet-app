@@ -21,15 +21,16 @@ export function CategoryTabs({ categories, siteSlug }: CategoryTabsProps) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="flex gap-2 py-4 min-w-max">
+      <div className="flex gap-2 pt-1 pb-4 min-w-max">
         {/* 전체 탭 */}
         <Link
           href={`/t/${siteSlug}/posts`}
           className={cn(
-            'px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors',
+            'px-4 py-2 rounded-lg',
+            'whitespace-nowrap transition-colors',
             isAllPostsPage && !currentCategorySlug
               ? 'bg-blue-100 text-blue-700'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+              : 'bg-primary text-white hover:bg-gray-500',
           )}
         >
           전체
@@ -43,10 +44,8 @@ export function CategoryTabs({ categories, siteSlug }: CategoryTabsProps) {
               key={category.slug}
               href={`/t/${siteSlug}/category/${category.slug}`}
               className={cn(
-                'px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors',
-                isActive
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                'px-4 py-2 rounded-lg whitespace-nowrap transition-colors',
+                isActive ? 'bg-blue-100 text-blue-700' : 'bg-primary text-white ',
               )}
             >
               {category.name}

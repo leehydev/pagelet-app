@@ -6,6 +6,7 @@ import { PostBannerSlider } from '@/components/public/PostBannerSlider';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -91,12 +92,11 @@ export default async function TenantHomePage({ params }: PageProps) {
     getPosts(slug, 6), // 최신 게시글 6개만
     getBanners(slug),
   ]);
-
   return (
     <>
       {/* 배너 섹션 */}
       {banners.length > 0 && (
-        <div className="bg-white border-b border-gray-200 py-8">
+        <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
             <PostBannerSlider banners={banners} siteSlug={slug} />
           </div>
@@ -109,12 +109,11 @@ export default async function TenantHomePage({ params }: PageProps) {
           <div className="max-w-6xl mx-auto px-4 py-12">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">최신 게시글</h2>
-                <p className="text-gray-600">최근에 올라온 게시글을 확인해보세요.</p>
+                <h2 className="text-3xl font-bold text-gray-900">최신 게시글</h2>
               </div>
               <Link
                 href={`/t/${slug}/posts`}
-                className="px-6 py-2 text-gray-500 rounded-md transition-colors font-medium"
+                className="px-0 md:px-6 py-2 text-gray-500 rounded-md transition-colors font-medium"
               >
                 <span>전체 보기</span> <ChevronRight size={14} className="inline-block pb-px" />
               </Link>
@@ -131,7 +130,7 @@ export default async function TenantHomePage({ params }: PageProps) {
 
       {/* 게시글이 없을 때 */}
       {recentPosts.length === 0 && (
-        <div className="bg-gray-50">
+        <div className="bg-gray-50 h-full">
           <div className="max-w-6xl mx-auto px-4 py-16">
             <div className="text-center">
               <div className="text-gray-400 text-6xl mb-4">📝</div>

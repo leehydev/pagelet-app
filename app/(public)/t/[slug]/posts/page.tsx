@@ -75,7 +75,7 @@ export default async function AllPostsPage({ params }: PageProps) {
   return (
     <>
       {/* 전체 게시글 섹션 헤더 */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-2">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">

@@ -88,7 +88,7 @@ export default async function CategoryPostsPage({ params }: PageProps) {
   return (
     <>
       {/* 카테고리 정보 */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-2">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
