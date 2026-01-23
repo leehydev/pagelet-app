@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
+import { AccountStatus } from '@/lib/api/types';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function AuthSuccessPage() {
@@ -11,7 +12,13 @@ export default function AuthSuccessPage() {
 
   useEffect(() => {
     if (isSuccess && user) {
-      router.replace('/admin');
+      if (user.accountStatus === AccountStatus.PENDING) {
+        router.replace('/waiting');
+      } else if (user.accountStatus === AccountStatus.ONBOARDING) {
+        router.replace('/onboarding/profile');
+      } else {
+        router.replace('/admin');
+      }
     }
   }, [isSuccess, user, router]);
 

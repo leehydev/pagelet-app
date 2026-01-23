@@ -2,7 +2,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/hooks/use-user';
 import { useAdminSites } from '@/hooks/use-admin-sites';
+import { AccountStatus } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
@@ -10,16 +12,38 @@ const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
 
 /**
  * /admin 페이지
+ * - PENDING 상태 → /waiting으로 리다이렉트
+ * - ONBOARDING 상태 → /onboarding/profile로 리다이렉트
  * - 사이트 0개 → 온보딩으로 리다이렉트
  * - 사이트 1개 → 자동 진입
  * - 사이트 N개 → 마지막 선택 복구 또는 선택 UI 표시
  */
 export default function AdminIndexPage() {
   const router = useRouter();
-  const { data: sites, isLoading, isError } = useAdminSites();
+  const { data: user, isLoading: isUserLoading } = useUser();
+  const { data: sites, isLoading: isSitesLoading, isError } = useAdminSites();
+
+  const isLoading = isUserLoading || isSitesLoading;
+
+  useEffect(() => {
+    if (isUserLoading || !user) return;
+
+    // PENDING 상태면 /waiting으로 리다이렉트
+    if (user.accountStatus === AccountStatus.PENDING) {
+      router.replace('/waiting');
+      return;
+    }
+    // ONBOARDING 상태면 온보딩으로 리다이렉트
+    if (user.accountStatus === AccountStatus.ONBOARDING) {
+      router.replace('/onboarding/profile');
+      return;
+    }
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (isLoading || isError || !sites) return;
+    // user 상태 체크가 완료되지 않았으면 대기
+    if (!user || user.accountStatus !== AccountStatus.ACTIVE) return;
 
     if (sites.length === 0) {
       // 사이트 없음 → 온보딩
@@ -41,7 +65,7 @@ export default function AdminIndexPage() {
       router.replace(`/admin/${validSite.id}`);
     }
     // else: 사이트 선택 UI 표시 (아래 렌더링)
-  }, [sites, isLoading, isError, router]);
+  }, [sites, isLoading, isError, router, user]);
 
   if (isLoading) {
     return <LoadingSpinner fullScreen size="lg" />;
