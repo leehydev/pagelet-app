@@ -71,8 +71,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [post.ogImageUrl]
         : settings.ogImageUrl
-        ? [settings.ogImageUrl]
-        : undefined,
+          ? [settings.ogImageUrl]
+          : undefined,
       type: 'article',
       publishedTime: post.publishedAt,
     },
@@ -97,7 +97,7 @@ export default async function PostDetailPage({ params }: PageProps) {
         <div className="max-w-4xl mx-auto px-4 py-12">
           {/* 카테고리 */}
           {post.categoryName && (
-            <div className="mb-4">
+            <div className="">
               <Link href={`/t/${slug}/category/${post.categorySlug}`}>
                 <Badge variant="secondary" className="hover:bg-gray-200 transition-colors">
                   {post.categoryName}
@@ -107,12 +107,12 @@ export default async function PostDetailPage({ params }: PageProps) {
           )}
 
           {/* 제목 */}
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
             {post.title}
           </h1>
 
           {/* 부제목 */}
-          {post.subtitle && <p className="text-xl text-gray-600 mb-6">{post.subtitle}</p>}
+          {post.subtitle && <p className="text-xl text-gray-600">{post.subtitle}</p>}
 
           {/* 메타 정보 */}
           <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -122,18 +122,6 @@ export default async function PostDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
-
-      {/* 썸네일 이미지 */}
-      {post.ogImageUrl && (
-        <div className="bg-gray-50">
-          <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="aspect-video rounded-lg overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.ogImageUrl} alt={post.title} className="w-full h-full object-cover" />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 본문 */}
       <main className="bg-white">

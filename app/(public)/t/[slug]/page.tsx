@@ -55,7 +55,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         canonical: `${settings.canonicalBaseUrl}`,
       },
     }),
-    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : undefined,
+    // faviconUrl이 없으면 빈 배열로 부모 상속 차단 (404 방지)
+    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : { icon: [] },
   };
 }
 
