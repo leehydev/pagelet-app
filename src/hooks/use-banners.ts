@@ -9,7 +9,6 @@ import {
   deleteBanner,
   updateBannerOrder,
   Banner,
-  DeviceType,
   CreateBannerRequest,
   UpdateBannerRequest,
   BannerOrderRequest,
@@ -20,8 +19,7 @@ import { AxiosError } from 'axios';
 export const bannerKeys = {
   all: ['banners'] as const,
   admin: (siteId: string) => [...bannerKeys.all, 'admin', siteId] as const,
-  adminList: (siteId: string, deviceType?: DeviceType) =>
-    [...bannerKeys.admin(siteId), 'list', deviceType || 'all'] as const,
+  adminList: (siteId: string) => [...bannerKeys.admin(siteId), 'list'] as const,
   adminDetail: (siteId: string, bannerId: string) =>
     [...bannerKeys.admin(siteId), 'detail', bannerId] as const,
 };
@@ -31,10 +29,10 @@ export const bannerKeys = {
 /**
  * Admin 배너 목록 조회 훅
  */
-export function useAdminBanners(siteId: string, deviceType?: DeviceType) {
+export function useAdminBanners(siteId: string) {
   return useQuery<Banner[], AxiosError>({
-    queryKey: bannerKeys.adminList(siteId, deviceType),
-    queryFn: () => getAdminBanners(siteId, deviceType),
+    queryKey: bannerKeys.adminList(siteId),
+    queryFn: () => getAdminBanners(siteId),
     enabled: !!siteId,
   });
 }
@@ -58,10 +56,8 @@ export function useCreateBanner(siteId: string) {
 
   return useMutation({
     mutationFn: (data: CreateBannerRequest) => createBanner(siteId, data),
-    onSuccess: (_, variables) => {
-      // 해당 deviceType의 배너 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: bannerKeys.adminList(siteId, variables.deviceType) });
-      // 전체 목록도 무효화
+    onSuccess: () => {
+      // 배너 목록 캐시 무효화
       queryClient.invalidateQueries({ queryKey: bannerKeys.adminList(siteId) });
     },
     onError: (error: AxiosError<{ message?: string; code?: string }>) => {
@@ -119,10 +115,10 @@ export function useUpdateBannerOrder(siteId: string) {
 
   return useMutation({
     mutationFn: (data: BannerOrderRequest) => updateBannerOrder(siteId, data),
-    onSuccess: (_, variables) => {
-      // 해당 deviceType의 배너 목록 캐시 무효화
+    onSuccess: () => {
+      // 배너 목록 캐시 무효화
       queryClient.invalidateQueries({
-        queryKey: bannerKeys.adminList(siteId, variables.deviceType),
+        queryKey: bannerKeys.adminList(siteId),
       });
     },
     onError: (error: AxiosError<{ message?: string; code?: string }>) => {

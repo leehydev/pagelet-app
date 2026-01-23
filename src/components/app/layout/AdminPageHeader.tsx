@@ -7,6 +7,7 @@ import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
 
 export interface AdminPageHeaderProps {
   breadcrumb: string;
+  breadcrumbHref?: string;
   title: string;
   action?: {
     label: string;
@@ -39,13 +40,19 @@ function SidebarToggle() {
 /**
  * 페이지에서 직접 사용하는 헤더 컴포넌트
  */
-export function AdminPageHeader({ breadcrumb, title, action, extra }: AdminPageHeaderProps) {
+export function AdminPageHeader({ breadcrumb, breadcrumbHref, title, action, extra }: AdminPageHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white">
       <div className="flex h-16 items-center gap-4 px-4">
         <SidebarToggle />
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{breadcrumb}</span>
+          {breadcrumbHref ? (
+            <Link href={breadcrumbHref} className="text-muted-foreground hover:text-foreground transition-colors">
+              {breadcrumb}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground">{breadcrumb}</span>
+          )}
           <span className="text-muted-foreground">
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
           </span>

@@ -7,8 +7,10 @@ import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export interface ValidationInputProps<TFieldValues extends FieldValues = FieldValues>
-  extends Omit<React.ComponentProps<typeof Input>, 'name'> {
+export interface ValidationInputProps<TFieldValues extends FieldValues = FieldValues> extends Omit<
+  React.ComponentProps<typeof Input>,
+  'name'
+> {
   /** react-hook-form 필드 이름 */
   name: FieldPath<TFieldValues>;
   /** 라벨 텍스트 */
@@ -88,11 +90,11 @@ function ValidationInputInner<TFieldValues extends FieldValues = FieldValues>(
               }
               className={className}
               value={field.value ?? ''}
-              onChange={e => {
+              onChange={(e) => {
                 field.onChange(e);
                 props.onChange?.(e);
               }}
-              onBlur={e => {
+              onBlur={(e) => {
                 field.onBlur();
                 props.onBlur?.(e);
               }}
@@ -100,7 +102,9 @@ function ValidationInputInner<TFieldValues extends FieldValues = FieldValues>(
             {description && !hasError && (
               <FieldDescription id={`${name}-description`}>{description}</FieldDescription>
             )}
-            <FieldError id={`${name}-error`}>{hasError ? error.message : ''}</FieldError>
+            <FieldError className="text-xs" id={`${name}-error`}>
+              {hasError ? error.message : ''}
+            </FieldError>
           </div>
         </Field>
       )}

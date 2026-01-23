@@ -1,7 +1,8 @@
-import type { PublicPost, SiteSettings } from '@/lib/api';
-import { fetchPublicPosts, fetchSiteSettings } from '@/lib/api/server';
+import type { PublicPost, PublicBanner, SiteSettings } from '@/lib/api';
+import { fetchPublicPosts, fetchSiteSettings, fetchPublicBanners } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
+import { PostBannerSlider } from '@/components/public/PostBannerSlider';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -54,7 +55,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         canonical: `${settings.canonicalBaseUrl}`,
       },
     }),
-    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : undefined,
+    // faviconUrl이 없으면 빈 배열로 부모 상속 차단 (404 방지)
+    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : { icon: [] },
   };
 }
 
@@ -71,26 +73,34 @@ async function getPosts(siteSlug: string, limit?: number): Promise<PublicPost[]>
   }
 }
 
+async function getBanners(siteSlug: string): Promise<PublicBanner[]> {
+  try {
+    return await fetchPublicBanners(siteSlug);
+  } catch (error) {
+    // 배너는 부가 데이터이므로 에러 로깅 후 빈 배열 반환 (graceful degradation)
+    console.error('Failed to fetch banners:', error);
+    return [];
+  }
+}
+
 export default async function TenantHomePage({ params }: PageProps) {
   const { slug } = await params;
-  const [settings, recentPosts] = await Promise.all([
+  const [settings, recentPosts, banners] = await Promise.all([
     getSiteSettings(slug),
     getPosts(slug, 6), // 최신 게시글 6개만
+    getBanners(slug),
   ]);
 
   return (
     <>
-      {/* 히어로 섹션 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4">{settings.name}</h1>
-            {settings.seoDescription && (
-              <p className="text-xl text-gray-600 mb-8">{settings.seoDescription}</p>
-            )}
+      {/* 배너 섹션 */}
+      {banners.length > 0 && (
+        <div className="bg-white border-b border-gray-200 py-8">
+          <div className="max-w-7xl mx-auto px-4">
+            <PostBannerSlider banners={banners} siteSlug={slug} />
           </div>
         </div>
-      </div>
+      )}
 
       {/* 최신 게시글 섹션 */}
       {recentPosts.length > 0 && (

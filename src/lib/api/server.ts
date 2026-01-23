@@ -4,7 +4,7 @@
  * axios interceptor 없이 순수 fetch 사용
  */
 
-import type { ApiResponse, PublicPost, SiteSettings, PublicCategory, PublicBanner, DeviceType } from './types';
+import type { ApiResponse, PublicPost, SiteSettings, PublicCategory, PublicBanner } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -97,19 +97,13 @@ export async function fetchPublicCategories(siteSlug: string): Promise<PublicCat
 
 // ===== Public Banner API (서버/ISR) =====
 
-export async function fetchPublicBanners(
-  siteSlug: string,
-  deviceType: DeviceType,
-): Promise<PublicBanner[]> {
-  const params = new URLSearchParams({
-    siteSlug,
-    deviceType,
-  });
+export async function fetchPublicBanners(siteSlug: string): Promise<PublicBanner[]> {
+  const params = new URLSearchParams({ siteSlug });
 
   const res = await fetch(`${API_BASE_URL}/public/banners?${params.toString()}`, {
     next: {
       revalidate: 60,
-      tags: [`banners-${siteSlug}-${deviceType}`],
+      tags: [`banners-${siteSlug}`],
     },
   });
 

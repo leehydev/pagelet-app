@@ -40,12 +40,15 @@ export async function POST(request: NextRequest) {
       // 데이터 캐시 태그
       tagsToRevalidate.push(`post-${siteSlug}-${postSlug}`);
       tagsToRevalidate.push(`posts-${siteSlug}`);
+      // 배너에서 게시글을 참조할 수 있으므로 배너 캐시도 무효화
+      tagsToRevalidate.push(`banners-${siteSlug}`);
     } else {
       // 사이트 전체 관련 경로
       pathsToRevalidate.push(`/t/${siteSlug}`);
       pathsToRevalidate.push(`/t/${siteSlug}/posts`);
       // 데이터 캐시 태그
       tagsToRevalidate.push(`posts-${siteSlug}`);
+      tagsToRevalidate.push(`banners-${siteSlug}`);
     }
 
     // 데이터 캐시 무효화 (태그 기반)

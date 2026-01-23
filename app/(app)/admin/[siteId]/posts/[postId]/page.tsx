@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAdminPost, PostStatus, revalidatePost } from '@/lib/api';
 import { PostContent } from '@/components/app/post/PostContent';
@@ -32,6 +33,7 @@ import {
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useDeletePost, useUpdatePostStatus } from '@/hooks/use-posts';
+import { useAdminCategories } from '@/hooks/use-categories';
 import { useState } from 'react';
 
 export default function AdminPostDetailPage() {
@@ -52,11 +54,15 @@ export default function AdminPostDetailPage() {
   });
 
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
+  const { data: categories } = useAdminCategories(siteId);
   const deletePostMutation = useDeletePost(siteId);
   const updateStatusMutation = useUpdatePostStatus(siteId, postId);
 
   const formattedDate = post ? formatPostDate(post.createdAt) : '';
   const publishedDate = post?.publishedAt ? formatPostDate(post.publishedAt) : null;
+  const categoryName = post?.categoryId
+    ? categories?.find((c) => c.id === post.categoryId)?.name
+    : null;
 
   // 발행된 게시글의 블로그 URL (full URL)
   // 에러 발생 시 조용히 처리 (블로그 URL은 선택적 기능)
@@ -167,7 +173,11 @@ export default function AdminPostDetailPage() {
   if (isLoading) {
     return (
       <>
-        <AdminPageHeader breadcrumb="Posts" title="게시글 상세" />
+        <AdminPageHeader
+          breadcrumb="Posts"
+          breadcrumbHref={`/admin/${siteId}/posts`}
+          title="게시글 상세"
+        />
         <div className="p-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
@@ -183,7 +193,11 @@ export default function AdminPostDetailPage() {
   if (error || !post) {
     return (
       <>
-        <AdminPageHeader breadcrumb="Posts" title="게시글 상세" />
+        <AdminPageHeader
+          breadcrumb="Posts"
+          breadcrumbHref={`/admin/${siteId}/posts`}
+          title="게시글 상세"
+        />
         <div className="p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-700 mb-4">게시글을 찾을 수 없습니다.</p>
@@ -198,14 +212,25 @@ export default function AdminPostDetailPage() {
 
   return (
     <>
+      <AdminPageHeader
+        breadcrumb="Posts"
+        breadcrumbHref={`/admin/${siteId}/posts`}
+        title={post.title || '(제목없음)'}
+        action={{
+          label: '편집',
+          href: `/admin/${siteId}/posts/${postId}/edit`,
+          icon: Pencil,
+        }}
+      />
+
       {/* 상태 배너 (Draft/Private) */}
       {bannerInfo && (
         <div
-          className={`border-b px-4 py-3 flex items-center justify-between ${bannerInfo.bgColor}`}
+          className={`border-b px-4 py-1 flex items-center justify-between ${bannerInfo.bgColor}`}
         >
           <div className="flex items-center gap-2">
             <bannerInfo.icon className={`w-4 h-4 ${bannerInfo.iconColor}`} />
-            <span className={`text-sm font-medium ${bannerInfo.textColor}`}>
+            <span className={`text-xs font-medium ${bannerInfo.textColor}`}>
               {bannerInfo.message}
             </span>
           </div>
@@ -215,7 +240,7 @@ export default function AdminPostDetailPage() {
               variant="outline"
               onClick={() => handleStatusChange(bannerInfo.actionStatus)}
               disabled={updateStatusMutation.isPending}
-              className={`${bannerInfo.textColor} border-current hover:bg-white/50`}
+              className={`${bannerInfo.textColor} h-5 text-xs border-current hover:bg-white/50`}
             >
               {bannerInfo.action}
             </Button>
@@ -233,71 +258,55 @@ export default function AdminPostDetailPage() {
         </div>
       )}
 
-      <AdminPageHeader
-        breadcrumb="Posts"
-        title={post.title || '(제목없음)'}
-        action={{
-          label: '편집',
-          href: `/admin/${siteId}/posts/${postId}/edit`,
-          icon: Pencil,
-        }}
-      />
-
       <div className="bg-gray-50 min-h-[calc(100vh-120px)]">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto p-6">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 좌측: 메인 콘텐츠 */}
             <div className="flex-1 min-w-0">
-              {/* 썸네일 */}
-              {post.ogImageUrl && (
-                <div className="mb-6">
-                  <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 shadow-sm">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={post.ogImageUrl}
-                      alt={post.title || '썸네일'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* 제목 및 날짜 */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
-                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+              <div className="mb-2 flex gap-2 items-center text-xs text-gray-500">
+                {getStatusBadge()}
+                {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
+
+                <span>작성: {formattedDate}</span>
+                {publishedDate && (
+                  <>
+                    <span>·</span>
+                    <span>발행: {publishedDate}</span>
+                  </>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">
                   {post.title || <span className="text-gray-400">(제목없음)</span>}
                 </h1>
                 {post.subtitle && (
-                  <p className="text-lg text-gray-600 mb-4">{post.subtitle}</p>
+                  <p className="text-sm text-gray-500 font-semibold mb-4">{post.subtitle}</p>
                 )}
-                <div className="flex items-center gap-3 text-sm text-gray-500">
-                  <span>작성: {formattedDate}</span>
-                  {publishedDate && (
-                    <>
-                      <span>·</span>
-                      <span>발행: {publishedDate}</span>
-                    </>
-                  )}
-                </div>
               </div>
 
               {/* 본문 */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <PostContent html={post.contentHtml} />
-              </div>
+              <PostContent html={post.contentHtml} />
             </div>
 
             {/* 우측: 사이드바 */}
-            <div className="w-full lg:w-80 shrink-0">
+            <div className="w-full lg:w-64 shrink-0">
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm sticky top-4">
+                {/* 썸네일 */}
+                <div className="aspect-video rounded-t-lg overflow-hidden bg-gray-100 relative">
+                  <Image
+                    src={post.ogImageUrl || '/images/admin/no_thumbnail.png'}
+                    alt={post.title || '썸네일'}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+
                 {/* 게시글 정보 */}
                 <div className="p-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">게시글 정보</h3>
                   <dl className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                      <dt className="text-gray-500">상태</dt>
-                      <dd>{getStatusBadge()}</dd>
-                    </div>
                     <div className="flex justify-between">
                       <dt className="text-gray-500">Slug</dt>
                       <dd className="font-mono text-gray-900 text-right truncate max-w-[180px]">

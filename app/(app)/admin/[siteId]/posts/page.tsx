@@ -147,17 +147,15 @@ export default function AdminPostsPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          {post.ogImageUrl && (
-                            <div className="aspect-video h-14 rounded-md overflow-hidden">
-                              <Image
-                                src={post.ogImageUrl}
-                                alt={post.title || '썸네일'}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                          )}
+                          <div className="aspect-video h-14 rounded-md overflow-hidden">
+                            <Image
+                              src={post.ogImageUrl || '/images/admin/no_thumbnail.png'}
+                              alt={post.title || '썸네일'}
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
