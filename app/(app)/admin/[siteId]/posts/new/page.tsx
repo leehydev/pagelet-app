@@ -1,14 +1,21 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreatePost } from '@/hooks/use-posts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
-import { PostStatus, revalidatePost } from '@/lib/api';
+import { useAutoSave } from '@/hooks/use-auto-save';
+import {
+  PostStatus,
+  revalidatePost,
+  createAdminPost,
+  publishPost,
+  CreatePostRequest,
+} from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
@@ -17,12 +24,11 @@ import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
-import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
 
-// Zod 스키마 정의
+// Zod 스키마 정의 (발행 시 검증용)
 const postSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요').max(500, '제목은 500자 이하여야 합니다').trim(),
   subtitle: z
@@ -51,22 +57,72 @@ type PostFormData = z.infer<typeof postSchema>;
 export default function NewPostPage() {
   const router = useRouter();
   const params = useParams();
+  const queryClient = useQueryClient();
   const siteId = params.siteId as string;
 
-  const createPost = useCreatePost(siteId);
   const {
     data: categories,
     isLoading: categoriesLoading,
     error: categoriesError,
   } = useAdminCategories(siteId);
-  const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
+  const { data: siteSettings } = useAdminSiteSettings(siteId);
   const editorRef = useRef<TiptapEditorRef>(null);
+  const [editorReady, setEditorReady] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
-  const [ogImageUrl, setOgImageUrl] = useState('');
+  const [createdPostId, setCreatedPostId] = useState<string | null>(null);
 
-  // 기본 카테고리 찾기 (미분류)
-  const defaultCategory = categories?.find((c) => c.slug === 'uncategorized');
+  // 자동저장 훅
+  const {
+    lastSavedAt,
+    isSaving,
+    hasUnsavedChanges,
+    markAsChanged,
+    saveNow,
+    getPostId,
+  } = useAutoSave({
+    siteId,
+    postId: createdPostId,
+    intervalMs: 5 * 60 * 1000, // 5분
+    onSaveSuccess: () => {
+      toast.success('자동 저장되었습니다', { duration: 2000 });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+    },
+    onSaveError: (err) => {
+      console.error('Auto-save failed:', err);
+      toast.error('자동 저장에 실패했습니다');
+    },
+    onPostCreated: (postId) => {
+      setCreatedPostId(postId);
+      // URL 변경 없이 내부 상태만 업데이트 (사용자 경험 유지)
+    },
+  });
+
+  // 상태 표시 텍스트
+  const getStatusText = () => {
+    if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
+    if (createdPostId) {
+      return { text: '작성 중', color: 'text-blue-600' };
+    }
+    return { text: '새 글', color: 'text-gray-600' };
+  };
+
+  const statusInfo = getStatusText();
+
+  // 헤더 extra
+  const headerExtra = (
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <span className={statusInfo.color}>{statusInfo.text}</span>
+      {!isSaving && lastSavedAt && (
+        <span className="text-gray-400">
+          ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
+        </span>
+      )}
+      {hasUnsavedChanges && !isSaving && (
+        <span className="text-orange-600">• 저장 대기 중</span>
+      )}
+    </div>
+  );
 
   const methods = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -74,112 +130,191 @@ export default function NewPostPage() {
       title: '',
       subtitle: '',
       slug: '',
-      categoryId: defaultCategory?.id || '',
+      categoryId: '',
       seoTitle: '',
       seoDescription: '',
       ogImageUrl: '',
     },
   });
 
-  const handleSubmit = async (status: PostStatus) => {
-    setError(null);
+  // 썸네일 값 watch
+  const watchedOgImageUrl = useWatch({
+    control: methods.control,
+    name: 'ogImageUrl',
+  });
 
-    try {
-      const data = methods.getValues();
+  // 에디터 내용을 포함한 현재 데이터 수집
+  const collectFormData = useCallback(() => {
+    const data = methods.getValues();
+    const editor = editorRef.current;
 
-      // 에디터에서 내용 추출
-      const editor = editorRef.current;
-      if (!editor) {
-        toast.error('에디터를 불러올 수 없습니다');
-        return;
-      }
+    if (!editor) return null;
 
-      const contentJson = editor.getJSON();
-      if (!contentJson) {
-        toast.error('내용을 입력해주세요');
-        return;
-      }
+    const contentJson = editor.getJSON();
+    if (!contentJson) return null;
 
-      // 빈 문서 체크 (기본 tiptap 문서 구조)
-      const isEmpty =
-        !contentJson.content ||
-        (Array.isArray(contentJson.content) &&
-          (contentJson.content.length === 0 ||
-            (contentJson.content.length === 1 &&
-              contentJson.content[0].type === 'paragraph' &&
-              (!contentJson.content[0].content || contentJson.content[0].content.length === 0))));
+    const contentHtml = editor.getHTML();
+    const contentText = editor.getText().trim();
 
-      if (isEmpty) {
-        toast.error('내용을 입력해주세요');
-        return;
-      }
+    return {
+      title: data.title?.trim(),
+      subtitle: data.subtitle?.trim(),
+      contentJson,
+      contentHtml,
+      contentText,
+      categoryId: data.categoryId?.trim() || undefined,
+      seoTitle: data.seoTitle?.trim() || undefined,
+      seoDescription: data.seoDescription?.trim() || undefined,
+      ogImageUrl: data.ogImageUrl?.trim() || undefined,
+    };
+  }, [methods]);
 
-      const contentHtml = editor.getHTML();
-      const contentText = editor.getText().trim();
+  // 폼 필드 변경 감지
+  const watchedValues = useWatch({ control: methods.control });
 
-      if (!contentText) {
-        toast.error('내용을 입력해주세요');
-        return;
-      }
+  useEffect(() => {
+    if (!editorReady) return;
 
-      const createdPost = await createPost.mutateAsync({
-        title: data.title.trim(),
-        subtitle: data.subtitle.trim(),
-        slug: data.slug?.trim() || undefined,
-        contentJson,
-        contentHtml,
-        contentText,
-        status,
-        categoryId: data.categoryId?.trim() || undefined,
-        seoTitle: data.seoTitle?.trim() || undefined,
-        seoDescription: data.seoDescription?.trim() || undefined,
-        ogImageUrl: ogImageUrl.trim() || undefined,
-      });
+    const data = collectFormData();
+    if (data) {
+      markAsChanged(data);
+    }
+  }, [watchedValues, editorReady, collectFormData, markAsChanged]);
 
-      // 발행 시 ISR 캐시 무효화 (에러 발생해도 조용히 처리)
-      if (status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
+  // 에디터 준비 완료 콜백
+  const handleEditorReady = useCallback(() => {
+    setEditorReady(true);
+  }, []);
+
+  // 발행 mutation (postId가 있을 때)
+  const publishMutation = useMutation({
+    mutationFn: (postId: string) => publishPost(siteId, postId),
+    onSuccess: async (updatedPost) => {
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      if (siteSettings?.slug && updatedPost.slug) {
         try {
-          await revalidatePost(siteSettings.slug, createdPost.slug);
-        } catch (revalidateError) {
-          // ISR revalidation 실패는 조용히 처리 (게시글 저장은 성공했으므로)
-          console.warn('Failed to revalidate post:', revalidateError);
+          await revalidatePost(siteSettings.slug, updatedPost.slug);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
         }
       }
-
+      toast.success('게시글이 발행되었습니다');
       router.push(`/admin/${siteId}/posts`);
-    } catch (err) {
-      const errorCode = getErrorCode(err);
-      const errorMessage = getErrorDisplayMessage(err, '게시글 저장에 실패했습니다.');
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
+    },
+  });
 
-      // POST_002 (slug 중복) 또는 409 상태 코드인 경우 slug 필드에 에러 표시
+  // 직접 발행 mutation (postId가 없을 때)
+  const createAndPublishMutation = useMutation({
+    mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
+    onSuccess: async (createdPost) => {
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      if (siteSettings?.slug && createdPost.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, createdPost.slug);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
+        }
+      }
+      toast.success('게시글이 발행되었습니다');
+      router.push(`/admin/${siteId}/posts`);
+    },
+    onError: (err) => {
+      const errorCode = getErrorCode(err);
+      const errorMessage = getErrorDisplayMessage(err, '게시글 발행에 실패했습니다.');
+
       if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
         methods.setError('slug', {
           type: 'manual',
           message: errorMessage,
         });
         setError(errorMessage);
-        // slug 에러 발생 시 해당 필드로 스크롤
         setTimeout(() => {
           scrollToFirstError(errorMessage);
         }, 150);
       } else {
         setError(errorMessage);
       }
+    },
+  });
+
+  // 발행 처리
+  const handlePublish = async () => {
+    setError(null);
+
+    // 폼 검증
+    const isValid = await methods.trigger();
+    if (!isValid) {
+      const errors = methods.formState.errors;
+      setTimeout(() => {
+        scrollToFirstError(errors);
+      }, 150);
+      return;
+    }
+
+    const data = methods.getValues();
+    const editor = editorRef.current;
+
+    if (!editor) {
+      toast.error('에디터를 불러올 수 없습니다');
+      return;
+    }
+
+    const contentJson = editor.getJSON();
+    const contentHtml = editor.getHTML();
+    const contentText = editor.getText().trim();
+
+    // 내용 검증
+    const isEmpty =
+      !contentJson?.content ||
+      (Array.isArray(contentJson.content) &&
+        (contentJson.content.length === 0 ||
+          (contentJson.content.length === 1 &&
+            contentJson.content[0].type === 'paragraph' &&
+            (!contentJson.content[0].content || contentJson.content[0].content.length === 0))));
+
+    if (isEmpty || !contentText) {
+      toast.error('내용을 입력해주세요');
+      return;
+    }
+
+    const currentPostId = getPostId();
+
+    if (currentPostId) {
+      // postId가 있으면 publishPost 호출
+      publishMutation.mutate(currentPostId);
+    } else {
+      // postId가 없으면 바로 PUBLISHED로 생성
+      createAndPublishMutation.mutate({
+        title: data.title.trim(),
+        subtitle: data.subtitle.trim(),
+        slug: data.slug?.trim() || undefined,
+        contentJson,
+        contentHtml,
+        contentText,
+        status: PostStatus.PUBLISHED,
+        categoryId: data.categoryId?.trim() || undefined,
+        seoTitle: data.seoTitle?.trim() || undefined,
+        seoDescription: data.seoDescription?.trim() || undefined,
+        ogImageUrl: data.ogImageUrl?.trim() || undefined,
+      });
     }
   };
 
-  const onError = (errors: FieldErrors<PostFormData>) => {
-    // onError에서 받은 errors를 직접 사용하여 스크롤
-    // 더 긴 지연 시간을 주어 React가 완전히 렌더링할 시간을 확보
-    setTimeout(() => {
-      scrollToFirstError(errors);
-    }, 150);
+  // 저장 처리 (수동)
+  const handleSave = async () => {
+    await saveNow();
+    toast.success('저장되었습니다');
   };
+
+  const isPending = isSaving || publishMutation.isPending || createAndPublishMutation.isPending;
 
   return (
     <FormProvider {...methods}>
       <>
-        <AdminPageHeader breadcrumb="Management" title="New Post" />
+        <AdminPageHeader breadcrumb="Management" title="New Post" extra={headerExtra} />
         <div className="p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
@@ -214,44 +349,50 @@ export default function NewPostPage() {
                 {/* 내용 */}
                 <Field>
                   <FieldLabel>내용</FieldLabel>
-                  <TiptapEditor ref={editorRef} siteId={siteId} />
+                  <TiptapEditor
+                    ref={editorRef}
+                    siteId={siteId}
+                    onEditorReady={handleEditorReady}
+                  />
                 </Field>
               </div>
             </div>
 
             {/* 사이드바 */}
             <div className="w-full lg:w-64 shrink-0 space-y-4">
-              {/* 발행 설정 */}
+              {/* 게시글 관리 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-900 mb-4">발행</h3>
+                <h3 className="font-medium text-gray-900 mb-4">게시글 관리</h3>
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
                     className="w-full"
-                    onClick={() => {
-                      methods.handleSubmit(() => handleSubmit(PostStatus.PUBLISHED), onError)();
-                    }}
-                    disabled={createPost.isPending}
+                    onClick={handlePublish}
+                    disabled={isPending}
                   >
-                    {createPost.isPending ? '발행 중...' : '발행하기'}
+                    {publishMutation.isPending || createAndPublishMutation.isPending
+                      ? '발행 중...'
+                      : '발행'}
                   </Button>
+
+                  {/* 저장 */}
                   <Button
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={() => {
-                      methods.handleSubmit(() => handleSubmit(PostStatus.DRAFT), onError)();
-                    }}
-                    disabled={createPost.isPending}
+                    onClick={handleSave}
+                    disabled={isPending || !hasUnsavedChanges}
                   >
-                    {createPost.isPending ? '저장 중...' : '임시 저장'}
+                    {isSaving ? '저장 중...' : '저장'}
                   </Button>
+
+                  {/* 취소 */}
                   <Button
                     type="button"
                     variant="ghost"
                     className="w-full"
                     onClick={() => router.back()}
-                    disabled={createPost.isPending}
+                    disabled={isPending}
                   >
                     취소
                   </Button>
@@ -335,9 +476,15 @@ export default function NewPostPage() {
                 <h3 className="font-medium text-gray-900 mb-3">썸네일</h3>
                 <ThumbnailInput
                   siteId={siteId}
-                  value={ogImageUrl}
-                  onChange={(url) => setOgImageUrl(url || '')}
-                  disabled={createPost.isPending}
+                  value={watchedOgImageUrl || ''}
+                  onChange={(url) => {
+                    methods.setValue('ogImageUrl', url || '');
+                    const data = collectFormData();
+                    if (data) {
+                      markAsChanged({ ...data, ogImageUrl: url || undefined });
+                    }
+                  }}
+                  disabled={isPending}
                 />
               </div>
 

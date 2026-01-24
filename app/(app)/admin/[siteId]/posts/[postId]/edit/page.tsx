@@ -108,7 +108,7 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
-  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, setIsEditingDraft } = useAutoSave({
+  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, saveNow, setIsEditingDraft } = useAutoSave({
     siteId,
     postId,
     intervalMs: 5 * 60 * 1000, // 5분
@@ -486,6 +486,17 @@ export default function EditPostPage() {
                       </Button>
                     </>
                   )}
+
+                  {/* 저장 */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={saveNow}
+                    disabled={isSaving || !hasUnsavedChanges}
+                  >
+                    {isSaving ? '저장 중...' : '저장'}
+                  </Button>
 
                   {/* 뒤로 가기 */}
                   <Button

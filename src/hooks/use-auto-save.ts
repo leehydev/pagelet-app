@@ -3,14 +3,15 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { saveDraft, SaveDraftRequest } from '@/lib/api';
+import { saveDraft, createAdminPost, CreatePostRequest, SaveDraftRequest, PostStatus } from '@/lib/api';
 
 interface UseAutoSaveOptions {
   siteId: string;
-  postId: string | null; // null이면 자동저장 비활성화 (새 글)
+  postId: string | null; // null이면 새 글 모드
   intervalMs?: number; // 자동저장 간격 (기본 5분)
   onSaveSuccess?: () => void;
   onSaveError?: (error: Error) => void;
+  onPostCreated?: (postId: string) => void; // 새 게시글 생성 시 호출
 }
 
 interface AutoSaveState {
@@ -20,12 +21,48 @@ interface AutoSaveState {
   isEditingDraft: boolean; // 드래프트 편집 중 여부
 }
 
+// 내용이 비어있는지 확인
+function isContentEmpty(contentJson: Record<string, unknown> | undefined): boolean {
+  if (!contentJson) return true;
+
+  const content = contentJson.content as Array<Record<string, unknown>> | undefined;
+  if (!content || content.length === 0) return true;
+
+  // 빈 paragraph만 있는 경우
+  if (
+    content.length === 1 &&
+    content[0].type === 'paragraph' &&
+    (!content[0].content || (content[0].content as Array<unknown>).length === 0)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+// 필수 필드 기본값 채우기
+function fillRequiredFields(data: SaveDraftRequest): CreatePostRequest {
+  return {
+    title: data.title?.trim() || '제목 없음',
+    subtitle: data.subtitle?.trim() || ' ',
+    contentJson: data.contentJson || { type: 'doc', content: [] },
+    contentHtml: data.contentHtml,
+    contentText: data.contentText,
+    seoTitle: data.seoTitle,
+    seoDescription: data.seoDescription,
+    ogImageUrl: data.ogImageUrl,
+    categoryId: data.categoryId,
+    status: PostStatus.PRIVATE,
+  };
+}
+
 export function useAutoSave({
   siteId,
-  postId,
+  postId: initialPostId,
   intervalMs = 5 * 60 * 1000, // 5분
   onSaveSuccess,
   onSaveError,
+  onPostCreated,
 }: UseAutoSaveOptions) {
   const [state, setState] = useState<AutoSaveState>({
     lastSavedAt: null,
@@ -34,14 +71,46 @@ export function useAutoSave({
     isEditingDraft: false,
   });
 
+  // postId를 내부 상태로 관리 (새 글 생성 후 업데이트)
+  const postIdRef = useRef<string | null>(initialPostId);
+
   const pendingDataRef = useRef<SaveDraftRequest | null>(null);
   const lastSavedDataRef = useRef<string>('');
 
+  // initialPostId 변경 시 동기화
+  useEffect(() => {
+    postIdRef.current = initialPostId;
+  }, [initialPostId]);
+
+  // 새 게시글 생성 mutation
+  const createMutation = useMutation({
+    mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
+    onSuccess: (post) => {
+      postIdRef.current = post.id;
+      setState((prev) => ({
+        ...prev,
+        lastSavedAt: dayjs().toDate(),
+        isSaving: false,
+        hasUnsavedChanges: false,
+        isEditingDraft: true,
+      }));
+      if (pendingDataRef.current) {
+        lastSavedDataRef.current = JSON.stringify(pendingDataRef.current);
+      }
+      onPostCreated?.(post.id);
+      onSaveSuccess?.();
+    },
+    onError: (error: Error) => {
+      setState((prev) => ({ ...prev, isSaving: false }));
+      onSaveError?.(error);
+    },
+  });
+
   // 드래프트 저장 mutation
-  const mutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: (data: SaveDraftRequest) => {
-      if (!postId) throw new Error('postId is required');
-      return saveDraft(siteId, postId, data);
+      if (!postIdRef.current) throw new Error('postId is required');
+      return saveDraft(siteId, postIdRef.current, data);
     },
     onSuccess: () => {
       setState((prev) => ({
@@ -49,9 +118,8 @@ export function useAutoSave({
         lastSavedAt: dayjs().toDate(),
         isSaving: false,
         hasUnsavedChanges: false,
-        isEditingDraft: true, // 드래프트 저장됨
+        isEditingDraft: true,
       }));
-      // 저장된 데이터 기록
       if (pendingDataRef.current) {
         lastSavedDataRef.current = JSON.stringify(pendingDataRef.current);
       }
@@ -72,32 +140,59 @@ export function useAutoSave({
     }
   }, []);
 
-  // 수동 저장 트리거
-  const saveNow = useCallback(async () => {
-    if (!postId || !pendingDataRef.current || mutation.isPending) return;
+  // 저장 실행 (내부 함수)
+  const executeSave = useCallback(async () => {
+    const data = pendingDataRef.current;
+    if (!data) return;
+
+    const isPending = createMutation.isPending || saveMutation.isPending;
+    if (isPending) return;
 
     setState((prev) => ({ ...prev, isSaving: true }));
-    await mutation.mutateAsync(pendingDataRef.current);
-  }, [postId, mutation]);
+
+    if (postIdRef.current) {
+      // postId가 있으면 드래프트 저장
+      await saveMutation.mutateAsync(data);
+    } else {
+      // postId가 없으면 새 게시글 생성
+      // 내용이 없으면 저장하지 않음
+      if (isContentEmpty(data.contentJson)) {
+        setState((prev) => ({ ...prev, isSaving: false }));
+        return;
+      }
+
+      const createData = fillRequiredFields(data);
+      await createMutation.mutateAsync(createData);
+    }
+  }, [createMutation, saveMutation]);
+
+  // 수동 저장 트리거
+  const saveNow = useCallback(async () => {
+    if (!pendingDataRef.current) return;
+    await executeSave();
+  }, [executeSave]);
 
   // 드래프트 편집 상태 설정 (에디터 초기화 시 사용)
   const setIsEditingDraft = useCallback((value: boolean) => {
     setState((prev) => ({ ...prev, isEditingDraft: value }));
   }, []);
 
+  // 현재 postId 반환 (새 글 생성 후 업데이트된 값)
+  const getPostId = useCallback(() => postIdRef.current, []);
+
   // 자동저장 인터벌
   useEffect(() => {
-    if (!postId) return;
-
     const interval = setInterval(() => {
-      if (pendingDataRef.current && state.hasUnsavedChanges && !mutation.isPending) {
-        setState((prev) => ({ ...prev, isSaving: true }));
-        mutation.mutate(pendingDataRef.current!);
+      if (pendingDataRef.current && state.hasUnsavedChanges) {
+        const isPending = createMutation.isPending || saveMutation.isPending;
+        if (!isPending) {
+          executeSave();
+        }
       }
     }, intervalMs);
 
     return () => clearInterval(interval);
-  }, [postId, intervalMs, state.hasUnsavedChanges, mutation]);
+  }, [intervalMs, state.hasUnsavedChanges, createMutation.isPending, saveMutation.isPending, executeSave]);
 
   // 페이지 떠날 때 경고
   useEffect(() => {
@@ -117,5 +212,6 @@ export function useAutoSave({
     markAsChanged,
     saveNow,
     setIsEditingDraft,
+    getPostId,
   };
 }
