@@ -4,12 +4,11 @@ import dayjs from 'dayjs';
 import { KeyRound } from 'lucide-react';
 
 import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
+import { getOAuthAuthorizeUrl, OAuthProvider } from '@/lib/oauth';
 
 export default function SignInPage() {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-
-  function signin(provider: string) {
-    window.location.href = `${API_BASE_URL}/auth/${provider}`;
+  function signin(provider: OAuthProvider) {
+    window.location.href = getOAuthAuthorizeUrl(provider);
   }
 
   return (
