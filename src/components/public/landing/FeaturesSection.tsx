@@ -11,7 +11,7 @@ const features = [
   {
     icon: Palette,
     title: '테마 커스터마이징',
-    description: '라이트/다크 모드, 색상을 자유롭게 변경 가능',
+    description: '폰트 선택 및 커스텀 로고 적용 기능 지원',
   },
   {
     icon: Zap,
