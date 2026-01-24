@@ -6,7 +6,7 @@ import { ReactNode, useState } from 'react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-import { api } from './api';
+import { removeAccessToken } from './api/client';
 
 // Devtools는 개발 환경에서만 동적으로 로드
 const ReactQueryDevtools =
@@ -21,12 +21,18 @@ const ReactQueryDevtools =
     : () => null;
 
 /**
- * 로그아웃 처리 (서버 API 호출 후 로그인 페이지로 이동)
+ * 로그아웃 처리
+ * - localStorage에서 accessToken 삭제
+ * - 프론트 서버 API 호출하여 refreshToken 쿠키 삭제
+ * - 로그인 페이지로 이동
  */
 async function logout() {
   if (typeof window !== 'undefined') {
     try {
-      await api.post('/auth/logout');
+      // localStorage에서 accessToken 삭제
+      removeAccessToken();
+      // 프론트 서버 API 호출하여 refreshToken 쿠키 삭제
+      await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
       window.location.href = '/signin';
     }
