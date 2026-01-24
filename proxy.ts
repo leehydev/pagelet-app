@@ -20,14 +20,6 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 디버깅용 로그
-  console.log('=== Middleware Debug ===');
-  console.log('host:', host);
-  console.log('x-forwarded-host:', req.headers.get('x-forwarded-host'));
-  console.log('host header:', req.headers.get('host'));
-  console.log('ROOT_DOMAIN:', ROOT_DOMAIN);
-  console.log('path:', path);
-
   // 1) apex 도메인 (랜딩): pagelet.kr, www.pagelet.kr
   if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}` || host === 'localhost') {
     url.pathname = `/landing${path}`;
