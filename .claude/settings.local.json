@@ -13,7 +13,8 @@
       "Bash(gh auth status:*)",
       "Bash(gh issue create:*)",
       "Bash(gh project item-add:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(file:*)"
     ]
   }
 }
