@@ -71,7 +71,7 @@ export function LandingFooter() {
               © 2026 Pagelet. All rights reserved.
             </p>
             <Link
-              href="/"
+              href={`https://www.${process.env.NEXT_PUBLIC_TENANT_DOMAIN}`}
               className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
             >
               Powered by Pagelet

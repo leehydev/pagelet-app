@@ -31,7 +31,7 @@ export function MenuBar({ editor, siteId }: MenuBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-0 p-2 border-b bg-muted/30">
+    <div className="flex flex-wrap items-center gap-0 p-2 border-b bg-background sticky top-[64px] z-10">
       <MediaMenu editor={editor} siteId={siteId} />
       <Separator />
       <LinkMenu editor={editor} editorState={editorState} />

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { PublicCategory } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -34,15 +34,8 @@ export function MobileMenu({ categories, siteSlug }: MobileMenuProps) {
       <SheetContent side="right" className="w-72 p-0">
         <div className="flex flex-col h-full">
           {/* 헤더 */}
-          <div className="flex items-center justify-between p-4 border-b">
+          <div className="p-4 border-b">
             <SheetTitle className="font-semibold text-gray-900">카테고리</SheetTitle>
-            <button
-              onClick={() => setOpen(false)}
-              className="p-1 rounded hover:bg-gray-100"
-              aria-label="메뉴 닫기"
-            >
-              <X className="text-gray-500" />
-            </button>
           </div>
 
           {/* 카테고리 목록 */}
