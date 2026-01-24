@@ -262,6 +262,12 @@ export interface BrandingCommitResponse {
   updatedAt: string;
 }
 
+export interface BrandingDeleteResponse {
+  deleted: boolean;
+  type: BrandingType;
+  updatedAt: string;
+}
+
 // ===== Category Types =====
 
 export interface Category {

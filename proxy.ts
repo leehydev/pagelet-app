@@ -15,14 +15,6 @@ export function proxy(req: NextRequest) {
   const host = getHostname(req);
   const path = url.pathname;
 
-  // 디버깅용 로그
-  console.log('=== Middleware Debug ===');
-  console.log('host:', host);
-  console.log('x-forwarded-host:', req.headers.get('x-forwarded-host'));
-  console.log('host header:', req.headers.get('host'));
-  console.log('ROOT_DOMAIN:', ROOT_DOMAIN);
-  console.log('path:', path);
-
   // 헬스체크 요청은 바로 통과
   if (path === '/api/health' || path === '/health') {
     return NextResponse.next();

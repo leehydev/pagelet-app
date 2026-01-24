@@ -31,6 +31,8 @@ import type {
   BrandingPresignResponse,
   BrandingCommitRequest,
   BrandingCommitResponse,
+  BrandingDeleteResponse,
+  BrandingType,
   CreateCategoryRequest,
   UpdateCategoryRequest,
   PaginatedResponse,
@@ -403,6 +405,16 @@ export async function commitBrandingUpload(
   const response = await api.post<ApiResponse<BrandingCommitResponse>>(
     `/admin/sites/${siteId}/assets/branding/commit`,
     data,
+  );
+  return response.data.data;
+}
+
+export async function deleteBrandingAsset(
+  siteId: string,
+  type: BrandingType,
+): Promise<BrandingDeleteResponse> {
+  const response = await api.delete<ApiResponse<BrandingDeleteResponse>>(
+    `/admin/sites/${siteId}/assets/branding/${type}`,
   );
   return response.data.data;
 }

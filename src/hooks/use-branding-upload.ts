@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   presignBrandingUpload,
   commitBrandingUpload,
+  deleteBrandingAsset,
   BrandingType,
   BrandingPresignResponse,
 } from '@/lib/api';
+import { toast } from 'sonner';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
 import { uploadFileToS3 } from './use-upload';
 import { siteSettingsKeys } from './use-site-settings';
@@ -32,7 +34,9 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<BrandingUploadState>(initialState);
   const siteIdRef = useRef(siteId);
-  siteIdRef.current = siteId;
+  useEffect(() => {
+    siteIdRef.current = siteId;
+  }, [siteId]);
 
   // Presign mutation
   const presignMutation = useMutation({
@@ -44,6 +48,15 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
   const commitMutation = useMutation({
     mutationFn: (data: { type: BrandingType; tmpKey: string }) =>
       commitBrandingUpload(siteIdRef.current, data),
+    onSuccess: () => {
+      // 설정 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteIdRef.current) });
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteBrandingAsset(siteIdRef.current, type),
     onSuccess: () => {
       // 설정 캐시 무효화
       queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteIdRef.current) });
@@ -140,14 +153,31 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
     setState(initialState);
   }, []);
 
+  /**
+   * 서버에 저장된 이미지 삭제
+   */
+  const deleteAsset = useCallback(async () => {
+    try {
+      const response = await deleteMutation.mutateAsync();
+      toast.success('이미지가 삭제되었습니다');
+      return response;
+    } catch (error) {
+      const errorMessage = getErrorDisplayMessage(error, '이미지 삭제에 실패했습니다');
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, [deleteMutation]);
+
   return {
     state,
     upload,
     commit,
     reset,
+    deleteAsset,
     isUploading: state.status === 'uploading',
     isUploaded: state.status === 'uploaded',
     isCommitting: state.status === 'committing',
+    isDeleting: deleteMutation.isPending,
     hasChanges: state.status === 'uploaded',
   };
 }

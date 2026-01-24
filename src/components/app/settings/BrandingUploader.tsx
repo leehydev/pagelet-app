@@ -1,7 +1,17 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useBrandingUpload } from '@/hooks/use-branding-upload';
 import { BrandingType } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -57,7 +67,8 @@ export function BrandingUploader({
   onCommit,
 }: BrandingUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { state, upload, commit, reset, isUploading, isUploaded, isCommitting } = useBrandingUpload(
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { state, upload, commit, reset, deleteAsset, isUploading, isUploaded, isCommitting, isDeleting } = useBrandingUpload(
     siteId,
     type,
   );
@@ -109,8 +120,24 @@ export function BrandingUploader({
   }, []);
 
   const handleRemove = useCallback(() => {
-    reset();
-  }, [reset]);
+    if (isUploaded) {
+      // 업로드 상태 취소 (로컬 리셋)
+      reset();
+    } else if (currentUrl) {
+      // 서버 이미지 삭제 확인 다이얼로그 표시
+      setShowDeleteConfirm(true);
+    }
+  }, [isUploaded, currentUrl, reset]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    setShowDeleteConfirm(false);
+    try {
+      await deleteAsset();
+      onCommit?.(); // 부모에게 변경 알림
+    } catch {
+      // 에러는 훅에서 처리됨
+    }
+  }, [deleteAsset, onCommit]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -122,103 +149,121 @@ export function BrandingUploader({
   }, [commit, onCommit]);
 
   return (
-    <div className="flex items-start justify-between py-4 border-b border-gray-100 last:border-b-0">
-      {/* 왼쪽: 정보 + 버튼 */}
-      <div className="flex-1">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+    <>
+      <div className="flex items-start justify-between py-4 border-b border-gray-100 last:border-b-0">
+        {/* 왼쪽: 정보 + 버튼 */}
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
 
-        <div className="flex items-center gap-2 mt-3">
-          {/* 숨겨진 file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={rules.accept}
-            onChange={handleFileSelect}
-            className="hidden"
-          />
+          <div className="flex items-center gap-2 mt-3">
+            {/* 숨겨진 file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={rules.accept}
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
-          {isUploaded ? (
-            <>
-              <Button type="button" size="sm" onClick={handleSave} disabled={isCommitting}>
-                {isCommitting ? '적용 중...' : '지금 적용하기'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleRemove}
-                disabled={isCommitting}
-              >
-                취소
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleReplace}
-                disabled={isUploading}
-              >
-                {isUploading ? '업로드 중...' : currentUrl ? '변경' : '업로드'}
-              </Button>
-              {currentUrl && (
+            {isUploaded ? (
+              <>
+                <Button type="button" size="sm" onClick={handleSave} disabled={isCommitting}>
+                  {isCommitting ? '적용 중...' : '지금 적용하기'}
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleRemove}
+                  disabled={isCommitting}
+                >
+                  취소
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReplace}
                   disabled={isUploading}
                 >
-                  삭제
+                  {isUploading ? '업로드 중...' : currentUrl ? '변경' : '업로드'}
                 </Button>
-              )}
-            </>
+                {currentUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemove}
+                    disabled={isUploading || isDeleting}
+                  >
+                    {isDeleting ? '삭제 중...' : '삭제'}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* 에러 메시지 */}
+          {state.error && <p className="text-xs text-red-500 mt-2">{state.error}</p>}
+
+          {/* 업로드 진행률 */}
+          {isUploading && state.progress > 0 && (
+            <div className="mt-2 w-32 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${state.progress}%` }}
+              />
+            </div>
           )}
         </div>
 
-        {/* 에러 메시지 */}
-        {state.error && <p className="text-xs text-red-500 mt-2">{state.error}</p>}
-
-        {/* 업로드 진행률 */}
-        {isUploading && state.progress > 0 && (
-          <div className="mt-2 w-32 h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${state.progress}%` }}
+        {/* 오른쪽: 이미지 미리보기 */}
+        <div
+          className={cn(
+            'shrink-0 ml-4 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center',
+            type === 'logo' && 'w-24 h-10',
+            type === 'favicon' && 'w-12 h-12',
+            type === 'og' && 'w-32 h-17',
+          )}
+        >
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={title}
+              className="max-w-full max-h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
-          </div>
-        )}
+          ) : (
+            <div className="text-gray-300">
+              <PlaceholderIcon type={type} />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 오른쪽: 이미지 미리보기 */}
-      <div
-        className={cn(
-          'shrink-0 ml-4 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center',
-          type === 'logo' && 'w-24 h-10',
-          type === 'favicon' && 'w-12 h-12',
-          type === 'og' && 'w-32 h-17',
-        )}
-      >
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={title}
-            className="max-w-full max-h-full object-contain"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="text-gray-300">
-            <PlaceholderIcon type={type} />
-          </div>
-        )}
-      </div>
-    </div>
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{title} 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 이미지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>삭제</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

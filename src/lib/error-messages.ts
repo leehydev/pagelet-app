@@ -51,6 +51,11 @@ export const ErrorMessages: Record<string, string> = {
 
   // 계정 관련 에러
   ACCOUNT_003: '계정이 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.',
+
+  // 브랜딩 에셋 관련 에러
+  BRANDING_001: '브랜딩 이미지를 찾을 수 없습니다.',
+  BRANDING_002: '브랜딩 이미지 삭제에 실패했습니다.',
+  BRANDING_003: '지원하지 않는 브랜딩 유형입니다.',
 };
 
 /**
