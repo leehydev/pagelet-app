@@ -7,15 +7,16 @@ import { cn } from '@/lib/utils';
 interface AdjacentPostsNavProps {
   posts: AdjacentPost[];
   siteSlug: string;
+  className?: string;
 }
 
-export function AdjacentPostsNav({ posts, siteSlug }: AdjacentPostsNavProps) {
+export function AdjacentPostsNav({ posts, siteSlug, className }: AdjacentPostsNavProps) {
   if (!posts || posts.length === 0) {
     return null;
   }
 
   return (
-    <section aria-label="인접 게시글 네비게이션" className="py-8">
+    <section aria-label="인접 게시글 네비게이션" className={cn('hidden md:block py-8', className)}>
       <h2 className="sr-only">관련 게시글</h2>
       <div className="grid grid-cols-5 gap-3 p-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
         {posts.map((post) => (
