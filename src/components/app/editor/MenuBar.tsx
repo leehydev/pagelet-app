@@ -5,6 +5,7 @@ import { GripVertical } from 'lucide-react';
 import { useMenuEditorState } from './menu/useEditorState';
 import { TextFormatMenu } from './menu/TextFormatMenu';
 import { HeadingMenu } from './menu/HeadingMenu';
+import { AlignMenu } from './menu/AlignMenu';
 import { ListMenu } from './menu/ListMenu';
 import { ColorMenu } from './menu/ColorMenu';
 import { LinkMenu } from './menu/LinkMenu';
@@ -40,6 +41,8 @@ export function MenuBar({ editor, siteId }: MenuBarProps) {
       <TextFormatMenu editor={editor} editorState={editorState} />
       <Separator />
       <HeadingMenu editor={editor} editorState={editorState} />
+      <Separator />
+      <AlignMenu editor={editor} editorState={editorState} />
       <Separator />
       <ListMenu editor={editor} editorState={editorState} />
       <Separator />

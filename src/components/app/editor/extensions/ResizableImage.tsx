@@ -6,7 +6,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 // 이미지 리사이즈 컴포넌트
 function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewProps) {
-  const { src, alt, width, height } = node.attrs;
+  const { src, alt, width, height, textAlign } = node.attrs;
   const [isResizing, setIsResizing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [startSize, setStartSize] = useState({ width: 0, height: 0 });
@@ -66,8 +66,15 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
     };
   }, [isResizing, startPos, startSize, updateAttributes]);
 
+  const alignClass = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
+    justify: 'text-left',
+  }[textAlign as string] || 'text-left';
+
   return (
-    <NodeViewWrapper className="relative inline-block">
+    <NodeViewWrapper className={`relative ${alignClass}`}>
       <div
         ref={containerRef}
         className={`relative inline-block ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
@@ -116,6 +123,16 @@ export const ResizableImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
+      textAlign: {
+        default: 'left',
+        parseHTML: (element) => element.getAttribute('data-text-align') || 'left',
+        renderHTML: (attributes) => {
+          if (!attributes.textAlign || attributes.textAlign === 'left') {
+            return {};
+          }
+          return { 'data-text-align': attributes.textAlign };
+        },
+      },
       width: {
         default: null,
         parseHTML: (element) => {
