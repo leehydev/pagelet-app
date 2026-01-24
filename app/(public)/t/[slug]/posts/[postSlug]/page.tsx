@@ -17,6 +17,10 @@ interface PageProps {
     slug: string;
     postSlug: string;
   }>;
+  searchParams: Promise<{
+    from?: string;
+    categorySlug?: string;
+  }>;
 }
 
 async function getSiteSettings(slug: string): Promise<SiteSettings> {
@@ -31,9 +35,13 @@ async function getSiteSettings(slug: string): Promise<SiteSettings> {
   }
 }
 
-async function getPost(siteSlug: string, postSlug: string): Promise<PublicPost> {
+async function getPost(
+  siteSlug: string,
+  postSlug: string,
+  categorySlug?: string,
+): Promise<PublicPost> {
   try {
-    return await fetchPublicPostBySlug(siteSlug, postSlug);
+    return await fetchPublicPostBySlug(siteSlug, postSlug, categorySlug);
   } catch (error) {
     if (error instanceof Error && error.message.includes('404')) {
       notFound();
@@ -86,9 +94,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PostDetailPage({ params }: PageProps) {
+export default async function PostDetailPage({ params, searchParams }: PageProps) {
   const { slug, postSlug } = await params;
-  const [settings, post] = await Promise.all([getSiteSettings(slug), getPost(slug, postSlug)]);
+  const { from, categorySlug: queryCategorySlug } = await searchParams;
+
+  // 카테고리 페이지에서 접근한 경우, categorySlug를 전달하여 카테고리 기준 인접 게시글 조회
+  const categorySlugForAdjacent = from === 'category' ? queryCategorySlug : undefined;
+
+  const [settings, post] = await Promise.all([
+    getSiteSettings(slug),
+    getPost(slug, postSlug, categorySlugForAdjacent),
+  ]);
 
   const formattedDate = formatPostDate(post.publishedAt);
 
@@ -154,12 +170,22 @@ export default async function PostDetailPage({ params }: PageProps) {
       <div className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <Link
-              href={`/t/${slug}/posts`}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              전체 게시글
-            </Link>
+            {/* 카테고리에서 접근한 경우 카테고리로 돌아가기 링크 표시 */}
+            {from === 'category' && queryCategorySlug ? (
+              <Link
+                href={`/t/${slug}/category/${queryCategorySlug}`}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                카테고리로 돌아가기
+              </Link>
+            ) : (
+              <Link
+                href={`/t/${slug}/posts`}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                전체 게시글
+              </Link>
+            )}
             <Link
               href={`/t/${slug}`}
               className="text-gray-600 hover:text-gray-900 transition-colors"
