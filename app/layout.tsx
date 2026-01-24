@@ -27,6 +27,9 @@ export const metadata: Metadata = {
     description: 'Pagelet - 멀티 테넌트 플랫폼',
     type: 'website',
   },
+  verification: {
+    google: '3YsODDS_PXdrs7T509w-4ldXmtdWEhp54lXlGwT-FMM',
+  },
 };
 
 export default function RootLayout({

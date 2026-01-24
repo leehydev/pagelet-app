@@ -225,21 +225,16 @@ export async function deleteAdminPost(siteId: string, postId: string): Promise<v
 
 // ===== Revalidation API =====
 
+import { revalidatePostAction, revalidateSiteSettingsAction } from './actions';
+
 /**
  * ISR 캐시 무효화 요청
  * 게시글 상태 변경, 삭제 시 호출
+ * Server Action을 사용하여 secret 노출 없이 처리
  */
 export async function revalidatePost(siteSlug: string, postSlug?: string): Promise<void> {
   try {
-    await fetch('/api/revalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        siteSlug,
-        postSlug,
-        secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET,
-      }),
-    });
+    await revalidatePostAction(siteSlug, postSlug);
   } catch (error) {
     // Revalidation 실패해도 주요 작업에는 영향 없음
     console.warn('Failed to revalidate:', error);
@@ -249,17 +244,11 @@ export async function revalidatePost(siteSlug: string, postSlug?: string): Promi
 /**
  * 사이트 설정 캐시 무효화
  * 폰트, 브랜딩 등 설정 변경 시 호출
+ * Server Action을 사용하여 secret 노출 없이 처리
  */
 export async function revalidateSiteSettings(siteSlug: string): Promise<void> {
   try {
-    await fetch('/api/revalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        siteSlug,
-        secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET,
-      }),
-    });
+    await revalidateSiteSettingsAction(siteSlug);
   } catch (error) {
     console.warn('Failed to revalidate site settings:', error);
   }

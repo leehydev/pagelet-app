@@ -19,7 +19,7 @@ export function Header({ logoImageUrl, siteSlug, siteName, categories = [] }: He
         <div className="flex items-center justify-between h-16">
           <Link href={`/t/${siteSlug}`}>
             <div className="flex items-center gap-2">
-              <Image src={logoImageUrl} alt={siteName} width={100} height={100} />
+              {logoImageUrl && <Image src={logoImageUrl} alt={siteName} width={100} height={100} />}
               <h1 className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {siteName}
               </h1>

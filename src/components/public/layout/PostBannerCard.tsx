@@ -1,12 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
 import { PublicBanner } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import dayjs from 'dayjs';
 import Image from 'next/image';
-import { Button } from '../ui/button';
 
 interface PostBannerCardProps {
   banner: PublicBanner;

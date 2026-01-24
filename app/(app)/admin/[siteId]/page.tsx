@@ -14,10 +14,7 @@ function DashboardSkeleton() {
       {/* 개요 카드 스켈레톤 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
+          <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <Skeleton className="h-4 w-20 mb-4" />
             <Skeleton className="h-8 w-24" />
           </div>
@@ -55,11 +52,13 @@ export default function AdminDashboardPage() {
 
   // 오늘/어제 방문자 비교 계산
   const calculateVisitorChange = () => {
-    if (!overview || overview.yesterdayVisitors === 0) {
+    const yesterdayVisitors = overview?.yesterdayVisitors ?? 0;
+    const todayVisitors = overview?.todayVisitors ?? 0;
+
+    if (!yesterdayVisitors || yesterdayVisitors === 0) {
       return undefined;
     }
-    const changePercent =
-      ((overview.todayVisitors - overview.yesterdayVisitors) / overview.yesterdayVisitors) * 100;
+    const changePercent = ((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100;
     return {
       value: Math.round(changePercent),
       isPositive: changePercent >= 0,

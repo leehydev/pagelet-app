@@ -40,6 +40,10 @@ export function useMenuEditorState(editor: Editor | null): EditorState | null {
         isTeal: ctx.editor.isActive('textStyle', { color: '#94FADB' }),
         isGreen: ctx.editor.isActive('textStyle', { color: '#B9F18D' }),
         isLink: ctx.editor.isActive('link'),
+        isAlignLeft: ctx.editor.isActive({ textAlign: 'left' }),
+        isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
+        isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
+        isAlignJustify: ctx.editor.isActive({ textAlign: 'justify' }),
       };
     },
   });

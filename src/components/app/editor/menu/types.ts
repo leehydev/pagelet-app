@@ -32,6 +32,10 @@ export interface EditorState {
   isTeal: boolean;
   isGreen: boolean;
   isLink: boolean;
+  isAlignLeft: boolean;
+  isAlignCenter: boolean;
+  isAlignRight: boolean;
+  isAlignJustify: boolean;
 }
 
 export interface MenuComponentProps {

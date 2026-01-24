@@ -5,6 +5,7 @@ import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PostsPageHeader } from '@/components/public/common/PostsPageHeader';
+import { EmptyPostList } from '@/components/public/common/EmptyPostList';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -91,14 +92,7 @@ export default async function AllPostsPage({ params }: PageProps) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">📝</div>
-            <h2 className="text-xl font-medium text-gray-600 mb-2">아직 게시글이 없습니다</h2>
-            <p className="text-gray-400 mb-6">곧 새로운 글이 올라올 예정입니다.</p>
-            <Link href={`/t/${slug}`} className="text-blue-600 hover:text-blue-700 font-medium">
-              메인으로 돌아가기 →
-            </Link>
-          </div>
+          <EmptyPostList siteSlug={slug} showBackLink={false} />
         )}
       </main>
     </>

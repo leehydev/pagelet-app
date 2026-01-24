@@ -13,6 +13,17 @@
   pointer-events: none;
 }
 
+/* prose 내 서식 요소가 color를 상속받도록 */
+.prose strong,
+.prose b,
+.prose em,
+.prose i,
+.prose code,
+.prose s,
+.prose del {
+  color: inherit;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
