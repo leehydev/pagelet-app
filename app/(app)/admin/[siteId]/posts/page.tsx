@@ -172,21 +172,34 @@ export default function AdminPostsPage() {
                         <span className="text-sm text-gray-900">{post.categoryName || '-'}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            post.status === PostStatus.PUBLISHED
-                              ? 'bg-green-100 text-green-800'
-                              : post.status === PostStatus.PRIVATE
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {post.status === PostStatus.PUBLISHED
-                            ? '발행됨'
-                            : post.status === PostStatus.PRIVATE
-                              ? '비공개'
-                              : '임시저장'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {post.status === PostStatus.PUBLISHED ? (
+                            <>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                발행됨
+                              </span>
+                              {post.hasDraft && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                  편집 중
+                                </span>
+                              )}
+                            </>
+                          ) : post.status === PostStatus.PRIVATE ? (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                post.hasDraft
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {post.hasDraft ? '작성 중' : '비공개'}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              임시저장
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {dayjs(post.createdAt).format('YYYY-MM-DD')}
