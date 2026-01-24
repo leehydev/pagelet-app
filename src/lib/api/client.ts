@@ -52,10 +52,35 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// ===== 토큰 관리 헬퍼 함수 =====
+
+export function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('accessToken');
+}
+
+export function setAccessToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('accessToken', token);
+}
+
+export function removeAccessToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('accessToken');
+}
+
+// Request interceptor - Authorization 헤더 추가
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // ===== 토큰 리프레시 로직 (클라이언트 전용) =====
@@ -78,7 +103,7 @@ const processQueue = (error: Error | null) => {
   failedQueue = [];
 };
 
-// Response interceptor - 401 에러 시 토큰 리프레시 후 재시도
+// Response interceptor - 401 에러 시 프론트 서버 경유 토큰 리프레시 후 재시도
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -88,14 +113,6 @@ api.interceptors.response.use(
 
     // 401 에러가 아니거나, 이미 재시도한 요청이면 에러 반환
     if (error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(error);
-    }
-
-    // /auth/refresh 요청 자체가 실패한 경우 로그인 페이지로 이동
-    if (originalRequest.url?.includes('/auth/refresh')) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/signin';
-      }
       return Promise.reject(error);
     }
 
@@ -112,19 +129,29 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // 토큰 리프레시 요청
-      await api.post('/auth/refresh');
+      // 프론트 서버 경유 토큰 리프레시 요청
+      const res = await fetch('/api/auth/refresh', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok || !data.accessToken) {
+        throw new Error('토큰 갱신 실패');
+      }
+
+      // 새 accessToken 저장
+      setAccessToken(data.accessToken);
 
       // 대기 중인 요청들 성공 처리
       processQueue(null);
 
-      // 원래 요청 재시도
+      // 원래 요청 재시도 (새 토큰으로)
+      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
       return api(originalRequest);
     } catch (refreshError) {
       // 리프레시 실패 시 대기 중인 요청들 실패 처리
       processQueue(refreshError as Error);
 
-      // 로그인 페이지로 이동
+      // 토큰 삭제 및 로그인 페이지로 이동
+      removeAccessToken();
       if (typeof window !== 'undefined') {
         window.location.href = '/signin';
       }
