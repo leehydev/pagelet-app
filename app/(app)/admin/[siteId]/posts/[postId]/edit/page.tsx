@@ -6,7 +6,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getAdminPost, PostStatus, UpdatePostRequest, revalidatePost } from '@/lib/api';
+import {
+  getAdminPost,
+  getDraft,
+  PostStatus,
+  UpdatePostRequest,
+  revalidatePost,
+  updateAdminPost,
+} from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useAutoSave } from '@/hooks/use-auto-save';
@@ -22,7 +29,6 @@ import type { FieldErrors } from 'react-hook-form';
 import { AxiosError } from 'axios';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
-import { updateAdminPost } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Zod 스키마 정의
@@ -72,6 +78,16 @@ export default function EditPostPage() {
     enabled: !!siteId && !!postId,
   });
 
+  // 드래프트 조회 (post.hasDraft가 true일 때만)
+  const {
+    data: draft,
+    isLoading: draftLoading,
+  } = useQuery({
+    queryKey: ['admin', 'draft', siteId, postId],
+    queryFn: () => getDraft(siteId, postId),
+    enabled: !!siteId && !!postId && post?.hasDraft === true,
+  });
+
   // 카테고리 목록
   const {
     data: categories,
@@ -83,30 +99,54 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
-  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged } = useAutoSave({
+  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, setIsEditingDraft } = useAutoSave({
     siteId,
     postId,
     intervalMs: 5 * 60 * 1000, // 5분
     onSaveSuccess: () => {
       toast.success('자동 저장되었습니다', { duration: 2000 });
+      // 드래프트 쿼리 무효화
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
     },
     onSaveError: (err) => {
       console.error('Auto-save failed:', err);
     },
   });
 
+  // 상태 표시 텍스트 계산
+  const getStatusText = () => {
+    if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
+
+    if (!post) return null;
+
+    if (post.status === PostStatus.PUBLISHED) {
+      if (isEditingDraft || post.hasDraft) {
+        return { text: '편집 중 (미발행 변경사항 있음)', color: 'text-amber-600' };
+      }
+      return { text: '발행됨', color: 'text-green-600' };
+    }
+
+    // PRIVATE 상태
+    if (isEditingDraft || post.hasDraft) {
+      return { text: '작성 중', color: 'text-blue-600' };
+    }
+    return { text: '비공개', color: 'text-gray-600' };
+  };
+
+  const statusInfo = getStatusText();
+
   // 헤더에 표시할 extra 컴포넌트
   const headerExtra = (
     <div className="flex items-center gap-2 text-sm text-gray-500">
-      {isSaving && <span className="text-blue-600">저장 중...</span>}
+      {statusInfo && <span className={statusInfo.color}>{statusInfo.text}</span>}
       {!isSaving && lastSavedAt && (
-        <span>
-          마지막 저장:{' '}
-          {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+        <span className="text-gray-400">
+          ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
         </span>
       )}
       {hasUnsavedChanges && !isSaving && (
-        <span className="text-orange-600">저장되지 않은 변경사항</span>
+        <span className="text-orange-600">• 저장 대기 중</span>
       )}
     </div>
   );
@@ -124,9 +164,24 @@ export default function EditPostPage() {
     },
   });
 
-  // 게시글 데이터 로드 시 폼 초기화
+  // 게시글/드래프트 데이터 로드 시 폼 초기화
   useEffect(() => {
-    if (post) {
+    if (!post) return;
+
+    // 드래프트가 있으면 드래프트 내용으로 초기화
+    if (post.hasDraft && draft) {
+      methods.reset({
+        title: draft.title || '',
+        subtitle: draft.subtitle || '',
+        slug: post.slug || '', // slug는 원본 게시글에서
+        categoryId: draft.categoryId || '',
+        seoTitle: draft.seoTitle || '',
+        seoDescription: draft.seoDescription || '',
+        ogImageUrl: draft.ogImageUrl || '',
+      });
+      setIsEditingDraft(true);
+    } else {
+      // 드래프트가 없으면 게시글 내용으로 초기화
       methods.reset({
         title: post.title || '',
         subtitle: post.subtitle || '',
@@ -136,8 +191,9 @@ export default function EditPostPage() {
         seoDescription: post.seoDescription || '',
         ogImageUrl: post.ogImageUrl || '',
       });
+      setIsEditingDraft(false);
     }
-  }, [post, methods]);
+  }, [post, draft, methods, setIsEditingDraft]);
 
   // 썸네일 값 watch (useWatch 사용 - React Compiler 호환)
   const watchedOgImageUrl = useWatch({
@@ -276,8 +332,8 @@ export default function EditPostPage() {
     }, 150);
   };
 
-  // 로딩 상태
-  if (postLoading) {
+  // 로딩 상태 (게시글 로딩 또는 드래프트가 있는데 드래프트 로딩 중)
+  if (postLoading || (post?.hasDraft && draftLoading)) {
     return (
       <>
         <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
@@ -350,7 +406,11 @@ export default function EditPostPage() {
                   <TiptapEditor
                     ref={editorRef}
                     siteId={siteId}
-                    content={post.contentJson || undefined}
+                    content={
+                      post.hasDraft && draft?.contentJson
+                        ? draft.contentJson
+                        : post.contentJson || undefined
+                    }
                     onEditorReady={handleEditorReady}
                   />
                 </Field>
