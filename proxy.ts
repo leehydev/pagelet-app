@@ -15,6 +15,11 @@ export function proxy(req: NextRequest) {
   const host = getHostname(req);
   const path = url.pathname;
 
+  // 헬스체크 요청은 바로 통과
+  if (path === '/api/health' || path === '/health') {
+    return NextResponse.next();
+  }
+
   // 1) apex 도메인 (랜딩): pagelet.kr, www.pagelet.kr
   if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}` || host === 'localhost') {
     url.pathname = `/landing${path}`;
