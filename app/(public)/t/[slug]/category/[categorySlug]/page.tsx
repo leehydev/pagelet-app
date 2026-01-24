@@ -1,18 +1,25 @@
-import type { PublicPost, PublicCategory, SiteSettings } from '@/lib/api';
+import type { PublicPost, PublicCategory, SiteSettings, PaginatedResponse } from '@/lib/api';
 import { fetchPublicPosts, fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { Metadata } from 'next';
-import { PostCard } from '@/components/public/PostCard';
+import { CategoryPostCard } from '@/components/public/CategoryPostCard';
 import { notFound } from 'next/navigation';
 import { PostsPageHeader } from '@/components/public/common/PostsPageHeader';
 import { EmptyPostList } from '@/components/public/common/EmptyPostList';
+import { Pagination } from '@/components/public/Pagination';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
+
+// 페이지당 게시글 수
+const POSTS_PER_PAGE = 9;
 
 interface PageProps {
   params: Promise<{
     slug: string;
     categorySlug: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
   }>;
 }
 
@@ -41,14 +48,28 @@ async function getCategories(siteSlug: string): Promise<PublicCategory[]> {
   }
 }
 
-async function getPosts(siteSlug: string, categorySlug: string): Promise<PublicPost[]> {
+async function getPosts(
+  siteSlug: string,
+  categorySlug: string,
+  page: number,
+): Promise<PaginatedResponse<PublicPost>> {
   try {
-    return await fetchPublicPosts(siteSlug, categorySlug);
+    return await fetchPublicPosts(siteSlug, { categorySlug, page, limit: POSTS_PER_PAGE });
   } catch (error) {
-    // 게시글은 부가 데이터이므로 에러 로깅 후 빈 배열 반환 (graceful degradation)
+    // 게시글은 부가 데이터이므로 에러 로깅 후 빈 응답 반환 (graceful degradation)
     console.error('Failed to fetch posts:', error);
     // TODO: 프로덕션에서는 에러 모니터링 시스템에 전송 (Sentry, LogRocket 등)
-    return [];
+    return {
+      items: [],
+      meta: {
+        page: 1,
+        limit: POSTS_PER_PAGE,
+        totalItems: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
   }
 }
 
@@ -75,10 +96,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function CategoryPostsPage({ params }: PageProps) {
+export default async function CategoryPostsPage({ params, searchParams }: PageProps) {
   const { slug, categorySlug } = await params;
-  const [posts, categories] = await Promise.all([
-    getPosts(slug, categorySlug),
+  const { page: pageParam } = await searchParams;
+
+  // 페이지 번호 파싱 (기본값: 1)
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+
+  const [{ items: posts, meta }, categories] = await Promise.all([
+    getPosts(slug, categorySlug, page),
     getCategories(slug),
   ]);
 
@@ -99,11 +125,24 @@ export default async function CategoryPostsPage({ params }: PageProps) {
       {/* 메인 콘텐츠 */}
       <main className="mx-auto max-w-6xl h-full px-4 py-8">
         {posts.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} siteSlug={slug} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <CategoryPostCard
+                  key={post.id}
+                  post={post}
+                  siteSlug={slug}
+                  categorySlug={categorySlug}
+                />
+              ))}
+            </div>
+            {/* 페이지네이션 */}
+            <Pagination
+              meta={meta}
+              basePath={`/t/${slug}/category/${categorySlug}`}
+              className="mt-12"
+            />
+          </>
         ) : (
           <EmptyPostList
             siteSlug={slug}

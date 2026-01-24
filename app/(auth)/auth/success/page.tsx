@@ -1,14 +1,65 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api/types';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { setAccessToken } from '@/lib/api/client';
+
+/**
+ * 쿠키에서 값 가져오기
+ */
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
+
+/**
+ * 쿠키 삭제
+ */
+function deleteCookie(name: string): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
+/**
+ * 초기화 시 임시 쿠키에서 accessToken을 localStorage로 이동
+ * 컴포넌트 마운트 전 동기적으로 실행
+ */
+function initializeToken(): boolean {
+  const tempToken = getCookie('accessToken_temp');
+  if (tempToken) {
+    setAccessToken(tempToken);
+    deleteCookie('accessToken_temp');
+    return true;
+  }
+  return false;
+}
 
 export default function AuthSuccessPage() {
   const router = useRouter();
-  const { data: user, isSuccess, error } = useUser();
+  // 토큰 초기화는 한 번만 실행 (ref로 추적)
+  const tokenInitialized = useRef(false);
+  const { data: user, isSuccess, error, refetch } = useUser();
+
+  // 임시 쿠키에서 accessToken을 localStorage로 이동
+  useEffect(() => {
+    if (!tokenInitialized.current) {
+      const hadToken = initializeToken();
+      tokenInitialized.current = true;
+
+      // 토큰이 있었다면 사용자 정보 다시 조회
+      if (hadToken) {
+        refetch();
+      }
+    }
+  }, [refetch]);
 
   useEffect(() => {
     if (isSuccess && user) {
