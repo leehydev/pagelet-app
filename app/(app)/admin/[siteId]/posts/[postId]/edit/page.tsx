@@ -16,6 +16,7 @@ import {
   republishPost,
   deleteDraft,
   unpublishPost,
+  updateAdminPost,
 } from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
@@ -108,7 +109,7 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
-  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, saveNow, setIsEditingDraft } = useAutoSave({
+  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, setIsEditingDraft } = useAutoSave({
     siteId,
     postId,
     intervalMs: 5 * 60 * 1000, // 5분
@@ -345,6 +346,38 @@ export default function EditPostPage() {
     },
   });
 
+  // 게시글 직접 저장 mutation (PATCH /posts/:id)
+  const saveMutation = useMutation({
+    mutationFn: (data: UpdatePostRequest) => updateAdminPost(siteId, postId, data),
+    onSuccess: async (updatedPost) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      // 발행된 게시글이면 ISR 캐시 무효화
+      if (updatedPost.status === PostStatus.PUBLISHED && siteSettings?.slug && updatedPost.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, updatedPost.slug);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
+        }
+      }
+      toast.success('저장되었습니다');
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '저장에 실패했습니다'));
+    },
+  });
+
+  // 저장 버튼 핸들러
+  const handleSave = useCallback(() => {
+    const data = collectFormData();
+    if (!data) {
+      toast.error('에디터가 준비되지 않았습니다');
+      return;
+    }
+    saveMutation.mutate(data);
+  }, [collectFormData, saveMutation]);
+
   // 로딩 상태 (게시글 로딩 또는 드래프트가 있는데 드래프트 로딩 중)
   if (postLoading || (post?.hasDraft && draftLoading)) {
     return (
@@ -492,10 +525,10 @@ export default function EditPostPage() {
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={saveNow}
-                    disabled={isSaving || !hasUnsavedChanges}
+                    onClick={handleSave}
+                    disabled={saveMutation.isPending}
                   >
-                    {isSaving ? '저장 중...' : '저장'}
+                    {saveMutation.isPending ? '저장 중...' : '저장'}
                   </Button>
 
                   {/* 뒤로 가기 */}
