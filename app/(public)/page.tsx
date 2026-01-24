@@ -1,9 +1,5 @@
-import { KakaoLoginButton } from "../KakaoLoginButton";
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <div>
-      <KakaoLoginButton />
-    </div>
-  );
+  redirect('/landing');
 }
