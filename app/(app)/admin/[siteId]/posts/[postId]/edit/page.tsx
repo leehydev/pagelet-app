@@ -6,23 +6,39 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getAdminPost, PostStatus, UpdatePostRequest, revalidatePost } from '@/lib/api';
+import {
+  getAdminPost,
+  getDraft,
+  PostStatus,
+  UpdatePostRequest,
+  revalidatePost,
+  publishPost,
+  republishPost,
+  deleteDraft,
+  unpublishPost,
+} from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
-import { scrollToFirstError } from '@/lib/scroll-to-error';
-import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
-import type { FieldErrors } from 'react-hook-form';
-import { AxiosError } from 'axios';
+import { getErrorDisplayMessage } from '@/lib/error-handler';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
-import { updateAdminPost } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Zod 스키마 정의
@@ -58,7 +74,6 @@ export default function EditPostPage() {
   const { siteId, postId } = params;
 
   const editorRef = useRef<TiptapEditorRef>(null);
-  const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
 
   // 게시글 조회
@@ -72,6 +87,16 @@ export default function EditPostPage() {
     enabled: !!siteId && !!postId,
   });
 
+  // 드래프트 조회 (post.hasDraft가 true일 때만)
+  const {
+    data: draft,
+    isLoading: draftLoading,
+  } = useQuery({
+    queryKey: ['admin', 'draft', siteId, postId],
+    queryFn: () => getDraft(siteId, postId),
+    enabled: !!siteId && !!postId && post?.hasDraft === true,
+  });
+
   // 카테고리 목록
   const {
     data: categories,
@@ -83,30 +108,54 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
-  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged } = useAutoSave({
+  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, setIsEditingDraft } = useAutoSave({
     siteId,
     postId,
     intervalMs: 5 * 60 * 1000, // 5분
     onSaveSuccess: () => {
       toast.success('자동 저장되었습니다', { duration: 2000 });
+      // 드래프트 쿼리 무효화
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
     },
     onSaveError: (err) => {
       console.error('Auto-save failed:', err);
     },
   });
 
+  // 상태 표시 텍스트 계산
+  const getStatusText = () => {
+    if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
+
+    if (!post) return null;
+
+    if (post.status === PostStatus.PUBLISHED) {
+      if (isEditingDraft || post.hasDraft) {
+        return { text: '편집 중 (미발행 변경사항 있음)', color: 'text-amber-600' };
+      }
+      return { text: '발행됨', color: 'text-green-600' };
+    }
+
+    // PRIVATE 상태
+    if (isEditingDraft || post.hasDraft) {
+      return { text: '작성 중', color: 'text-blue-600' };
+    }
+    return { text: '비공개', color: 'text-gray-600' };
+  };
+
+  const statusInfo = getStatusText();
+
   // 헤더에 표시할 extra 컴포넌트
   const headerExtra = (
     <div className="flex items-center gap-2 text-sm text-gray-500">
-      {isSaving && <span className="text-blue-600">저장 중...</span>}
+      {statusInfo && <span className={statusInfo.color}>{statusInfo.text}</span>}
       {!isSaving && lastSavedAt && (
-        <span>
-          마지막 저장:{' '}
-          {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+        <span className="text-gray-400">
+          ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
         </span>
       )}
       {hasUnsavedChanges && !isSaving && (
-        <span className="text-orange-600">저장되지 않은 변경사항</span>
+        <span className="text-orange-600">• 저장 대기 중</span>
       )}
     </div>
   );
@@ -124,9 +173,24 @@ export default function EditPostPage() {
     },
   });
 
-  // 게시글 데이터 로드 시 폼 초기화
+  // 게시글/드래프트 데이터 로드 시 폼 초기화
   useEffect(() => {
-    if (post) {
+    if (!post) return;
+
+    // 드래프트가 있으면 드래프트 내용으로 초기화
+    if (post.hasDraft && draft) {
+      methods.reset({
+        title: draft.title || '',
+        subtitle: draft.subtitle || '',
+        slug: post.slug || '', // slug는 원본 게시글에서
+        categoryId: draft.categoryId || '',
+        seoTitle: draft.seoTitle || '',
+        seoDescription: draft.seoDescription || '',
+        ogImageUrl: draft.ogImageUrl || '',
+      });
+      setIsEditingDraft(true);
+    } else {
+      // 드래프트가 없으면 게시글 내용으로 초기화
       methods.reset({
         title: post.title || '',
         subtitle: post.subtitle || '',
@@ -136,8 +200,9 @@ export default function EditPostPage() {
         seoDescription: post.seoDescription || '',
         ogImageUrl: post.ogImageUrl || '',
       });
+      setIsEditingDraft(false);
     }
-  }, [post, methods]);
+  }, [post, draft, methods, setIsEditingDraft]);
 
   // 썸네일 값 watch (useWatch 사용 - React Compiler 호환)
   const watchedOgImageUrl = useWatch({
@@ -189,95 +254,99 @@ export default function EditPostPage() {
     setEditorReady(true);
   }, []);
 
-  // 수동 저장 mutation
-  const updateMutation = useMutation({
-    mutationFn: (data: UpdatePostRequest & { status?: PostStatus }) =>
-      updateAdminPost(siteId, postId, data),
-    onSuccess: () => {
+  // 모달 상태
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [republishModalOpen, setRepublishModalOpen] = useState(false);
+  const [discardModalOpen, setDiscardModalOpen] = useState(false);
+  const [unpublishModalOpen, setUnpublishModalOpen] = useState(false);
+
+  // 발행 mutation (PRIVATE + draft -> PUBLISHED)
+  const publishMutation = useMutation({
+    mutationFn: () => publishPost(siteId, postId),
+    onSuccess: async (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-    },
-  });
-
-  const handleSubmit = async (status: PostStatus) => {
-    setError(null);
-
-    try {
-      const formData = collectFormData();
-      if (!formData) {
-        toast.error('에디터를 불러올 수 없습니다');
-        return;
-      }
-
-      // 빈 문서 체크
-      const contentJson = formData.contentJson;
-      const isEmpty =
-        !contentJson?.content ||
-        (Array.isArray(contentJson.content) &&
-          (contentJson.content.length === 0 ||
-            (contentJson.content.length === 1 &&
-              contentJson.content[0].type === 'paragraph' &&
-              (!contentJson.content[0].content || contentJson.content[0].content.length === 0))));
-
-      if (isEmpty) {
-        toast.error('내용을 입력해주세요');
-        return;
-      }
-
-      if (!formData.contentText) {
-        toast.error('내용을 입력해주세요');
-        return;
-      }
-
-      const updatedPost = await updateMutation.mutateAsync({
-        ...formData,
-        status,
-      });
-
-      // 발행 또는 상태 변경 시 ISR 캐시 무효화 (에러 발생해도 조용히 처리)
+      // ISR 캐시 무효화
       if (siteSettings?.slug && updatedPost.slug) {
         try {
           await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (revalidateError) {
-          // ISR revalidation 실패는 조용히 처리 (게시글 저장은 성공했으므로)
-          console.warn('Failed to revalidate post:', revalidateError);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
         }
       }
-
-      if (status === PostStatus.PUBLISHED) {
-        toast.success('게시글이 발행되었습니다');
-      } else {
-        toast.success('게시글이 저장되었습니다');
-      }
-
+      toast.success('게시글이 발행되었습니다');
       router.push(`/admin/${siteId}/posts`);
-    } catch (err) {
-      const errorCode = getErrorCode(err);
-      const errorMessage = getErrorDisplayMessage(err, '게시글 저장에 실패했습니다.');
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
+    },
+  });
 
-      if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
-        methods.setError('slug', {
-          type: 'manual',
-          message: errorMessage,
-        });
-        setError(errorMessage);
-        setTimeout(() => {
-          scrollToFirstError(errorMessage);
-        }, 150);
-      } else {
-        setError(errorMessage);
+  // 재발행 mutation (PUBLISHED + draft -> PUBLISHED)
+  const republishMutation = useMutation({
+    mutationFn: () => republishPost(siteId, postId),
+    onSuccess: async (updatedPost) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      // ISR 캐시 무효화
+      if (siteSettings?.slug && updatedPost.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, updatedPost.slug);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
+        }
       }
-    }
-  };
+      toast.success('변경사항이 발행되었습니다');
+      router.push(`/admin/${siteId}/posts`);
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '재발행에 실패했습니다'));
+    },
+  });
 
-  const onError = (errors: FieldErrors<PostFormData>) => {
-    setTimeout(() => {
-      scrollToFirstError(errors);
-    }, 150);
-  };
+  // 변경 취소 mutation (드래프트 삭제)
+  const discardMutation = useMutation({
+    mutationFn: () => deleteDraft(siteId, postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      setIsEditingDraft(false);
+      toast.success('변경사항이 취소되었습니다');
+      // 페이지 새로고침하여 발행본 내용으로 리로드
+      window.location.reload();
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '변경 취소에 실패했습니다'));
+    },
+  });
 
-  // 로딩 상태
-  if (postLoading) {
+  // 비공개 전환 mutation (PUBLISHED -> PRIVATE)
+  const unpublishMutation = useMutation({
+    mutationFn: () => unpublishPost(siteId, postId),
+    onSuccess: async (updatedPost) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      // ISR 캐시 무효화
+      if (siteSettings?.slug && updatedPost.slug) {
+        try {
+          await revalidatePost(siteSettings.slug, updatedPost.slug);
+        } catch (e) {
+          console.warn('Failed to revalidate:', e);
+        }
+      }
+      toast.success('게시글이 비공개로 전환되었습니다');
+      router.push(`/admin/${siteId}/posts`);
+    },
+    onError: (err) => {
+      toast.error(getErrorDisplayMessage(err, '비공개 전환에 실패했습니다'));
+    },
+  });
+
+  // 로딩 상태 (게시글 로딩 또는 드래프트가 있는데 드래프트 로딩 중)
+  if (postLoading || (post?.hasDraft && draftLoading)) {
     return (
       <>
         <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
@@ -314,12 +383,6 @@ export default function EditPostPage() {
       <>
         <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
         <div className="p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
-              {error}
-            </div>
-          )}
-
           <div className="flex flex-col lg:flex-row gap-6 max-w-7xl">
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
@@ -350,7 +413,11 @@ export default function EditPostPage() {
                   <TiptapEditor
                     ref={editorRef}
                     siteId={siteId}
-                    content={post.contentJson || undefined}
+                    content={
+                      post.hasDraft && draft?.contentJson
+                        ? draft.contentJson
+                        : post.contentJson || undefined
+                    }
                     onEditorReady={handleEditorReady}
                   />
                 </Field>
@@ -361,37 +428,73 @@ export default function EditPostPage() {
             <div className="w-full lg:w-64 shrink-0 space-y-4">
               {/* 발행 설정 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-900 mb-4">발행</h3>
+                <h3 className="font-medium text-gray-900 mb-4">게시글 관리</h3>
                 <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={() => {
-                      methods.handleSubmit(() => handleSubmit(PostStatus.PUBLISHED), onError)();
-                    }}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending ? '발행 중...' : '발행하기'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      methods.handleSubmit(() => handleSubmit(PostStatus.DRAFT), onError)();
-                    }}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending ? '저장 중...' : '임시 저장'}
-                  </Button>
+                  {/* PRIVATE 상태 (새 글 또는 비공개) */}
+                  {post.status === PostStatus.PRIVATE && (
+                    <>
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => setPublishModalOpen(true)}
+                        disabled={publishMutation.isPending || !isEditingDraft && !post.hasDraft}
+                      >
+                        {publishMutation.isPending ? '발행 중...' : '발행'}
+                      </Button>
+                      {!isEditingDraft && !post.hasDraft && (
+                        <p className="text-xs text-gray-500 text-center">
+                          내용을 작성하면 발행할 수 있습니다
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {/* PUBLISHED 상태 */}
+                  {post.status === PostStatus.PUBLISHED && (
+                    <>
+                      {/* 드래프트 있으면 재발행/변경취소 */}
+                      {(isEditingDraft || post.hasDraft) && (
+                        <>
+                          <Button
+                            type="button"
+                            className="w-full"
+                            onClick={() => setRepublishModalOpen(true)}
+                            disabled={republishMutation.isPending}
+                          >
+                            {republishMutation.isPending ? '재발행 중...' : '재발행'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setDiscardModalOpen(true)}
+                            disabled={discardMutation.isPending}
+                          >
+                            {discardMutation.isPending ? '취소 중...' : '변경 취소'}
+                          </Button>
+                        </>
+                      )}
+                      {/* 비공개 전환 (항상 표시) */}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => setUnpublishModalOpen(true)}
+                        disabled={unpublishMutation.isPending}
+                      >
+                        {unpublishMutation.isPending ? '처리 중...' : '비공개 전환'}
+                      </Button>
+                    </>
+                  )}
+
+                  {/* 뒤로 가기 */}
                   <Button
                     type="button"
                     variant="ghost"
                     className="w-full"
                     onClick={() => router.back()}
-                    disabled={updateMutation.isPending}
                   >
-                    취소
+                    돌아가기
                   </Button>
                 </div>
               </div>
@@ -479,7 +582,7 @@ export default function EditPostPage() {
                       markAsChanged({ ...data, ogImageUrl: url || undefined });
                     }
                   }}
-                  disabled={updateMutation.isPending}
+                  disabled={isSaving}
                 />
               </div>
 
@@ -515,6 +618,94 @@ export default function EditPostPage() {
             </div>
           </div>
         </div>
+
+        {/* 발행 확인 모달 */}
+        <AlertDialog open={publishModalOpen} onOpenChange={setPublishModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>게시글 발행</AlertDialogTitle>
+              <AlertDialogDescription>
+                게시글을 발행하시겠습니까? 발행된 게시글은 모든 방문자가 볼 수 있습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => publishMutation.mutate()}
+                disabled={publishMutation.isPending}
+              >
+                {publishMutation.isPending ? '발행 중...' : '발행'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 재발행 확인 모달 */}
+        <AlertDialog open={republishModalOpen} onOpenChange={setRepublishModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>변경사항 재발행</AlertDialogTitle>
+              <AlertDialogDescription>
+                편집한 내용을 발행하시겠습니까? 기존 발행본이 새 내용으로 교체됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => republishMutation.mutate()}
+                disabled={republishMutation.isPending}
+              >
+                {republishMutation.isPending ? '재발행 중...' : '재발행'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 변경 취소 확인 모달 */}
+        <AlertDialog open={discardModalOpen} onOpenChange={setDiscardModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>변경사항 취소</AlertDialogTitle>
+              <AlertDialogDescription>
+                편집 중인 내용을 취소하시겠습니까? 현재 발행된 내용은 유지됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>돌아가기</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => discardMutation.mutate()}
+                disabled={discardMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {discardMutation.isPending ? '취소 중...' : '변경 취소'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 비공개 전환 확인 모달 */}
+        <AlertDialog open={unpublishModalOpen} onOpenChange={setUnpublishModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>비공개로 전환</AlertDialogTitle>
+              <AlertDialogDescription>
+                {post.hasDraft || isEditingDraft
+                  ? '게시글을 비공개로 전환하시겠습니까? 편집 중인 내용이 적용되어 비공개 상태가 됩니다.'
+                  : '게시글을 비공개로 전환하시겠습니까? 방문자가 더 이상 볼 수 없게 됩니다.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => unpublishMutation.mutate()}
+                disabled={unpublishMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {unpublishMutation.isPending ? '처리 중...' : '비공개 전환'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     </FormProvider>
   );

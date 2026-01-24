@@ -115,9 +115,13 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
 
     // 업로드 완료 시 에디터에 이미지 삽입
     useEffect(() => {
-      if (uploadProgress.status === 'completed' && uploadProgress.publicUrl && editor) {
-        editor.chain().focus().setImage({ src: uploadProgress.publicUrl }).run();
-        reset();
+      const publicUrl = uploadProgress.publicUrl;
+      if (uploadProgress.status === 'completed' && publicUrl && editor) {
+        // flushSync 에러 방지를 위해 setTimeout 사용
+        setTimeout(() => {
+          editor.chain().focus().setImage({ src: publicUrl }).run();
+          reset();
+        }, 0);
       }
     }, [uploadProgress.status, uploadProgress.publicUrl, editor, reset]);
 

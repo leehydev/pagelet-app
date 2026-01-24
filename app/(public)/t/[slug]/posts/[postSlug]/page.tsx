@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPostDate } from '@/lib/date-utils';
 import { PostContent } from '@/components/app/post/PostContent';
 import { AdjacentPostsNav } from '@/components/public/AdjacentPostsNav';
+import { AdjacentPostsMobileNav } from '@/components/public/AdjacentPostsMobileNav';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -72,8 +73,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [post.ogImageUrl]
         : settings.ogImageUrl
-          ? [settings.ogImageUrl]
-          : undefined,
+        ? [settings.ogImageUrl]
+        : undefined,
       type: 'article',
       publishedTime: post.publishedAt,
     },
@@ -135,7 +136,16 @@ export default async function PostDetailPage({ params }: PageProps) {
       {post.adjacentPosts && post.adjacentPosts.length > 0 && (
         <div className="bg-gray-50 border-t border-gray-200">
           <div className="max-w-6xl mx-auto px-4">
-            <AdjacentPostsNav posts={post.adjacentPosts} siteSlug={slug} />
+            <AdjacentPostsNav
+              posts={post.adjacentPosts}
+              siteSlug={slug}
+              className="hidden md:block"
+            />
+            <AdjacentPostsMobileNav
+              posts={post.adjacentPosts}
+              siteSlug={slug}
+              className="block md:hidden"
+            />
           </div>
         </div>
       )}

@@ -42,6 +42,8 @@ import type {
   AnalyticsOverview,
   PostAnalytics,
   DailyAnalytics,
+  PostDraft,
+  SaveDraftRequest,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -221,6 +223,59 @@ export async function updateAdminPost(
 
 export async function deleteAdminPost(siteId: string, postId: string): Promise<void> {
   await api.delete(`/admin/sites/${siteId}/posts/${postId}`);
+}
+
+// ===== Admin Draft API =====
+
+export async function getDraft(siteId: string, postId: string): Promise<PostDraft | null> {
+  try {
+    const response = await api.get<ApiResponse<PostDraft>>(
+      `/admin/sites/${siteId}/posts/${postId}/draft`,
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function saveDraft(
+  siteId: string,
+  postId: string,
+  data: SaveDraftRequest,
+): Promise<PostDraft> {
+  const response = await api.put<ApiResponse<PostDraft>>(
+    `/admin/sites/${siteId}/posts/${postId}/draft`,
+    data,
+  );
+  return response.data.data;
+}
+
+export async function deleteDraft(siteId: string, postId: string): Promise<void> {
+  await api.delete(`/admin/sites/${siteId}/posts/${postId}/draft`);
+}
+
+export async function publishPost(siteId: string, postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(
+    `/admin/sites/${siteId}/posts/${postId}/publish`,
+  );
+  return response.data.data;
+}
+
+export async function republishPost(siteId: string, postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(
+    `/admin/sites/${siteId}/posts/${postId}/republish`,
+  );
+  return response.data.data;
+}
+
+export async function unpublishPost(siteId: string, postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(
+    `/admin/sites/${siteId}/posts/${postId}/unpublish`,
+  );
+  return response.data.data;
 }
 
 // ===== Revalidation API =====

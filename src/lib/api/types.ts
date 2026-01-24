@@ -14,9 +14,10 @@ export const AccountStatus = {
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
 
 export const PostStatus = {
+  /** @deprecated 백엔드 마이그레이션 후 PRIVATE로 대체 예정 */
   DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
-  PRIVATE: 'PRIVATE', // 발행했지만 비공개
+  PRIVATE: 'PRIVATE', // 비공개 (새 글 또는 비공개 전환)
+  PUBLISHED: 'PUBLISHED', // 공개
 } as const;
 
 export type PostStatus = (typeof PostStatus)[keyof typeof PostStatus];
@@ -45,6 +46,7 @@ export interface Post {
   contentHtml: string | null;
   contentText: string | null;
   status: PostStatus;
+  hasDraft: boolean; // 드래프트 존재 여부
   publishedAt: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
@@ -144,6 +146,7 @@ export interface PostListItem {
   subtitle: string;
   slug: string;
   status: PostStatus;
+  hasDraft: boolean; // 드래프트 존재 여부
   publishedAt: string | null;
   seoDescription: string | null;
   ogImageUrl: string | null;
@@ -431,4 +434,34 @@ export interface DailyAnalytics {
   views: number;
   visitors: number;
   ctaClicks: number;
+}
+
+// ===== Draft Types =====
+
+export interface PostDraft {
+  id: string;
+  postId: string;
+  title: string;
+  subtitle: string;
+  contentJson: Record<string, unknown> | null;
+  contentHtml: string | null;
+  contentText: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  categoryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveDraftRequest {
+  title?: string;
+  subtitle?: string;
+  contentJson?: Record<string, unknown>;
+  contentHtml?: string;
+  contentText?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImageUrl?: string;
+  categoryId?: string;
 }

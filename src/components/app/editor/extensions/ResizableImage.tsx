@@ -3,10 +3,12 @@
 import Image from '@tiptap/extension-image';
 import { NodeViewWrapper, NodeViewProps, ReactNodeViewRenderer } from '@tiptap/react';
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { GripVertical, Square, LayoutGrid } from 'lucide-react';
 
 // 이미지 리사이즈 컴포넌트
 function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewProps) {
-  const { src, alt, width, height, textAlign } = node.attrs;
+  const { src, alt, width, height, displayMode, textAlign } = node.attrs;
+  const isInline = displayMode === 'inline';
   const [isResizing, setIsResizing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [startSize, setStartSize] = useState({ width: 0, height: 0 });
@@ -66,19 +68,54 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
     };
   }, [isResizing, startPos, startSize, updateAttributes]);
 
-  const alignClass = {
+  const alignClass = isInline ? '' : {
     left: 'text-left',
     center: 'text-center',
     right: 'text-right',
-    justify: 'text-left',
-  }[textAlign as string] || 'text-left';
+  }[textAlign as string] || '';
+
+  const wrapperClass = isInline
+    ? 'inline-block align-top'
+    : `block ${alignClass}`;
 
   return (
-    <NodeViewWrapper className={`relative ${alignClass}`}>
+    <NodeViewWrapper as={isInline ? 'span' : 'div'} className={wrapperClass}>
       <div
         ref={containerRef}
         className={`relative inline-block ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
       >
+        {/* 이미지 툴바 - 선택 시에만 표시 */}
+        {selected && (
+          <div className="absolute -top-10 left-0 flex items-center gap-1 bg-black/80 rounded px-1 py-1 z-20">
+            {/* 드래그 핸들 */}
+            <div
+              data-drag-handle
+              className="w-6 h-6 cursor-grab flex items-center justify-center hover:bg-white/20 rounded"
+              title="드래그하여 이동"
+            >
+              <GripVertical className="w-4 h-4 text-white" />
+            </div>
+            <div className="w-px h-4 bg-white/30" />
+            {/* 블록/인라인 전환 */}
+            <button
+              type="button"
+              onClick={() => updateAttributes({ displayMode: 'block' })}
+              className={`w-6 h-6 flex items-center justify-center rounded ${!isInline ? 'bg-white/30' : 'hover:bg-white/20'}`}
+              title="단독 배치 (블록)"
+            >
+              <Square className="w-4 h-4 text-white" />
+            </button>
+            <button
+              type="button"
+              onClick={() => updateAttributes({ displayMode: 'inline' })}
+              className={`w-6 h-6 flex items-center justify-center rounded ${isInline ? 'bg-white/30' : 'hover:bg-white/20'}`}
+              title="나란히 배치 (인라인)"
+            >
+              <LayoutGrid className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        )}
+
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imageRef}
@@ -120,17 +157,40 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
 
 // 리사이저블 이미지 익스텐션 - 기본 Image 확장을 확장
 export const ResizableImage = Image.extend({
+  inline: true,
+  group: 'inline',
+  draggable: true,
+
   addAttributes() {
     return {
       ...this.parent?.(),
+      displayMode: {
+        default: 'block',
+        parseHTML: (element) => element.getAttribute('data-display-mode') || 'block',
+        renderHTML: (attributes) => {
+          const mode = attributes.displayMode;
+          if (!mode || mode === 'block') {
+            return { 'data-display-mode': 'block' };
+          }
+          return { 'data-display-mode': mode };
+        },
+      },
       textAlign: {
         default: 'left',
         parseHTML: (element) => element.getAttribute('data-text-align') || 'left',
         renderHTML: (attributes) => {
-          if (!attributes.textAlign || attributes.textAlign === 'left') {
+          const align = attributes.textAlign;
+          if (!align || align === 'left') {
             return {};
           }
-          return { 'data-text-align': attributes.textAlign };
+          const styleMap: Record<string, string> = {
+            center: 'display: block; margin-left: auto; margin-right: auto;',
+            right: 'display: block; margin-left: auto;',
+          };
+          return {
+            'data-text-align': align,
+            style: styleMap[align] || '',
+          };
         },
       },
       width: {
