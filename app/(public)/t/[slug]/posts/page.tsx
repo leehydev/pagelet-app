@@ -1,18 +1,24 @@
-import type { PublicPost, SiteSettings } from '@/lib/api';
+import type { PublicPost, SiteSettings, PaginatedResponse } from '@/lib/api';
 import { fetchPublicPosts, fetchSiteSettings } from '@/lib/api/server';
 import { Metadata } from 'next';
 import { PostCard } from '@/components/public/PostCard';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { PostsPageHeader } from '@/components/public/common/PostsPageHeader';
 import { EmptyPostList } from '@/components/public/common/EmptyPostList';
+import { Pagination } from '@/components/public/Pagination';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
 
+// 페이지당 게시글 수
+const POSTS_PER_PAGE = 9;
+
 interface PageProps {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
   }>;
 }
 
@@ -59,20 +65,44 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-async function getPosts(siteSlug: string, categorySlug?: string): Promise<PublicPost[]> {
+async function getPosts(
+  siteSlug: string,
+  page: number,
+): Promise<PaginatedResponse<PublicPost>> {
   try {
-    return await fetchPublicPosts(siteSlug, categorySlug);
+    return await fetchPublicPosts(siteSlug, { page, limit: POSTS_PER_PAGE });
   } catch (error) {
-    // 게시글은 부가 데이터이므로 에러 로깅 후 빈 배열 반환 (graceful degradation)
+    // 게시글은 부가 데이터이므로 에러 로깅 후 빈 응답 반환 (graceful degradation)
     console.error('Failed to fetch posts:', error);
     // TODO: 프로덕션에서는 에러 모니터링 시스템에 전송 (Sentry, LogRocket 등)
-    return [];
+    return {
+      items: [],
+      meta: {
+        page: 1,
+        limit: POSTS_PER_PAGE,
+        totalItems: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
   }
 }
 
-export default async function AllPostsPage({ params }: PageProps) {
+export default async function AllPostsPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const posts = await getPosts(slug);
+  const { page: pageParam } = await searchParams;
+
+  // 페이지 번호 파싱 (기본값: 1)
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+
+  const { items: posts, meta } = await getPosts(slug, page);
+
+  // 유효하지 않은 페이지 번호 처리 (범위 초과)
+  if (page > 1 && posts.length === 0 && meta.totalPages > 0) {
+    // 마지막 페이지로 리다이렉트하지 않고, 빈 상태 표시
+    // (SEO 친화적: 잘못된 URL은 빈 결과 표시)
+  }
 
   return (
     <>
@@ -86,11 +116,15 @@ export default async function AllPostsPage({ params }: PageProps) {
       {/* 메인 콘텐츠 */}
       <main className="mx-auto max-w-6xl h-full px-4 py-8">
         {posts.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} siteSlug={slug} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} siteSlug={slug} />
+              ))}
+            </div>
+            {/* 페이지네이션 */}
+            <Pagination meta={meta} basePath={`/t/${slug}/posts`} className="mt-12" />
+          </>
         ) : (
           <EmptyPostList siteSlug={slug} showBackLink={false} />
         )}

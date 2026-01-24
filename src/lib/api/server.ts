@@ -4,26 +4,46 @@
  * axios interceptor 없이 순수 fetch 사용
  */
 
-import type { ApiResponse, PublicPost, SiteSettings, PublicCategory, PublicBanner } from './types';
+import type {
+  ApiResponse,
+  PublicPost,
+  SiteSettings,
+  PublicCategory,
+  PublicBanner,
+  PaginatedResponse,
+} from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 // ===== Public Post API (서버/ISR) =====
 
+export interface FetchPublicPostsOptions {
+  categorySlug?: string;
+  page?: number;
+  limit?: number;
+}
+
 export async function fetchPublicPosts(
   siteSlug: string,
-  categorySlug?: string,
-): Promise<PublicPost[]> {
+  options?: FetchPublicPostsOptions,
+): Promise<PaginatedResponse<PublicPost>> {
   const params = new URLSearchParams({ siteSlug: siteSlug });
-  if (categorySlug) {
-    params.append('categorySlug', categorySlug);
+  if (options?.categorySlug) {
+    params.append('categorySlug', options.categorySlug);
+  }
+  if (options?.page) {
+    params.append('page', String(options.page));
+  }
+  if (options?.limit) {
+    params.append('limit', String(options.limit));
   }
   const res = await fetch(`${API_BASE_URL}/public/posts?${params.toString()}`, {
     next: {
       revalidate: 60,
-      tags: [`posts-${siteSlug}`, categorySlug ? `posts-${siteSlug}-${categorySlug}` : ''].filter(
-        Boolean,
-      ),
+      tags: [
+        `posts-${siteSlug}`,
+        options?.categorySlug ? `posts-${siteSlug}-${options.categorySlug}` : '',
+      ].filter(Boolean),
     },
   });
 
@@ -31,18 +51,22 @@ export async function fetchPublicPosts(
     throw new Error(`Failed to fetch posts: ${res.status}`);
   }
 
-  const data: ApiResponse<PublicPost[]> = await res.json();
+  const data: ApiResponse<PaginatedResponse<PublicPost>> = await res.json();
   return data.data;
 }
 
 export async function fetchPublicPostBySlug(
   siteSlug: string,
   postSlug: string,
+  categorySlug?: string,
 ): Promise<PublicPost> {
+  const params = new URLSearchParams({ siteSlug });
+  if (categorySlug) {
+    params.append('categorySlug', categorySlug);
+  }
+
   const res = await fetch(
-    `${API_BASE_URL}/public/posts/${encodeURIComponent(postSlug)}?siteSlug=${encodeURIComponent(
-      siteSlug,
-    )}`,
+    `${API_BASE_URL}/public/posts/${encodeURIComponent(postSlug)}?${params.toString()}`,
     {
       next: {
         revalidate: 60,

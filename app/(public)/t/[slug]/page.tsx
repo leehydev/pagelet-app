@@ -63,9 +63,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 async function getPosts(siteSlug: string, limit?: number): Promise<PublicPost[]> {
   try {
-    const posts = await fetchPublicPosts(siteSlug);
-    // 최신 게시글만 반환 (limit이 지정된 경우)
-    return limit ? posts.slice(0, limit) : posts;
+    const response = await fetchPublicPosts(siteSlug, { limit });
+    return response.items;
   } catch (error) {
     // 게시글은 부가 데이터이므로 에러 로깅 후 빈 배열 반환 (graceful degradation)
     console.error('Failed to fetch posts:', error);
