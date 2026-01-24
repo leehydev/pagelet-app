@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { updateAdminPost, UpdatePostRequest } from '@/lib/api';
+import { saveDraft, SaveDraftRequest } from '@/lib/api';
 
 interface UseAutoSaveOptions {
   siteId: string;
@@ -17,6 +17,7 @@ interface AutoSaveState {
   lastSavedAt: Date | null;
   isSaving: boolean;
   hasUnsavedChanges: boolean;
+  isEditingDraft: boolean; // 드래프트 편집 중 여부
 }
 
 export function useAutoSave({
@@ -30,15 +31,17 @@ export function useAutoSave({
     lastSavedAt: null,
     isSaving: false,
     hasUnsavedChanges: false,
+    isEditingDraft: false,
   });
 
-  const pendingDataRef = useRef<UpdatePostRequest | null>(null);
+  const pendingDataRef = useRef<SaveDraftRequest | null>(null);
   const lastSavedDataRef = useRef<string>('');
 
+  // 드래프트 저장 mutation
   const mutation = useMutation({
-    mutationFn: (data: UpdatePostRequest) => {
+    mutationFn: (data: SaveDraftRequest) => {
       if (!postId) throw new Error('postId is required');
-      return updateAdminPost(siteId, postId, data);
+      return saveDraft(siteId, postId, data);
     },
     onSuccess: () => {
       setState((prev) => ({
@@ -46,6 +49,7 @@ export function useAutoSave({
         lastSavedAt: dayjs().toDate(),
         isSaving: false,
         hasUnsavedChanges: false,
+        isEditingDraft: true, // 드래프트 저장됨
       }));
       // 저장된 데이터 기록
       if (pendingDataRef.current) {
@@ -60,7 +64,7 @@ export function useAutoSave({
   });
 
   // 데이터 변경 감지
-  const markAsChanged = useCallback((data: UpdatePostRequest) => {
+  const markAsChanged = useCallback((data: SaveDraftRequest) => {
     const dataStr = JSON.stringify(data);
     if (dataStr !== lastSavedDataRef.current) {
       pendingDataRef.current = data;
@@ -75,6 +79,11 @@ export function useAutoSave({
     setState((prev) => ({ ...prev, isSaving: true }));
     await mutation.mutateAsync(pendingDataRef.current);
   }, [postId, mutation]);
+
+  // 드래프트 편집 상태 설정 (에디터 초기화 시 사용)
+  const setIsEditingDraft = useCallback((value: boolean) => {
+    setState((prev) => ({ ...prev, isEditingDraft: value }));
+  }, []);
 
   // 자동저장 인터벌
   useEffect(() => {
@@ -107,5 +116,6 @@ export function useAutoSave({
     ...state,
     markAsChanged,
     saveNow,
+    setIsEditingDraft,
   };
 }
