@@ -25,42 +25,10 @@ declare module '@tiptap/core' {
   }
 }
 
-// 전역 스크립트 로드 상태
-let kakaoMapScriptLoading = false;
-let kakaoMapScriptLoaded = false;
-const loadCallbacks: (() => void)[] = [];
-
-// 카카오맵 스크립트 로드 유틸리티
-function loadKakaoMapScript(): Promise<void> {
-  return new Promise((resolve) => {
-    if (kakaoMapScriptLoaded) {
-      resolve();
-      return;
-    }
-
-    loadCallbacks.push(resolve);
-
-    if (kakaoMapScriptLoading) {
-      return;
-    }
-
-    kakaoMapScriptLoading = true;
-
-    const script = document.createElement('script');
-    script.src = 'https://ssl.daumcdn.net/dmaps/map_js_init/roughmapLoader.js';
-    script.charset = 'UTF-8';
-    script.onload = () => {
-      kakaoMapScriptLoaded = true;
-      loadCallbacks.forEach((cb) => cb());
-      loadCallbacks.length = 0;
-    };
-    script.onerror = () => {
-      kakaoMapScriptLoading = false;
-      loadCallbacks.forEach((cb) => cb());
-      loadCallbacks.length = 0;
-    };
-    document.head.appendChild(script);
-  });
+// 카카오맵 스크립트가 로드되어 있는지 확인 (root layout에서 beforeInteractive로 로드)
+function isKakaoMapScriptLoaded(): boolean {
+  const daum = (window as unknown as { daum?: { roughmap?: { Lander?: unknown } } }).daum;
+  return !!daum?.roughmap?.Lander;
 }
 
 // KakaoMapComponent - 에디터 내 미리보기
@@ -70,6 +38,7 @@ function KakaoMapComponent({ node, deleteNode, selected }: NodeViewProps) {
   const mapInitialized = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
 
   const handleDelete = useCallback(() => {
     deleteNode();
@@ -78,15 +47,17 @@ function KakaoMapComponent({ node, deleteNode, selected }: NodeViewProps) {
   useEffect(() => {
     if (!timestamp || !key || mapInitialized.current) return;
 
-    const initMap = async () => {
-      try {
-        await loadKakaoMapScript();
+    const initMap = () => {
+      // 스크립트가 로드되어 있는지 확인 (root layout에서 beforeInteractive로 로드됨)
+      if (!isKakaoMapScriptLoaded()) {
+        // 에디터에서는 placeholder로 표시 (실제 지도는 공개 페이지에서 렌더링)
+        setShowPlaceholder(true);
+        setIsLoading(false);
+        return;
+      }
 
-        // 스크립트 로드 후 daum 객체 확인
+      try {
         const daum = (window as unknown as { daum?: { roughmap?: { Lander?: unknown } } }).daum;
-        if (!daum?.roughmap?.Lander) {
-          throw new Error('카카오맵 스크립트를 로드하지 못했습니다.');
-        }
 
         if (containerRef.current && !mapInitialized.current) {
           const containerId = `daumRoughmapContainer${timestamp}`;
@@ -94,7 +65,7 @@ function KakaoMapComponent({ node, deleteNode, selected }: NodeViewProps) {
           containerRef.current.className = 'root_daum_roughmap root_daum_roughmap_landing';
 
           // Lander 생성자 타입 정의
-          const LanderClass = daum.roughmap.Lander as new (options: {
+          const LanderClass = daum!.roughmap!.Lander as new (options: {
             timestamp: string;
             key: string;
             mapWidth: string;
@@ -167,6 +138,18 @@ function KakaoMapComponent({ node, deleteNode, selected }: NodeViewProps) {
             style={{ width: mapWidth, height: mapHeight, maxWidth: '100%' }}
           >
             <span className="text-red-500">{error}</span>
+          </div>
+        )}
+
+        {/* Placeholder - 스크립트 미로드 시 */}
+        {showPlaceholder && (
+          <div
+            className="flex flex-col items-center justify-center bg-blue-50 border border-blue-200 rounded"
+            style={{ width: mapWidth, height: mapHeight, maxWidth: '100%' }}
+          >
+            <span className="text-blue-600 font-medium">📍 카카오맵</span>
+            <span className="text-blue-500 text-sm mt-1">{mapWidth} × {mapHeight}</span>
+            <span className="text-blue-400 text-xs mt-2">발행 시 지도가 표시됩니다</span>
           </div>
         )}
 

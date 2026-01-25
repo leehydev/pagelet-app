@@ -39,7 +39,7 @@ export function PostSearchAutocomplete({
   }, [query]);
 
   // 검색 쿼리
-  const { data: results, isLoading } = useSearchPosts(
+  const { data: results, isLoading, error } = useSearchPosts(
     siteId,
     debouncedQuery,
     isOpen && debouncedQuery.length >= 1,
@@ -157,13 +157,17 @@ export function PostSearchAutocomplete({
             <div className="p-4 text-center text-sm text-muted-foreground">검색 중...</div>
           )}
 
-          {!isLoading && debouncedQuery && filteredResults.length === 0 && (
+          {!isLoading && error && (
+            <div className="p-4 text-center text-sm text-red-500">검색 중 오류가 발생했습니다.</div>
+          )}
+
+          {!isLoading && !error && debouncedQuery && filteredResults.length === 0 && (
             <div className="p-4 text-center text-sm text-muted-foreground">
               검색 결과가 없습니다.
             </div>
           )}
 
-          {!isLoading && !debouncedQuery && (
+          {!isLoading && !error && !debouncedQuery && (
             <div className="p-4 text-center text-sm text-muted-foreground">
               게시글 제목을 입력하세요.
             </div>

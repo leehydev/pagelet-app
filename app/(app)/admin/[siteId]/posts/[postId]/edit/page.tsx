@@ -89,10 +89,7 @@ export default function EditPostPage() {
   });
 
   // 드래프트 조회 (post.hasDraft가 true일 때만)
-  const {
-    data: draft,
-    isLoading: draftLoading,
-  } = useQuery({
+  const { data: draft, isLoading: draftLoading } = useQuery({
     queryKey: ['admin', 'draft', siteId, postId],
     queryFn: () => getDraft(siteId, postId),
     enabled: !!siteId && !!postId && post?.hasDraft === true,
@@ -109,7 +106,14 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 자동저장 훅
-  const { lastSavedAt, isSaving, hasUnsavedChanges, isEditingDraft, markAsChanged, setIsEditingDraft } = useAutoSave({
+  const {
+    lastSavedAt,
+    isSaving,
+    hasUnsavedChanges,
+    isEditingDraft,
+    markAsChanged,
+    setIsEditingDraft,
+  } = useAutoSave({
     siteId,
     postId,
     intervalMs: 5 * 60 * 1000, // 5분
@@ -155,9 +159,7 @@ export default function EditPostPage() {
           ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
         </span>
       )}
-      {hasUnsavedChanges && !isSaving && (
-        <span className="text-orange-600">• 저장 대기 중</span>
-      )}
+      {hasUnsavedChanges && !isSaving && <span className="text-orange-600">• 저장 대기 중</span>}
     </div>
   );
 
@@ -470,15 +472,10 @@ export default function EditPostPage() {
                         type="button"
                         className="w-full"
                         onClick={() => setPublishModalOpen(true)}
-                        disabled={publishMutation.isPending || !isEditingDraft && !post.hasDraft}
+                        disabled={publishMutation.isPending}
                       >
                         {publishMutation.isPending ? '발행 중...' : '발행'}
                       </Button>
-                      {!isEditingDraft && !post.hasDraft && (
-                        <p className="text-xs text-gray-500 text-center">
-                          내용을 작성하면 발행할 수 있습니다
-                        </p>
-                      )}
                     </>
                   )}
 

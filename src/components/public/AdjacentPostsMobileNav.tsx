@@ -49,8 +49,8 @@ function MobilePostCard({ post, siteSlug }: MobilePostCardProps) {
           : 'bg-white shadow-sm border border-gray-100 active:scale-95',
       )}
     >
-      {/* 썸네일 이미지 */}
-      <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
+      {/* 썸네일 이미지 - w-36(144px)의 4:3 비율 = 108px */}
+      <div className="w-full h-[108px] relative overflow-hidden bg-gray-100">
         <Image
           src={post.ogImageUrl || '/images/admin/no_thumbnail.png'}
           alt={post.title}
