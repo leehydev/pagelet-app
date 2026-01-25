@@ -8,9 +8,15 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function WaitingPage() {
   const router = useRouter();
-  const { data: user, isLoading } = useUser();
+  const { data: user, isLoading, error } = useUser();
 
   useEffect(() => {
+    // 에러 시 로그인 페이지로
+    if (error) {
+      router.replace('/signin');
+      return;
+    }
+
     if (isLoading || !user) return;
 
     // ACTIVE 상태면 어드민으로 리다이렉트
@@ -21,9 +27,9 @@ export default function WaitingPage() {
     if (user.accountStatus === AccountStatus.ONBOARDING) {
       router.replace('/onboarding/profile');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, error, router]);
 
-  if (isLoading) {
+  if (isLoading || error) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 

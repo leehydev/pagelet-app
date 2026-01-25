@@ -86,6 +86,7 @@ api.interceptors.request.use((config) => {
 // 브라우저 탭당 하나의 인스턴스이므로 모듈 레벨 변수 사용 가능
 
 let isRefreshing = false;
+let isSessionExpired = false; // 세션 만료 시 모든 리프레시 시도 차단
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
@@ -112,6 +113,11 @@ api.interceptors.response.use(
 
     // 401 에러가 아니거나, 이미 재시도한 요청이면 에러 반환
     if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    // 이미 세션 만료 처리 중이면 바로 에러 반환 (무한 루프 방지)
+    if (isSessionExpired) {
       return Promise.reject(error);
     }
 
@@ -146,6 +152,9 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
       return api(originalRequest);
     } catch (refreshError) {
+      // 세션 만료 플래그 설정 - 이후 모든 리프레시 시도 차단
+      isSessionExpired = true;
+
       // 리프레시 실패 시 대기 중인 요청들 실패 처리
       processQueue(refreshError as Error);
 

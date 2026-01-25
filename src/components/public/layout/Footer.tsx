@@ -44,6 +44,7 @@ export function Footer({
                     alt={siteName || ''}
                     width={100}
                     height={100}
+                    className="h-auto"
                   />
                 )}
                 <span className="text-xl font-bold text-gray-900">{siteName}</span>
