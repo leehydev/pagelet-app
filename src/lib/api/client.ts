@@ -158,9 +158,9 @@ api.interceptors.response.use(
       // 리프레시 실패 시 대기 중인 요청들 실패 처리
       processQueue(refreshError as Error);
 
-      // 토큰 삭제 및 로그인 페이지로 이동
+      // 토큰 삭제 및 로그인 페이지로 이동 (이미 /signin이면 리다이렉트 안 함)
       removeAccessToken();
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/signin')) {
         window.location.href = '/signin';
       }
 
