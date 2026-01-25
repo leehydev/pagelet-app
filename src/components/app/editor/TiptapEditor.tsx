@@ -2,11 +2,25 @@
 
 import { forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
 import { extensions } from './extensions';
 import { MenuBar } from './MenuBar';
 import { useCharacterCount } from './hooks/useCharacterCount';
 import { useUpload } from '@/hooks/use-upload';
 import { Loader2 } from 'lucide-react';
+
+// 이미지 삽입 헬퍼: 노드가 선택된 경우 그 뒤에 삽입
+function insertImage(editor: Editor, src: string) {
+  const { selection } = editor.state;
+
+  // 노드(이미지 등)가 선택된 경우, 노드 뒤로 커서 이동 후 삽입
+  if (selection instanceof NodeSelection) {
+    const pos = selection.$anchor.pos + selection.node.nodeSize;
+    editor.chain().focus().setTextSelection(pos).setImage({ src }).run();
+  } else {
+    editor.chain().focus().setImage({ src }).run();
+  }
+}
 
 export interface TiptapEditorRef {
   getEditor: () => Editor | null;
@@ -117,11 +131,11 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     useEffect(() => {
       const publicUrl = uploadProgress.publicUrl;
       if (uploadProgress.status === 'completed' && publicUrl && editor) {
-        // flushSync 에러 방지를 위해 setTimeout 사용
-        setTimeout(() => {
-          editor.chain().focus().setImage({ src: publicUrl }).run();
+        // flushSync 에러 방지를 위해 queueMicrotask 사용
+        queueMicrotask(() => {
+          insertImage(editor, publicUrl);
           reset();
-        }, 0);
+        });
       }
     }, [uploadProgress.status, uploadProgress.publicUrl, editor, reset]);
 

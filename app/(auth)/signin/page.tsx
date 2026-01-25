@@ -1,14 +1,31 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { KeyRound } from 'lucide-react';
 
 import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
 import { getOAuthAuthorizeUrl, OAuthProvider } from '@/lib/oauth';
+import { useUser } from '@/hooks/use-user';
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { data: user, isLoading } = useUser();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/admin');
+    }
+  }, [user, isLoading, router]);
+
   function signin(provider: OAuthProvider) {
     window.location.href = getOAuthAuthorizeUrl(provider);
+  }
+
+  // 로그인 상태 확인 중이거나 로그인된 경우 렌더링하지 않음
+  if (isLoading || user) {
+    return null;
   }
 
   return (
