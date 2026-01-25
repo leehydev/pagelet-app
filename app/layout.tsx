@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 // import { Suspense } from 'react';
 import './globals.css';
 import { RootProviders } from './providers/root-providers';
@@ -36,6 +37,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning className="h-full">
+      <head>
+        {/* 카카오맵 지도 퍼가기 스크립트 - 클라이언트 사이드 로드 */}
+        <Script
+          src="https://ssl.daumcdn.net/dmaps/map_js_init/roughmapLoader.js"
+          strategy="afterInteractive"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen h-full flex flex-col`}
       >

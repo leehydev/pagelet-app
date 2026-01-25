@@ -10,7 +10,9 @@ import { KakaoMap } from './extensions/KakaoMap';
 
 export const extensions = [
   TextStyleKit,
-  StarterKit,
+  StarterKit.configure({
+    dropcursor: false,
+  }),
   TextAlign.configure({
     types: ['heading', 'paragraph', 'image'],
   }),
