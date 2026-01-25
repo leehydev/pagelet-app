@@ -4,19 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { AccountStatus } from '@/lib/api';
-import { Stepper } from '@/components/app/onboarding/Stepper';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-
-const STEP_PATHS = {
-  1: '/onboarding/profile',
-  2: '/onboarding/site',
-} as const;
-
-function getStepFromPath(pathname: string): number {
-  if (pathname.includes('/profile')) return 1;
-  if (pathname.includes('/site')) return 2;
-  return 1;
-}
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,15 +28,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       return;
     }
 
-    // 현재 URL의 단계와 사용자의 온보딩 단계가 맞지 않으면 올바른 단계로 리다이렉트
-    const currentPathStep = getStepFromPath(pathname);
-    const userStep = user.onboardingStep || 1;
-
-    if (currentPathStep !== userStep) {
-      const correctPath = STEP_PATHS[userStep as keyof typeof STEP_PATHS];
-      if (correctPath) {
-        router.replace(correctPath);
-      }
+    // 사이트 생성 페이지가 아니면 리다이렉트
+    if (!pathname.includes('/site')) {
+      router.replace('/onboarding/site');
     }
   }, [user, isLoading, error, pathname, router]);
 
@@ -67,17 +49,13 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     return null;
   }
 
-  const currentStep = user.onboardingStep || 1;
-
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Pagelet 시작하기</h1>
-          <p className="text-gray-600 mt-2">몇 가지 정보만 입력하면 바로 시작할 수 있어요</p>
+          <p className="text-gray-600 mt-2">홈페이지 정보를 입력하면 바로 시작할 수 있어요</p>
         </div>
-
-        <Stepper currentStep={currentStep} />
 
         <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">{children}</div>
       </div>

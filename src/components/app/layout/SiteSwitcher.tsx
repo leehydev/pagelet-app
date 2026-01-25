@@ -25,9 +25,7 @@ export function SiteSwitcher() {
     // 마지막 선택 저장
     localStorage.setItem(LAST_SITE_KEY, newSiteId);
 
-    // /admin/{oldSiteId}/posts/123 → /admin/{newSiteId}/posts/123
-    const newPathname = pathname.replace(`/admin/${currentSiteId}`, `/admin/${newSiteId}`);
-    router.push(newPathname);
+    router.push(`/admin/${newSiteId}`);
   };
 
   if (isLoading || !sites) {
@@ -35,11 +33,7 @@ export function SiteSwitcher() {
   }
 
   if (isError) {
-    return (
-      <div className="text-sm text-red-500 px-2">
-        사이트 목록을 불러올 수 없습니다
-      </div>
-    );
+    return <div className="text-sm text-red-500 px-2">사이트 목록을 불러올 수 없습니다</div>;
   }
 
   // 사이트 1개면 이름만 표시

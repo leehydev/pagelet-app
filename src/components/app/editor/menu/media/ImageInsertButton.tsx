@@ -14,8 +14,22 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Image, Upload, Loader2 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
 import { useUpload } from '@/hooks/use-upload';
 import { cn } from '@/lib/utils';
+
+// 이미지 삽입 헬퍼: 노드가 선택된 경우 그 뒤에 삽입
+function insertImage(editor: Editor, src: string) {
+  const { selection } = editor.state;
+
+  // 노드(이미지 등)가 선택된 경우, 노드 뒤로 커서 이동 후 삽입
+  if (selection instanceof NodeSelection) {
+    const pos = selection.$anchor.pos + selection.node.nodeSize;
+    editor.chain().focus().setTextSelection(pos).setImage({ src }).run();
+  } else {
+    editor.chain().focus().setImage({ src }).run();
+  }
+}
 
 type InputMode = 'url' | 'upload';
 
@@ -34,18 +48,19 @@ export function ImageInsertButton({ editor, siteId }: ImageInsertButtonProps) {
   // 업로드 완료 시 에디터에 이미지 삽입
   useEffect(() => {
     if (uploadProgress.status === 'completed' && uploadProgress.publicUrl) {
-      editor?.chain().focus().setImage({ src: uploadProgress.publicUrl }).run();
+      const url = uploadProgress.publicUrl;
       reset();
-      // 다음 프레임에 모달 닫기 (cascading render 방지)
-      requestAnimationFrame(() => {
+      // React 렌더링 사이클 외부에서 에디터 명령 실행 (flushSync 충돌 방지)
+      queueMicrotask(() => {
+        if (editor) insertImage(editor, url);
         setIsModalOpen(false);
       });
     }
   }, [uploadProgress.status, uploadProgress.publicUrl, editor, reset]);
 
   const handleAddImage = useCallback(() => {
-    if (imageUrl.trim()) {
-      editor?.chain().focus().setImage({ src: imageUrl.trim() }).run();
+    if (imageUrl.trim() && editor) {
+      insertImage(editor, imageUrl.trim());
       setImageUrl('');
       setIsModalOpen(false);
     }

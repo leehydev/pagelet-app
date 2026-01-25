@@ -17,7 +17,6 @@ import type {
   Category,
   PublicCategory,
   AdminSite,
-  UpdateProfileRequest,
   CreateSiteRequest,
   CreatePostRequest,
   UpdatePostRequest,
@@ -171,10 +170,6 @@ export async function getMe(): Promise<User> {
 }
 
 // ===== Onboarding API =====
-
-export async function updateProfile(data: UpdateProfileRequest): Promise<void> {
-  await api.post('/onboarding/profile', data);
-}
 
 export async function createSite(data: CreateSiteRequest): Promise<void> {
   await api.post('/onboarding/site', data);

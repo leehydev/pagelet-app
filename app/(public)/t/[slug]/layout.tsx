@@ -67,6 +67,9 @@ export async function generateMetadata({
   const settings = await fetchSiteSettings(slug);
 
   return {
+    icons: {
+      icon: settings.faviconUrl || '/images/favicon.ico',
+    },
     verification: settings.naverSiteVerification
       ? {
           other: {
