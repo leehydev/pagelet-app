@@ -86,10 +86,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: ogUrl,
       siteName: settings.name,
       images: post.ogImageUrl
-        ? [post.ogImageUrl]
+        ? [{ url: post.ogImageUrl, width: 1200, height: 630 }]
         : settings.ogImageUrl
-        ? [settings.ogImageUrl]
-        : undefined,
+          ? [{ url: settings.ogImageUrl, width: 1200, height: 630 }]
+          : undefined,
       type: 'article',
       publishedTime: post.publishedAt,
     },
