@@ -4,10 +4,8 @@ import { NextResponse } from 'next/server';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 interface RefreshResponse {
-  success: boolean;
-  data: {
-    accessToken: string;
-  };
+  accessToken: string;
+  isCached: boolean;
 }
 
 /**
@@ -46,7 +44,7 @@ export async function POST() {
     }
 
     const data: RefreshResponse = await res.json();
-    return NextResponse.json({ success: true, accessToken: data.data.accessToken });
+    return NextResponse.json({ success: true, accessToken: data.accessToken });
   } catch (error) {
     console.error('Token refresh failed:', error);
     return NextResponse.json(

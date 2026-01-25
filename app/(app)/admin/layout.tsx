@@ -19,10 +19,16 @@ const ONBOARDING_PATHS = {
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data: user, isLoading } = useUser();
+  const { data: user, isLoading, error } = useUser();
 
   useEffect(() => {
     if (isLoading) return;
+
+    // 인증 에러 시 로그인 페이지로 리다이렉트
+    if (error) {
+      router.replace('/signin');
+      return;
+    }
 
     // PENDING 상태면 대기 페이지로 리다이렉트
     if (user?.accountStatus === AccountStatus.PENDING) {
@@ -36,10 +42,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const path = ONBOARDING_PATHS[step as keyof typeof ONBOARDING_PATHS];
       router.replace(path || '/onboarding/profile');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, error, router]);
 
-  // 로딩 중이거나 온보딩/PENDING 상태면 로딩 UI 표시
-  if (isLoading || user?.accountStatus === AccountStatus.ONBOARDING || user?.accountStatus === AccountStatus.PENDING) {
+  // 로딩 중, 에러, 온보딩/PENDING 상태면 로딩 UI 표시 (리다이렉트 대기)
+  if (isLoading || error || user?.accountStatus === AccountStatus.ONBOARDING || user?.accountStatus === AccountStatus.PENDING) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
