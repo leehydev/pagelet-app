@@ -93,6 +93,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       publishedTime: post.publishedAt,
     },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: post.ogImageUrl
+        ? [post.ogImageUrl]
+        : settings.ogImageUrl
+          ? [settings.ogImageUrl]
+          : undefined,
+    },
     ...(settings.canonicalBaseUrl && {
       alternates: {
         canonical: `${settings.canonicalBaseUrl}/posts/${postSlug}`,
