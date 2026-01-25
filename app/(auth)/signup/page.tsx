@@ -1,15 +1,31 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { UserPlus } from 'lucide-react';
 
 import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
+import { useUser } from '@/hooks/use-user';
 
 export default function SignUpPage() {
+  const router = useRouter();
+  const { data: user, isLoading } = useUser();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/admin');
+    }
+  }, [user, isLoading, router]);
 
   function signup(provider: string) {
     window.location.href = `${API_BASE_URL}/auth/${provider}`;
+  }
+
+  // 로그인 상태 확인 중이거나 로그인된 경우 렌더링하지 않음
+  if (isLoading || user) {
+    return null;
   }
 
   return (

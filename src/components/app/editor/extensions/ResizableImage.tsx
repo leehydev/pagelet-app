@@ -169,16 +169,23 @@ export const ResizableImage = Image.extend({
         parseHTML: (element) => element.getAttribute('data-display-mode') || 'block',
         renderHTML: (attributes) => {
           const mode = attributes.displayMode;
-          if (!mode || mode === 'block') {
-            return { 'data-display-mode': 'block' };
+          if (mode === 'inline') {
+            return {
+              'data-display-mode': 'inline',
+              style: 'display: inline-block; vertical-align: top; margin-right: 8px;',
+            };
           }
-          return { 'data-display-mode': mode };
+          return { 'data-display-mode': 'block' };
         },
       },
       textAlign: {
         default: 'left',
         parseHTML: (element) => element.getAttribute('data-text-align') || 'left',
         renderHTML: (attributes) => {
+          // 인라인 모드에서는 텍스트 정렬이 의미 없음 (displayMode에서 스타일 처리)
+          if (attributes.displayMode === 'inline') {
+            return {};
+          }
           const align = attributes.textAlign;
           if (!align || align === 'left') {
             return {};
