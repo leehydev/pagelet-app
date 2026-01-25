@@ -6,6 +6,7 @@ import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
 import Youtube from '@tiptap/extension-youtube';
 import { linkExtension } from './config/link-config';
 import { ResizableImage } from './extensions/ResizableImage';
+import { KakaoMap } from './extensions/KakaoMap';
 
 export const extensions = [
   TextStyleKit,
@@ -28,4 +29,5 @@ export const extensions = [
     controls: false,
     nocookie: true,
   }),
+  KakaoMap,
 ];

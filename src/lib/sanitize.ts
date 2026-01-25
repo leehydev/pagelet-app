@@ -15,6 +15,17 @@ export function sanitizeHtml(dirty: string): string {
   return DOMPurify.sanitize(dirty, {
     USE_PROFILES: { html: true },
     ADD_TAGS: ['iframe'], // YouTube embed 허용
-    ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling'], // iframe 속성 허용
+    ADD_ATTR: [
+      'allow',
+      'allowfullscreen',
+      'frameborder',
+      'scrolling',
+      // 카카오맵 속성 허용
+      'data-kakao-map',
+      'data-timestamp',
+      'data-key',
+      'data-map-width',
+      'data-map-height',
+    ],
   });
 }
