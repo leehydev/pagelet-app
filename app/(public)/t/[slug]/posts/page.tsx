@@ -47,6 +47,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `전체 게시글 - ${settings.seoTitle || settings.name || slug}`;
   const description = `${settings.name || slug}의 모든 게시글을 확인하세요.`;
 
+  // og:url 생성
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet.kr';
+  const baseUrl = settings.canonicalBaseUrl || `https://${slug}.${tenantDomain}`;
+  const ogUrl = `${baseUrl}/posts`;
+
   return {
     title,
     description,
@@ -55,6 +60,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
+      url: ogUrl,
+      siteName: settings.name,
       images: settings.ogImageUrl ? [settings.ogImageUrl] : undefined,
     },
     ...(settings.canonicalBaseUrl && {

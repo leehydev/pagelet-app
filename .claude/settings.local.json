@@ -14,7 +14,9 @@
       "Bash(gh issue create:*)",
       "Bash(gh project item-add:*)",
       "Bash(gh issue view:*)",
-      "Bash(file:*)"
+      "Bash(file:*)",
+      "WebFetch(domain:pagelet-dev-note.pagelet.kr)",
+      "WebFetch(domain:assets.pagelet.kr)"
     ]
   }
 }
