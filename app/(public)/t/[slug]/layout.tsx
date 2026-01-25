@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { PublicCategory, SiteSettings } from '@/lib/api';
 import { fetchPublicCategories, fetchSiteSettings } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
@@ -54,6 +55,26 @@ async function getCategories(siteSlug: string): Promise<PublicCategory[]> {
     // TODO: 프로덕션에서는 에러 모니터링 시스템에 전송 (Sentry, LogRocket 등)
     return [];
   }
+}
+
+// 네이버 사이트 인증 키 적용 (어드민 설정 UI는 TODO)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const settings = await fetchSiteSettings(slug);
+
+  return {
+    verification: settings.naverSiteVerification
+      ? {
+          other: {
+            'naver-site-verification': settings.naverSiteVerification,
+          },
+        }
+      : undefined,
+  };
 }
 
 export default async function PublicLayout({

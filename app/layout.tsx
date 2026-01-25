@@ -27,11 +27,6 @@ export const metadata: Metadata = {
     description: 'Pagelet - 멀티 테넌트 플랫폼',
     type: 'website',
   },
-  verification: {
-    other: {
-      'naver-site-verification': 'a1a0e077b45645abecc54a767e6d2eb997f12124',
-    },
-  },
 };
 
 export default function RootLayout({
