@@ -85,12 +85,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     category?.description || `${siteName}의 ${categoryName} 카테고리 게시글입니다.`;
 
+  // og:url 생성
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet.kr';
+  const baseUrl = settings.canonicalBaseUrl || `https://${slug}.${tenantDomain}`;
+  const ogUrl = `${baseUrl}/category/${categorySlug}`;
+
   return {
     title,
     description,
     openGraph: {
       title,
       description,
+      url: ogUrl,
+      siteName,
       images: settings.ogImageUrl ? [settings.ogImageUrl] : undefined,
     },
   };

@@ -71,6 +71,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.subtitle || `${post.title} - ${settings.name}`;
 
+  // og:url 생성 - canonicalBaseUrl이 있으면 사용, 없으면 테넌트 도메인 사용
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet.kr';
+  const baseUrl = settings.canonicalBaseUrl || `https://${slug}.${tenantDomain}`;
+  const ogUrl = `${baseUrl}/posts/${postSlug}`;
+
   return {
     title: `${title} - ${settings.name}`,
     description,
@@ -78,6 +83,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
+      url: ogUrl,
+      siteName: settings.name,
       images: post.ogImageUrl
         ? [post.ogImageUrl]
         : settings.ogImageUrl
