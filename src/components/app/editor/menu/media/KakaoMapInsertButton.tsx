@@ -32,13 +32,17 @@ export function KakaoMapInsertButton({ editor }: { editor: Editor }) {
     }
 
     if (!isValidKakaoMapHtml(htmlInput)) {
-      setParseError('올바른 카카오맵 퍼가기 HTML이 아닙니다. 카카오맵에서 "지도 퍼가기" 코드를 복사해주세요.');
+      setParseError(
+        '올바른 카카오맵 퍼가기 HTML이 아닙니다. 카카오맵에서 "지도 퍼가기" 코드를 복사해주세요.',
+      );
       return;
     }
 
     const params = parseKakaoMapHtml(htmlInput);
     if (!params) {
-      setParseError('HTML에서 지도 정보를 추출하지 못했습니다. 올바른 카카오맵 퍼가기 코드인지 확인해주세요.');
+      setParseError(
+        'HTML에서 지도 정보를 추출하지 못했습니다. 올바른 카카오맵 퍼가기 코드인지 확인해주세요.',
+      );
       return;
     }
 
@@ -91,11 +95,9 @@ export function KakaoMapInsertButton({ editor }: { editor: Editor }) {
                   setParseError(null);
                 }}
                 rows={8}
-                className="font-mono text-xs"
+                className="font-mono text-xs break-all"
               />
-              {parseError && (
-                <p className="text-sm text-red-500">{parseError}</p>
-              )}
+              {parseError && <p className="text-sm text-red-500">{parseError}</p>}
             </div>
             <div className="text-xs text-gray-500 space-y-1">
               <p className="font-medium">카카오맵에서 퍼가기 코드 가져오는 방법:</p>
