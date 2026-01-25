@@ -16,7 +16,8 @@
       "Bash(gh issue view:*)",
       "Bash(file:*)",
       "WebFetch(domain:pagelet-dev-note.pagelet.kr)",
-      "WebFetch(domain:assets.pagelet.kr)"
+      "WebFetch(domain:assets.pagelet.kr)",
+      "Bash(ls:*)"
     ]
   }
 }
