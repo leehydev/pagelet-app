@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Category } from '@/lib/api';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
+import { QueryError } from '@/components/common/QueryError';
 import { Plus } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
   const params = useParams();
   const siteId = params.siteId as string;
 
-  const { data: categories, isLoading, error } = useAdminCategories(siteId);
+  const { data: categories, isLoading, error, refetch } = useAdminCategories(siteId);
   const deleteCategory = useDeleteCategory(siteId);
 
   const handleDelete = async (id: string, name: string) => {
@@ -54,9 +55,11 @@ export default function AdminCategoriesPage() {
       <>
         <AdminPageHeader breadcrumb="Management" title="Categories" action={headerAction} />
         <div className="p-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-            카테고리를 불러오는데 실패했습니다.
-          </div>
+          <QueryError
+            error={error}
+            onRetry={refetch}
+            fallbackMessage="카테고리를 불러오는데 실패했습니다."
+          />
         </div>
       </>
     );

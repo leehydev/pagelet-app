@@ -34,32 +34,11 @@ export function CtaSettingsSection({
     'cta',
   );
 
-  // settings.id를 key로 사용해 settings 변경 시 상태 리셋 추적
-  const settingsKey = `${settings.id}-${settings.updatedAt}`;
-  const [localSettingsKey, setLocalSettingsKey] = useState(settingsKey);
-
-  // 로컬 상태 초기화 (settings가 외부에서 변경된 경우)
-  const getInitialState = useCallback(() => ({
-    ctaEnabled: settings.ctaEnabled || false,
-    ctaType: (settings.ctaType || 'text') as CtaType,
-    ctaText: settings.ctaText || '',
-    ctaLink: settings.ctaLink || '',
-  }), [settings]);
-
+  // 부모에서 key를 통해 settings 변경 시 컴포넌트가 리마운트됨
   const [ctaEnabled, setCtaEnabled] = useState(() => settings.ctaEnabled || false);
   const [ctaType, setCtaType] = useState<CtaType>(() => settings.ctaType || 'text');
   const [ctaText, setCtaText] = useState(() => settings.ctaText || '');
   const [ctaLink, setCtaLink] = useState(() => settings.ctaLink || '');
-
-  // settings가 외부에서 변경된 경우 로컬 상태 리셋
-  if (settingsKey !== localSettingsKey) {
-    setLocalSettingsKey(settingsKey);
-    const initial = getInitialState();
-    setCtaEnabled(initial.ctaEnabled);
-    setCtaType(initial.ctaType);
-    setCtaText(initial.ctaText);
-    setCtaLink(initial.ctaLink);
-  }
 
   // 변경 감지 (useMemo로 계산)
   const hasChanges = useMemo(() => {

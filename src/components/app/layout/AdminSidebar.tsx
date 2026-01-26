@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { SiteSwitcher } from './SiteSwitcher';
-import { api } from '@/lib/api';
+import { removeAccessToken } from '@/lib/api';
 
 const menuItems = [
   { path: '', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,8 +37,11 @@ export function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      // Next.js API 라우트로 쿠키 삭제
+      await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
+      // localStorage 토큰 삭제
+      removeAccessToken();
       window.location.href = '/signin';
     }
   };

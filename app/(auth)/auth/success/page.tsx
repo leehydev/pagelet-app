@@ -66,7 +66,7 @@ export default function AuthSuccessPage() {
       if (user.accountStatus === AccountStatus.PENDING) {
         router.replace('/waiting');
       } else if (user.accountStatus === AccountStatus.ONBOARDING) {
-        router.replace('/onboarding/profile');
+        router.replace('/onboarding/site');
       } else {
         router.replace('/admin');
       }

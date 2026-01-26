@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import {
   presignUpload,
@@ -29,7 +29,9 @@ export function useUpload(siteId: string) {
     progress: 0,
   });
   const siteIdRef = useRef(siteId);
-  siteIdRef.current = siteId;
+  useEffect(() => {
+    siteIdRef.current = siteId;
+  }, [siteId]);
 
   const presignMutation = useMutation({
     mutationFn: ({ request }: { request: PresignUploadRequest; file: File }) =>
@@ -174,12 +176,12 @@ export function useUpload(siteId: string) {
     presignMutation.mutate({ request, file });
   };
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setUploadProgress({
       status: 'idle',
       progress: 0,
     });
-  };
+  }, []);
 
   return {
     upload,

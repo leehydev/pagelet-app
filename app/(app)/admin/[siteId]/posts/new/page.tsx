@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * 새 게시글 작성 페이지
+ *
+ * 저장 로직:
+ * - 5분마다 PRIVATE 상태로 post 자동 생성/저장
+ * - 발행 버튼: PUBLISHED 상태로 발행
+ * - 저장 버튼: 수동으로 즉시 저장
+ */
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
@@ -28,7 +37,10 @@ import { AxiosError } from 'axios';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
 
-// Zod 스키마 정의 (발행 시 검증용)
+// ============================================================================
+// 스키마 & 타입
+// ============================================================================
+
 const postSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요').max(500, '제목은 500자 이하여야 합니다').trim(),
   subtitle: z
@@ -54,11 +66,19 @@ const postSchema = z.object({
 
 type PostFormData = z.infer<typeof postSchema>;
 
+// ============================================================================
+// 메인 컴포넌트
+// ============================================================================
+
 export default function NewPostPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
   const siteId = params.siteId as string;
+
+  // --------------------------------------------------------------------------
+  // 데이터 조회
+  // --------------------------------------------------------------------------
 
   const {
     data: categories,
@@ -66,50 +86,51 @@ export default function NewPostPage() {
     error: categoriesError,
   } = useAdminCategories(siteId);
   const { data: siteSettings } = useAdminSiteSettings(siteId);
+
+  // --------------------------------------------------------------------------
+  // 로컬 상태
+  // --------------------------------------------------------------------------
+
   const editorRef = useRef<TiptapEditorRef>(null);
   const [editorReady, setEditorReady] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
   const [createdPostId, setCreatedPostId] = useState<string | null>(null);
 
-  // 자동저장 훅
-  const {
-    lastSavedAt,
-    isSaving,
-    hasUnsavedChanges,
-    markAsChanged,
-    saveNow,
-    getPostId,
-  } = useAutoSave({
-    siteId,
-    postId: createdPostId,
-    intervalMs: 5 * 60 * 1000, // 5분
-    onSaveSuccess: () => {
-      toast.success('자동 저장되었습니다', { duration: 2000 });
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-    },
-    onSaveError: (err) => {
-      console.error('Auto-save failed:', err);
-      toast.error('자동 저장에 실패했습니다');
-    },
-    onPostCreated: (postId) => {
-      setCreatedPostId(postId);
-      // URL 변경 없이 내부 상태만 업데이트 (사용자 경험 유지)
-    },
-  });
+  // --------------------------------------------------------------------------
+  // 자동 저장
+  // --------------------------------------------------------------------------
 
-  // 상태 표시 텍스트
+  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged, saveNow, getPostId } =
+    useAutoSave({
+      siteId,
+      postId: createdPostId,
+      postStatus: null, // 새 글은 상태 없음 (PRIVATE로 생성됨)
+      intervalMs: 5 * 60 * 1000,
+      onSaveSuccess: () => {
+        toast.success('자동 저장되었습니다', { duration: 2000 });
+        queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+      },
+      onSaveError: (err) => {
+        console.error('Auto-save failed:', err);
+        toast.error('자동 저장에 실패했습니다');
+      },
+      onPostCreated: (postId) => {
+        setCreatedPostId(postId);
+      },
+    });
+
+  // --------------------------------------------------------------------------
+  // 상태 표시
+  // --------------------------------------------------------------------------
+
   const getStatusText = () => {
     if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
-    if (createdPostId) {
-      return { text: '작성 중', color: 'text-blue-600' };
-    }
+    if (createdPostId) return { text: '작성 중', color: 'text-blue-600' };
     return { text: '새 글', color: 'text-gray-600' };
   };
 
   const statusInfo = getStatusText();
 
-  // 헤더 extra
   const headerExtra = (
     <div className="flex items-center gap-2 text-sm text-gray-500">
       <span className={statusInfo.color}>{statusInfo.text}</span>
@@ -118,11 +139,13 @@ export default function NewPostPage() {
           ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
         </span>
       )}
-      {hasUnsavedChanges && !isSaving && (
-        <span className="text-orange-600">• 저장 대기 중</span>
-      )}
+      {hasUnsavedChanges && !isSaving && <span className="text-orange-600">• 저장 대기 중</span>}
     </div>
   );
+
+  // --------------------------------------------------------------------------
+  // 폼 설정
+  // --------------------------------------------------------------------------
 
   const methods = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -137,31 +160,29 @@ export default function NewPostPage() {
     },
   });
 
-  // 썸네일 값 watch
   const watchedOgImageUrl = useWatch({
     control: methods.control,
     name: 'ogImageUrl',
   });
 
-  // 에디터 내용을 포함한 현재 데이터 수집
+  // --------------------------------------------------------------------------
+  // 데이터 수집 & 변경 감지
+  // --------------------------------------------------------------------------
+
   const collectFormData = useCallback(() => {
     const data = methods.getValues();
     const editor = editorRef.current;
-
     if (!editor) return null;
 
     const contentJson = editor.getJSON();
     if (!contentJson) return null;
 
-    const contentHtml = editor.getHTML();
-    const contentText = editor.getText().trim();
-
     return {
       title: data.title?.trim(),
       subtitle: data.subtitle?.trim(),
       contentJson,
-      contentHtml,
-      contentText,
+      contentHtml: editor.getHTML(),
+      contentText: editor.getText().trim(),
       categoryId: data.categoryId?.trim() || undefined,
       seoTitle: data.seoTitle?.trim() || undefined,
       seoDescription: data.seoDescription?.trim() || undefined,
@@ -169,24 +190,23 @@ export default function NewPostPage() {
     };
   }, [methods]);
 
-  // 폼 필드 변경 감지
   const watchedValues = useWatch({ control: methods.control });
 
   useEffect(() => {
     if (!editorReady) return;
-
     const data = collectFormData();
-    if (data) {
-      markAsChanged(data);
-    }
+    if (data) markAsChanged(data);
   }, [watchedValues, editorReady, collectFormData, markAsChanged]);
 
-  // 에디터 준비 완료 콜백
   const handleEditorReady = useCallback(() => {
     setEditorReady(true);
   }, []);
 
-  // 발행 mutation (postId가 있을 때)
+  // --------------------------------------------------------------------------
+  // 발행 Mutations
+  // --------------------------------------------------------------------------
+
+  // postId가 있을 때: publishPost API 호출
   const publishMutation = useMutation({
     mutationFn: (postId: string) => publishPost(siteId, postId),
     onSuccess: async (updatedPost) => {
@@ -206,7 +226,7 @@ export default function NewPostPage() {
     },
   });
 
-  // 직접 발행 mutation (postId가 없을 때)
+  // postId가 없을 때: 바로 PUBLISHED로 생성
   const createAndPublishMutation = useMutation({
     mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
     onSuccess: async (createdPost) => {
@@ -226,37 +246,32 @@ export default function NewPostPage() {
       const errorMessage = getErrorDisplayMessage(err, '게시글 발행에 실패했습니다.');
 
       if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
-        methods.setError('slug', {
-          type: 'manual',
-          message: errorMessage,
-        });
+        methods.setError('slug', { type: 'manual', message: errorMessage });
         setError(errorMessage);
-        setTimeout(() => {
-          scrollToFirstError(errorMessage);
-        }, 150);
+        setTimeout(() => scrollToFirstError(errorMessage), 150);
       } else {
         setError(errorMessage);
       }
     },
   });
 
-  // 발행 처리
+  // --------------------------------------------------------------------------
+  // 핸들러
+  // --------------------------------------------------------------------------
+
+  /** 발행 버튼 */
   const handlePublish = async () => {
     setError(null);
 
     // 폼 검증
     const isValid = await methods.trigger();
     if (!isValid) {
-      const errors = methods.formState.errors;
-      setTimeout(() => {
-        scrollToFirstError(errors);
-      }, 150);
+      setTimeout(() => scrollToFirstError(methods.formState.errors), 150);
       return;
     }
 
     const data = methods.getValues();
     const editor = editorRef.current;
-
     if (!editor) {
       toast.error('에디터를 불러올 수 없습니다');
       return;
@@ -283,10 +298,10 @@ export default function NewPostPage() {
     const currentPostId = getPostId();
 
     if (currentPostId) {
-      // postId가 있으면 publishPost 호출
+      // 이미 저장된 게시글이 있으면 publishPost 호출
       publishMutation.mutate(currentPostId);
     } else {
-      // postId가 없으면 바로 PUBLISHED로 생성
+      // 새 글이면 바로 PUBLISHED로 생성
       createAndPublishMutation.mutate({
         title: data.title.trim(),
         subtitle: data.subtitle.trim(),
@@ -303,13 +318,17 @@ export default function NewPostPage() {
     }
   };
 
-  // 저장 처리 (수동)
+  /** 저장 버튼 (수동) */
   const handleSave = async () => {
     await saveNow();
     toast.success('저장되었습니다');
   };
 
   const isPending = isSaving || publishMutation.isPending || createAndPublishMutation.isPending;
+
+  // --------------------------------------------------------------------------
+  // 렌더링
+  // --------------------------------------------------------------------------
 
   return (
     <FormProvider {...methods}>
@@ -326,7 +345,6 @@ export default function NewPostPage() {
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-                {/* 제목 */}
                 <ValidationInput
                   name="title"
                   label="제목"
@@ -335,8 +353,6 @@ export default function NewPostPage() {
                   maxLength={500}
                   required
                 />
-
-                {/* 부제목 */}
                 <ValidationInput
                   name="subtitle"
                   label="부제목"
@@ -345,15 +361,9 @@ export default function NewPostPage() {
                   maxLength={500}
                   required
                 />
-
-                {/* 내용 */}
                 <Field>
                   <FieldLabel>내용</FieldLabel>
-                  <TiptapEditor
-                    ref={editorRef}
-                    siteId={siteId}
-                    onEditorReady={handleEditorReady}
-                  />
+                  <TiptapEditor ref={editorRef} siteId={siteId} onEditorReady={handleEditorReady} />
                 </Field>
               </div>
             </div>
@@ -374,8 +384,6 @@ export default function NewPostPage() {
                       ? '발행 중...'
                       : '발행'}
                   </Button>
-
-                  {/* 저장 */}
                   <Button
                     type="button"
                     variant="outline"
@@ -385,8 +393,6 @@ export default function NewPostPage() {
                   >
                     {isSaving ? '저장 중...' : '저장'}
                   </Button>
-
-                  {/* 취소 */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -452,10 +458,7 @@ export default function NewPostPage() {
                         id="slug"
                         type="text"
                         value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value.toLowerCase();
-                          field.onChange(value);
-                        }}
+                        onChange={(e) => field.onChange(e.target.value.toLowerCase())}
                         placeholder="url-friendly-slug"
                         maxLength={255}
                         aria-invalid={!!fieldState.error}
@@ -480,9 +483,7 @@ export default function NewPostPage() {
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
                     const data = collectFormData();
-                    if (data) {
-                      markAsChanged({ ...data, ogImageUrl: url || undefined });
-                    }
+                    if (data) markAsChanged({ ...data, ogImageUrl: url || undefined });
                   }}
                   disabled={isPending}
                 />
