@@ -34,11 +34,17 @@ interface TrackingResponse {
  */
 export function useAnalytics({ siteId, postId, autoTrackPageview = true }: UseAnalyticsOptions) {
   const hasTrackedPageview = useRef(false);
+  // 최신 값을 ref로 저장해 의존성 배열에서 제외
+  const optionsRef = useRef({ siteId, postId });
+  useEffect(() => {
+    optionsRef.current = { siteId, postId };
+  }, [siteId, postId]);
 
   /**
    * 페이지뷰 추적
    */
   const trackPageview = useCallback(async (): Promise<boolean> => {
+    const { siteId: currentSiteId, postId: currentPostId } = optionsRef.current;
     const visitorId = getOrCreateVisitorId();
     if (!visitorId) return false;
 
@@ -49,8 +55,8 @@ export function useAnalytics({ siteId, postId, autoTrackPageview = true }: UseAn
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          siteId,
-          ...(postId && { postId }),
+          siteId: currentSiteId,
+          ...(currentPostId && { postId: currentPostId }),
           visitorId,
         }),
       });
@@ -67,12 +73,13 @@ export function useAnalytics({ siteId, postId, autoTrackPageview = true }: UseAn
       console.warn('페이지뷰 추적 에러:', error);
       return false;
     }
-  }, [siteId, postId]);
+  }, []);
 
   /**
    * CTA 클릭 추적
    */
   const trackCtaClick = useCallback(async (): Promise<boolean> => {
+    const { siteId: currentSiteId, postId: currentPostId } = optionsRef.current;
     const visitorId = getOrCreateVisitorId();
     if (!visitorId) return false;
 
@@ -83,8 +90,8 @@ export function useAnalytics({ siteId, postId, autoTrackPageview = true }: UseAn
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          siteId,
-          ...(postId && { postId }),
+          siteId: currentSiteId,
+          ...(currentPostId && { postId: currentPostId }),
           visitorId,
         }),
       });
@@ -101,9 +108,9 @@ export function useAnalytics({ siteId, postId, autoTrackPageview = true }: UseAn
       console.warn('CTA 클릭 추적 에러:', error);
       return false;
     }
-  }, [siteId, postId]);
+  }, []);
 
-  // 페이지 로드 시 자동 페이지뷰 추적
+  // 페이지 로드 시 자동 페이지뷰 추적 (마운트 시 1회만)
   useEffect(() => {
     if (autoTrackPageview && !hasTrackedPageview.current) {
       hasTrackedPageview.current = true;

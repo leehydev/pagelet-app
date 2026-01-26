@@ -37,7 +37,13 @@ export default function SocialLoginButton({
         className,
       )}
     >
-      <Image src={iconSrc} width={iconWidth} height={iconHeight} alt={`${label} icon`} />
+      <Image
+        src={iconSrc}
+        width={iconWidth}
+        height={iconHeight}
+        alt={`${label} icon`}
+        style={{ width: 'auto', height: 'auto' }}
+      />
       <div className="w-full">
         <span className={`${textColor} text-lg`}>{label}</span>
       </div>

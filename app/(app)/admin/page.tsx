@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminSites } from '@/hooks/use-admin-sites';
-import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { QueryError } from '@/components/common/QueryError';
 
 const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
 
@@ -18,7 +18,7 @@ const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
  */
 export default function AdminIndexPage() {
   const router = useRouter();
-  const { data: sites, isLoading, isError } = useAdminSites();
+  const { data: sites, isLoading, isError, refetch } = useAdminSites();
 
   useEffect(() => {
     if (isLoading || isError || !sites) return;
@@ -51,11 +51,13 @@ export default function AdminIndexPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">사이트 목록을 불러오는데 실패했습니다.</p>
-          <Button onClick={() => window.location.reload()}>다시 시도</Button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-8">
+        <QueryError
+          error={new Error('사이트 목록을 불러오는데 실패했습니다.')}
+          onRetry={refetch}
+          fallbackMessage="사이트 목록을 불러오는데 실패했습니다."
+          size="page"
+        />
       </div>
     );
   }

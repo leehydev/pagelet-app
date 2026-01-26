@@ -20,6 +20,11 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // public 디렉토리 정적 파일은 rewrite 없이 직접 전달
+  if (path.endsWith('.html') || path.startsWith('/images/')) {
+    return NextResponse.next();
+  }
+
   // 1) apex 도메인 (랜딩): pagelet.kr, www.pagelet.kr
   if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}` || host === 'localhost') {
     url.pathname = `/landing${path}`;

@@ -35,9 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" suppressHydrationWarning className="h-full">
+    <html lang="ko" suppressHydrationWarning className="h-full relative">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen h-full flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen h-full flex flex-col relative`}
       >
         <RootProviders>
           {/* 네비게이션 스택 추적 비활성화 (필요시 주석 해제) */}

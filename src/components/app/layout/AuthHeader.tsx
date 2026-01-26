@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -16,11 +15,10 @@ export default function AuthHeader() {
       <div className="h-full max-w-6xl mx-auto px-4 flex items-center justify-between">
         {/* 로고 */}
         <Link href="/" className="flex items-center">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/images/logos/gray_logo_200.png"
             alt="Pagelet"
-            width={100}
-            height={28}
             className="h-7 w-auto"
           />
         </Link>

@@ -7,6 +7,7 @@ import { StatCard } from '@/components/app/dashboard/StatCard';
 import { PostStatsTable } from '@/components/app/dashboard/PostStatsTable';
 import { useAdminAnalytics } from '@/hooks/use-admin-analytics';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QueryError } from '@/components/common/QueryError';
 
 function DashboardSkeleton() {
   return (
@@ -35,20 +36,12 @@ function DashboardSkeleton() {
   );
 }
 
-function DashboardError() {
-  return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-      <p className="text-red-700">통계 데이터를 불러올 수 없습니다.</p>
-      <p className="text-sm text-red-500 mt-1">잠시 후 다시 시도해주세요.</p>
-    </div>
-  );
-}
 
 export default function AdminDashboardPage() {
   const params = useParams();
   const siteId = params.siteId as string;
 
-  const { overview, posts, isLoading, isError } = useAdminAnalytics(siteId);
+  const { overview, posts, isLoading, isError, refetch } = useAdminAnalytics(siteId);
 
   // 오늘/어제 방문자 비교 계산
   const calculateVisitorChange = () => {
@@ -74,7 +67,11 @@ export default function AdminDashboardPage() {
         {isLoading ? (
           <DashboardSkeleton />
         ) : isError ? (
-          <DashboardError />
+          <QueryError
+            error={new Error('통계 데이터를 불러올 수 없습니다.')}
+            onRetry={refetch}
+            fallbackMessage="통계 데이터를 불러올 수 없습니다."
+          />
         ) : (
           <>
             {/* 개요 카드 */}

@@ -35,7 +35,7 @@ export function LandingHero() {
   };
 
   return (
-    <section className="relative bg-gradient-to-b from-blue-50 to-white dark:from-background-dark dark:to-gray-900">
+    <section className="relative bg-linear-to-b from-blue-50 to-white dark:from-background-dark dark:to-gray-900">
       {/* Hero Content Area */}
       <div
         ref={sectionRef}
@@ -65,7 +65,7 @@ export function LandingHero() {
           {/* Main Headline */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 animate-fade-in-down [animation-delay:200ms]">
             블로그를 더{' '}
-            <span className="bg-gradient-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
               쉽고 빠르게
             </span>
           </h1>
@@ -116,7 +116,7 @@ export function LandingHero() {
             </div>
           </div>
           {/* Actual Screenshot - scrolls within the frame */}
-          <div className="aspect-[16/10] relative overflow-hidden bg-gray-100 dark:bg-gray-900">
+          <div className="aspect-16/10 relative overflow-hidden bg-gray-100 dark:bg-gray-900">
             <motion.div
               className="absolute inset-x-0 top-0 h-[300%] md:h-[2700px]"
               style={{ y: imageY }}
@@ -125,6 +125,7 @@ export function LandingHero() {
                 src="https://assets.pagelet.kr/resource/blog_main_screencapture.png"
                 alt="Pagelet Blog Interface"
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1024px"
                 className="object-contain object-top"
                 priority
               />

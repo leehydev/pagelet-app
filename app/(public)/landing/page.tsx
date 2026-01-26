@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-background-dark">
+    <div className="  min-h-screen bg-white dark:bg-background-dark">
       <LandingHero />
       <FeaturesSection />
       <ProductPreview />

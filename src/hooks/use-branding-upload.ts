@@ -34,9 +34,16 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<BrandingUploadState>(initialState);
   const siteIdRef = useRef(siteId);
+  const stateRef = useRef(state);
+
   useEffect(() => {
     siteIdRef.current = siteId;
   }, [siteId]);
+
+  // 최신 state를 ref로 추적
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Presign mutation
   const presignMutation = useMutation({
@@ -116,7 +123,8 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
    * 업로드 확정 (commit)
    */
   const commit = useCallback(async () => {
-    if (!state.tmpKey) {
+    const currentTmpKey = stateRef.current.tmpKey;
+    if (!currentTmpKey) {
       throw new Error('업로드된 파일이 없습니다.');
     }
 
@@ -128,7 +136,7 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
     try {
       const response = await commitMutation.mutateAsync({
         type,
-        tmpKey: state.tmpKey,
+        tmpKey: currentTmpKey,
       });
 
       // 완료 후 상태 초기화
@@ -144,7 +152,7 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
       }));
       throw error;
     }
-  }, [type, state.tmpKey, commitMutation]);
+  }, [type, commitMutation]);
 
   /**
    * 상태 초기화 (취소)

@@ -13,6 +13,7 @@ import { BrandingUploader } from '@/components/app/settings/BrandingUploader';
 import { FontSelector } from '@/components/app/settings/FontSelector';
 import { CtaSettingsSection } from '@/components/app/settings/CtaSettingsSection';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
+import { QueryError } from '@/components/common/QueryError';
 
 // 섹션 정의
 const SECTIONS = [
@@ -64,7 +65,7 @@ type SiteSettingsFormData = z.infer<typeof siteSettingsSchema>;
 
 export default function SiteSettingsPage() {
   const siteId = useSiteId();
-  const { data: settings, isLoading, error } = useAdminSiteSettings(siteId);
+  const { data: settings, isLoading, error, refetch } = useAdminSiteSettings(siteId);
   const updateSettings = useUpdateAdminSiteSettings(siteId);
 
   const methods = useForm<SiteSettingsFormData>({
@@ -183,8 +184,12 @@ export default function SiteSettingsPage() {
     return (
       <>
         <AdminPageHeader breadcrumb="Management" title="Site Settings" />
-        <div className="flex items-center justify-center h-full">
-          <div className="text-red-500">설정을 불러오는데 실패했습니다.</div>
+        <div className="p-8">
+          <QueryError
+            error={error}
+            onRetry={refetch}
+            fallbackMessage="설정을 불러오는데 실패했습니다."
+          />
         </div>
       </>
     );
@@ -271,6 +276,7 @@ export default function SiteSettingsPage() {
             {/* CTA 버튼 섹션 (독립적으로 관리) */}
             <div className="mb-8">
               <CtaSettingsSection
+                key={`${settings.id}-${settings.updatedAt}`}
                 siteId={siteId}
                 settings={settings}
                 onUpdate={async (updates) => {

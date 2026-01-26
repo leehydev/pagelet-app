@@ -22,6 +22,7 @@ import { Banner } from '@/lib/api';
 import { BannerCard } from './BannerCard';
 import { BannerFormSheet } from './BannerFormSheet';
 import { getErrorDisplayMessage } from '@/lib/error-handler';
+import { QueryError } from '@/components/common/QueryError';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -41,7 +42,7 @@ interface BannerListProps {
 const MAX_BANNERS = 5;
 
 export function BannerList({ siteId }: BannerListProps) {
-  const { data: banners, isLoading, error } = useAdminBanners(siteId);
+  const { data: banners, isLoading, error, refetch } = useAdminBanners(siteId);
   const updateOrderMutation = useUpdateBannerOrder(siteId);
   const deleteMutation = useDeleteBanner(siteId);
 
@@ -110,9 +111,11 @@ export function BannerList({ siteId }: BannerListProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-700">배너를 불러올 수 없습니다.</p>
-      </div>
+      <QueryError
+        error={error}
+        onRetry={refetch}
+        fallbackMessage="배너를 불러올 수 없습니다."
+      />
     );
   }
 

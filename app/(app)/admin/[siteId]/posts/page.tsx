@@ -10,6 +10,7 @@ import { PostStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { DataPagination } from '@/components/common/DataPagination';
+import { QueryError, QueryErrorInline } from '@/components/common/QueryError';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 
@@ -24,7 +25,7 @@ export default function AdminPostsPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  const { data, isLoading, error } = useAdminPosts(siteId, {
+  const { data, isLoading, error, refetch } = useAdminPosts(siteId, {
     categoryId: selectedCategoryId || undefined,
     page: currentPage,
     limit: ITEMS_PER_PAGE,
@@ -67,9 +68,11 @@ export default function AdminPostsPage() {
           action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
         />
         <div className="p-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-            게시글을 불러오는데 실패했습니다.
-          </div>
+          <QueryError
+            error={error}
+            onRetry={refetch}
+            fallbackMessage="게시글을 불러오는데 실패했습니다."
+          />
         </div>
       </>
     );
@@ -87,9 +90,7 @@ export default function AdminPostsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
           {/* 카테고리 조회 에러 메시지 */}
           {categoriesError && (
-            <div className="text-sm text-red-500">
-              카테고리 목록을 불러올 수 없습니다
-            </div>
+            <QueryErrorInline error={categoriesError} fallbackMessage="카테고리 목록을 불러올 수 없습니다" />
           )}
           {/* 카테고리 필터 */}
           {/* <div className="flex items-center gap-3">

@@ -1,9 +1,19 @@
 'use client';
 
+/**
+ * 게시글 상세 페이지
+ *
+ * 기능:
+ * - 발행본/임시저장 탭메뉴 (draft가 있을 때만)
+ * - 상태 배너 (DRAFT/PRIVATE)
+ * - 게시글 정보 사이드바
+ * - 삭제/상태변경 액션
+ */
+
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getAdminPost, PostStatus, revalidatePost } from '@/lib/api';
+import { getAdminPost, getDraft, PostStatus, revalidatePost } from '@/lib/api';
 import { PostContent } from '@/components/app/post/PostContent';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,26 +41,56 @@ import {
   Lock,
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
+import { QueryError } from '@/components/common/QueryError';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useDeletePost, useUpdatePostStatus } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+// ============================================================================
+// 타입
+// ============================================================================
+
+type ViewTab = 'published' | 'draft';
+
+// ============================================================================
+// 메인 컴포넌트
+// ============================================================================
 
 export default function AdminPostDetailPage() {
   const params = useParams<{ siteId: string; postId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { siteId, postId } = params;
+
+  // --------------------------------------------------------------------------
+  // 로컬 상태
+  // --------------------------------------------------------------------------
+
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<ViewTab>('published');
+
+  // --------------------------------------------------------------------------
+  // 데이터 조회
+  // --------------------------------------------------------------------------
 
   const {
     data: post,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['admin', 'post', siteId, postId],
     queryFn: () => getAdminPost(siteId, postId),
     enabled: !!siteId && !!postId,
+  });
+
+  // 드래프트 조회 (post.hasDraft가 true일 때만)
+  const { data: draft } = useQuery({
+    queryKey: ['admin', 'draft', siteId, postId],
+    queryFn: () => getDraft(siteId, postId),
+    enabled: !!siteId && !!postId && post?.hasDraft === true,
   });
 
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
@@ -58,21 +98,32 @@ export default function AdminPostDetailPage() {
   const deletePostMutation = useDeletePost(siteId);
   const updateStatusMutation = useUpdatePostStatus(siteId, postId);
 
+  // --------------------------------------------------------------------------
+  // 파생 데이터
+  // --------------------------------------------------------------------------
+
   const formattedDate = post ? formatPostDate(post.createdAt) : '';
   const publishedDate = post?.publishedAt ? formatPostDate(post.publishedAt) : null;
   const categoryName = post?.categoryId
     ? categories?.find((c) => c.id === post.categoryId)?.name
     : null;
 
-  // 발행된 게시글의 블로그 URL (full URL)
-  // 에러 발생 시 조용히 처리 (블로그 URL은 선택적 기능)
+  // 발행된 게시글의 블로그 URL
   const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
   const blogPostUrl =
     post?.status === PostStatus.PUBLISHED && siteSettings?.slug && post?.slug && !siteSettingsError
       ? `https://${siteSettings.slug}.${tenantDomain}/posts/${post.slug}`
       : null;
 
+  // 현재 탭에 따른 콘텐츠
+  const displayContent = activeTab === 'draft' && draft ? draft : post;
+  const displayHtml =
+    activeTab === 'draft' && draft ? draft.contentHtml : post?.contentHtml;
+
+  // --------------------------------------------------------------------------
   // 상태 배너 정보
+  // --------------------------------------------------------------------------
+
   const getBannerInfo = () => {
     if (!post) return null;
     if (post.status === PostStatus.DRAFT) {
@@ -102,7 +153,10 @@ export default function AdminPostDetailPage() {
 
   const bannerInfo = getBannerInfo();
 
-  // 상태 뱃지 스타일
+  // --------------------------------------------------------------------------
+  // 상태 뱃지
+  // --------------------------------------------------------------------------
+
   const getStatusBadge = () => {
     if (!post) return null;
     switch (post.status) {
@@ -130,13 +184,15 @@ export default function AdminPostDetailPage() {
     }
   };
 
-  // 삭제 핸들러
+  // --------------------------------------------------------------------------
+  // 핸들러
+  // --------------------------------------------------------------------------
+
   const handleDelete = async () => {
     if (!post || !siteSettings) return;
     setIsDeleting(true);
     try {
       await deletePostMutation.mutateAsync(postId);
-      // ISR 캐시 무효화 (에러 발생해도 조용히 처리)
       if (siteSettings.slug && post.slug) {
         try {
           await revalidatePost(siteSettings.slug, post.slug);
@@ -145,18 +201,16 @@ export default function AdminPostDetailPage() {
         }
       }
       router.push(`/admin/${siteId}/posts`);
-    } catch (error) {
-      console.error('Failed to delete post:', error);
+    } catch (err) {
+      console.error('Failed to delete post:', err);
       setIsDeleting(false);
     }
   };
 
-  // 상태 변경 핸들러
   const handleStatusChange = async (newStatus: PostStatus) => {
     if (!post || !siteSettings) return;
     try {
       await updateStatusMutation.mutateAsync({ status: newStatus });
-      // ISR 캐시 무효화 (에러 발생해도 조용히 처리)
       if (siteSettings.slug && post.slug) {
         try {
           await revalidatePost(siteSettings.slug, post.slug);
@@ -165,10 +219,14 @@ export default function AdminPostDetailPage() {
         }
       }
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-    } catch (error) {
-      console.error('Failed to update status:', error);
+    } catch (err) {
+      console.error('Failed to update status:', err);
     }
   };
+
+  // --------------------------------------------------------------------------
+  // 로딩/에러 상태
+  // --------------------------------------------------------------------------
 
   if (isLoading) {
     return (
@@ -180,10 +238,10 @@ export default function AdminPostDetailPage() {
         />
         <div className="p-8">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-12 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/4" />
+            <div className="h-12 bg-gray-200 rounded w-3/4" />
+            <div className="h-6 bg-gray-200 rounded w-1/2" />
+            <div className="h-64 bg-gray-200 rounded" />
           </div>
         </div>
       </>
@@ -199,16 +257,15 @@ export default function AdminPostDetailPage() {
           title="게시글 상세"
         />
         <div className="p-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-700 mb-4">게시글을 찾을 수 없습니다.</p>
-            <Button variant="outline" onClick={() => router.push(`/admin/${siteId}/posts`)}>
-              목록으로 돌아가기
-            </Button>
-          </div>
+          <QueryError error={error} onRetry={refetch} fallbackMessage="게시글을 찾을 수 없습니다." />
         </div>
       </>
     );
   }
+
+  // --------------------------------------------------------------------------
+  // 렌더링
+  // --------------------------------------------------------------------------
 
   return (
     <>
@@ -258,6 +315,37 @@ export default function AdminPostDetailPage() {
         </div>
       )}
 
+      {/* 드래프트 탭 (draft가 있을 때만) */}
+      {post.hasDraft && draft && (
+        <div className="border-b bg-gray-50 px-4">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('published')}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+                activeTab === 'published'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              )}
+            >
+              {post.status === PostStatus.PUBLISHED ? '발행본' : '저장본'}
+            </button>
+            <button
+              onClick={() => setActiveTab('draft')}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+                activeTab === 'draft'
+                  ? 'border-amber-500 text-amber-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              )}
+            >
+              임시저장
+              <span className="ml-1 text-xs text-amber-500">(미발행)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-gray-50 min-h-[calc(100vh-120px)]">
         <div className="max-w-7xl mx-auto p-6">
           <div className="flex flex-col lg:flex-row gap-8">
@@ -266,8 +354,13 @@ export default function AdminPostDetailPage() {
               {/* 제목 및 날짜 */}
               <div className="mb-2 flex gap-2 items-center text-xs text-gray-500">
                 {getStatusBadge()}
+                {activeTab === 'draft' && (
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                    <FileText className="w-3 h-3 mr-1" />
+                    임시저장 버전
+                  </Badge>
+                )}
                 {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
-
                 <span>작성: {formattedDate}</span>
                 {publishedDate && (
                   <>
@@ -279,15 +372,17 @@ export default function AdminPostDetailPage() {
 
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {post.title || <span className="text-gray-400">(제목없음)</span>}
+                  {displayContent?.title || <span className="text-gray-400">(제목없음)</span>}
                 </h1>
-                {post.subtitle && (
-                  <p className="text-sm text-gray-500 font-semibold mb-4">{post.subtitle}</p>
+                {displayContent?.subtitle && (
+                  <p className="text-sm text-gray-500 font-semibold mb-4">
+                    {displayContent.subtitle}
+                  </p>
                 )}
               </div>
 
               {/* 본문 */}
-              <PostContent html={post.contentHtml} />
+              <PostContent html={displayHtml ?? null} />
             </div>
 
             {/* 우측: 사이드바 */}
@@ -296,7 +391,11 @@ export default function AdminPostDetailPage() {
                 {/* 썸네일 */}
                 <div className="aspect-video rounded-t-lg overflow-hidden bg-gray-100 relative">
                   <Image
-                    src={post.ogImageUrl || '/images/admin/no_thumbnail.png'}
+                    src={
+                      (activeTab === 'draft' && draft?.ogImageUrl) ||
+                      post.ogImageUrl ||
+                      '/images/admin/no_thumbnail.png'
+                    }
                     alt={post.title || '썸네일'}
                     fill
                     className="object-cover"
