@@ -25,7 +25,7 @@ export default function WaitingPage() {
     }
     // ONBOARDING 상태면 온보딩으로 리다이렉트
     if (user.accountStatus === AccountStatus.ONBOARDING) {
-      router.replace('/onboarding/profile');
+      router.replace('/onboarding/site');
     }
   }, [user, isLoading, error, router]);
 

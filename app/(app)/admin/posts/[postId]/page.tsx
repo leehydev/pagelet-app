@@ -422,6 +422,30 @@ export default function AdminPostDetailPage() {
 
                 <Separator />
 
+                {/* SEO 정보 */}
+                <div className="p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">SEO 정보</h3>
+                  <dl className="space-y-3 text-sm">
+                    <div>
+                      <dt className="text-gray-500 mb-1">SEO 제목</dt>
+                      <dd className="text-gray-900 break-words">
+                        {(activeTab === 'draft' && draft?.seoTitle) || post.seoTitle || (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-gray-500 mb-1">SEO 설명</dt>
+                      <dd className="text-gray-900 break-words">
+                        {(activeTab === 'draft' && draft?.seoDescription) ||
+                          post.seoDescription || <span className="text-gray-400">-</span>}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <Separator />
+
                 {/* 작업 버튼들 */}
                 <div className="p-4 space-y-2">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">작업</h3>
