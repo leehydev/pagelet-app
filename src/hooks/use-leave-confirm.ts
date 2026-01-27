@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
+import { useNavigationGuardStore } from '@/stores/navigation-guard-store';
 
 export type EditorMode = 'create' | 'edit-draft' | 'edit-post';
 
@@ -14,8 +15,8 @@ interface UseLeaveConfirmOptions {
   hasChanges: boolean;
   /** 에디터 모드 */
   mode: EditorMode;
-  /** 브라우저 뒤로가기 시 이탈 확인 모달을 표시할 콜백 */
-  onBrowserBack?: () => void;
+  /** 네비게이션 차단 시 콜백 (path: 이동하려는 경로, 브라우저 뒤로가기 시 undefined) */
+  onNavigationBlocked?: (path?: string) => void;
 }
 
 interface UseLeaveConfirmReturn {
@@ -47,21 +48,37 @@ interface UseLeaveConfirmReturn {
  * ```
  */
 export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfirmReturn {
-  const { hasChanges, onBrowserBack } = options;
+  const { hasChanges, onNavigationBlocked } = options;
   const [isLeaveAllowed, setIsLeaveAllowed] = useState(false);
   const hasChangesRef = useRef(hasChanges);
   const isLeaveAllowedRef = useRef(isLeaveAllowed);
   const historyPushedRef = useRef(false);
 
-  // hasChanges 변경 시 ref 업데이트
+  const { setGuard, setHasUnsavedChanges, clearGuard } = useNavigationGuardStore();
+
+  // hasChanges 변경 시 ref 및 스토어 업데이트
   useEffect(() => {
     hasChangesRef.current = hasChanges;
-  }, [hasChanges]);
+    setHasUnsavedChanges(hasChanges);
+  }, [hasChanges, setHasUnsavedChanges]);
 
   // isLeaveAllowed 변경 시 ref 업데이트
   useEffect(() => {
     isLeaveAllowedRef.current = isLeaveAllowed;
   }, [isLeaveAllowed]);
+
+  // 네비게이션 가드 등록 (사이드바 Link 클릭 등)
+  useEffect(() => {
+    if (!onNavigationBlocked) return;
+
+    setGuard((path) => {
+      if (!isLeaveAllowedRef.current) {
+        onNavigationBlocked(path);
+      }
+    });
+
+    return () => clearGuard();
+  }, [onNavigationBlocked, setGuard, clearGuard]);
 
   // beforeunload 이벤트 핸들러 (브라우저 기본 경고)
   useEffect(() => {
@@ -78,7 +95,7 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
 
   // popstate 이벤트 핸들러 (브라우저 뒤로가기/앞으로가기)
   useEffect(() => {
-    if (!onBrowserBack) return;
+    if (!onNavigationBlocked) return;
 
     // 변경사항이 있으면 히스토리에 더미 상태 추가
     if (hasChanges && !historyPushedRef.current) {
@@ -86,11 +103,11 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
       historyPushedRef.current = true;
     }
 
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       if (hasChangesRef.current && !isLeaveAllowedRef.current) {
         // 뒤로가기 방지: 다시 앞으로
         window.history.pushState({ leaveConfirm: true }, '');
-        onBrowserBack();
+        onNavigationBlocked();
       }
     };
 
@@ -98,7 +115,7 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [hasChanges, onBrowserBack]);
+  }, [hasChanges, onNavigationBlocked]);
 
   // 이탈 허용
   const allowLeave = useCallback(() => {

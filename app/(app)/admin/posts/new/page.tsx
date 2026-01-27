@@ -120,7 +120,10 @@ export default function NewPostPage() {
   const { allowLeave, isLeaveAllowed } = useLeaveConfirm({
     hasChanges,
     mode: editorMode,
-    onBrowserBack: () => setShowLeaveModal(true),
+    onNavigationBlocked: (path) => {
+      if (path) setPendingNavigation(path);
+      setShowLeaveModal(true);
+    },
   });
 
   // --------------------------------------------------------------------------

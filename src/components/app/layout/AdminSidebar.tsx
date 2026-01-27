@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { GuardedLink } from '@/components/common/GuardedLink';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -73,7 +73,7 @@ export function AdminSidebar() {
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-center border-b px-4">
-        <Link href={`${baseHref}/dashboard`} className="flex items-center">
+        <GuardedLink href={`${baseHref}/dashboard`} className="flex items-center">
           <Image
             src="/images/logos/admin_logo_200.png"
             alt="Pagelet"
@@ -83,7 +83,7 @@ export function AdminSidebar() {
             priority
             loading="eager"
           />
-        </Link>
+        </GuardedLink>
       </div>
 
       {/* Site Switcher */}
@@ -100,7 +100,7 @@ export function AdminSidebar() {
             const active = isActive(item.path);
             return (
               <li key={item.path}>
-                <Link
+                <GuardedLink
                   href={href}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -111,7 +111,7 @@ export function AdminSidebar() {
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="whitespace-nowrap">{item.label}</span>
-                </Link>
+                </GuardedLink>
               </li>
             );
           })}
