@@ -63,6 +63,18 @@ export function getAccessToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+// ===== Site ID 헬퍼 함수 =====
+
+/**
+ * 현재 브라우저 URL에서 siteId 추출
+ * 패턴: /admin/[siteId]/...
+ */
+export function extractSiteIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const match = window.location.pathname.match(/^\/admin\/([a-f0-9-]{36})\//);
+  return match ? match[1] : null;
+}
+
 export function setAccessToken(token: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem('accessToken', token);
@@ -73,12 +85,19 @@ export function removeAccessToken(): void {
   localStorage.removeItem('accessToken');
 }
 
-// Request interceptor - Authorization 헤더 추가
+// Request interceptor - Authorization 및 X-Site-Id 헤더 추가
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // X-Site-Id 헤더 추가 (Admin v2 API용, v1 API에서는 무시됨)
+  const siteId = extractSiteIdFromUrl();
+  if (siteId) {
+    config.headers['X-Site-Id'] = siteId;
+  }
+
   return config;
 });
 
@@ -509,6 +528,40 @@ export async function deleteCategory(siteId: string, id: string): Promise<void> 
   await api.delete(`/admin/sites/${siteId}/categories/${id}`);
 }
 
+// ===== Admin Category API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 카테고리 목록 조회
+ * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
+ */
+export async function getAdminCategoriesV2(): Promise<Category[]> {
+  const response = await api.get<ApiResponse<Category[]>>('/admin/v2/categories');
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 생성
+ */
+export async function createCategoryV2(data: CreateCategoryRequest): Promise<Category> {
+  const response = await api.post<ApiResponse<Category>>('/admin/v2/categories', data);
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 수정
+ */
+export async function updateCategoryV2(id: string, data: UpdateCategoryRequest): Promise<Category> {
+  const response = await api.put<ApiResponse<Category>>(`/admin/v2/categories/${id}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 삭제
+ */
+export async function deleteCategoryV2(id: string): Promise<void> {
+  await api.delete(`/admin/v2/categories/${id}`);
+}
+
 // ===== Public Category API (클라이언트) =====
 
 export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
@@ -601,7 +654,10 @@ export async function getPostsAnalytics(siteId: string): Promise<PostAnalytics[]
   return response.data.data;
 }
 
-export async function getDailyAnalytics(siteId: string, days: number = 7): Promise<DailyAnalytics[]> {
+export async function getDailyAnalytics(
+  siteId: string,
+  days: number = 7,
+): Promise<DailyAnalytics[]> {
   const response = await api.get<ApiResponse<DailyAnalytics[]>>(
     `/admin/sites/${siteId}/analytics/daily`,
     {
