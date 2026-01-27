@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // 커스텀 규칙
+  {
+    rules: {
+      // hydration 처리를 위한 mounted 패턴에서 setState 사용 허용
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -34,14 +34,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     }
   }, [user, isLoading, error, pathname, router]);
 
-  // 로딩 중
-  if (isLoading) {
+  // 로딩 중, 에러, 또는 사용자 정보 없음 (리다이렉트 대기)
+  if (isLoading || error || !user) {
     return <LoadingSpinner fullScreen size="lg" />;
-  }
-
-  // 에러 또는 사용자 없음
-  if (error || !user) {
-    return null;
   }
 
   // 온보딩 상태가 아님

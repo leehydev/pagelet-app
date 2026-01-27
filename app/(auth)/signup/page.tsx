@@ -2,16 +2,20 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import dayjs from 'dayjs';
 import { UserPlus } from 'lucide-react';
 
 import SocialLoginButton from '@/components/auth/signin/SocialLoginButton';
 import { getOAuthAuthorizeUrl, OAuthProvider } from '@/lib/oauth';
 import { useUser } from '@/hooks/use-user';
+import { useMounted } from '@/hooks/use-mounted';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 export default function SignUpPage() {
   const router = useRouter();
   const { data: user, isLoading } = useUser();
+  const mounted = useMounted();
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -23,9 +27,14 @@ export default function SignUpPage() {
     window.location.href = getOAuthAuthorizeUrl(provider);
   }
 
-  // 로그인 상태 확인 중이거나 로그인된 경우 렌더링하지 않음
-  if (isLoading || user) {
-    return null;
+  // 서버/클라이언트 hydration 일치를 위해 마운트 전까지 로딩 표시
+  if (!mounted || isLoading) {
+    return <LoadingSpinner fullScreen size="lg" />;
+  }
+
+  // 이미 로그인된 경우 리다이렉트 대기
+  if (user) {
+    return <LoadingSpinner fullScreen size="lg" />;
   }
 
   return (
@@ -76,7 +85,7 @@ export default function SignUpPage() {
       </div>
 
       {/* 푸터 */}
-      <p className="mt-8 text-sm text-gray-400">© {dayjs().year()} Pagelet. All rights reserved.</p>
+      <p className="mt-8 text-sm text-gray-400">© {CURRENT_YEAR} Pagelet. All rights reserved.</p>
     </div>
   );
 }
