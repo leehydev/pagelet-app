@@ -7,6 +7,7 @@
  */
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getCurrentSiteId } from '@/stores/site-store';
 import type {
   ApiResponse,
   User,
@@ -66,11 +67,17 @@ export function getAccessToken(): string | null {
 // ===== Site ID 헬퍼 함수 =====
 
 /**
- * 현재 브라우저 URL에서 siteId 추출
- * 패턴: /admin/[siteId]/...
+ * 현재 siteId를 가져오는 함수
+ * 우선순위: 1) Zustand 스토어 → 2) URL 폴백
  */
 export function extractSiteIdFromUrl(): string | null {
   if (typeof window === 'undefined') return null;
+
+  // 1. 스토어에서 먼저 확인
+  const storeId = getCurrentSiteId();
+  if (storeId) return storeId;
+
+  // 2. URL 폴백 (마이그레이션 기간 동안 유지)
   const match = window.location.pathname.match(/^\/admin\/([a-f0-9-]{36})\//);
   return match ? match[1] : null;
 }

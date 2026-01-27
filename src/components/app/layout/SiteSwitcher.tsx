@@ -1,8 +1,9 @@
 'use client';
 
-import { useRouter, usePathname, useParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Select, SelectOption } from '@/components/ui/select';
 import { useAdminSites } from '@/hooks/use-admin-sites';
+import { useSiteStore } from '@/stores/site-store';
 
 const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
 
@@ -12,9 +13,9 @@ const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
  */
 export function SiteSwitcher() {
   const router = useRouter();
-  const pathname = usePathname();
   const params = useParams();
   const currentSiteId = params.siteId as string;
+  const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
 
   const { data: sites, isLoading, isError } = useAdminSites();
 
@@ -24,6 +25,9 @@ export function SiteSwitcher() {
 
     // 마지막 선택 저장
     localStorage.setItem(LAST_SITE_KEY, newSiteId);
+
+    // 스토어 업데이트
+    setCurrentSiteId(newSiteId);
 
     router.push(`/admin/${newSiteId}`);
   };
