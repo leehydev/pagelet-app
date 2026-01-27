@@ -1,7 +1,7 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { Eye, Users, MousePointerClick, TrendingUp } from 'lucide-react';
+import { useSiteId } from '@/stores/site-store';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { StatCard } from '@/components/app/dashboard/StatCard';
 import { PostStatsTable } from '@/components/app/dashboard/PostStatsTable';
@@ -36,10 +36,8 @@ function DashboardSkeleton() {
   );
 }
 
-
 export default function AdminDashboardPage() {
-  const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
 
   const { overview, posts, isLoading, isError, refetch } = useAdminAnalytics(siteId);
 
