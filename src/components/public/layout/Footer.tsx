@@ -39,13 +39,15 @@ export function Footer({
             <Link href={`/t/${siteSlug}`}>
               <div className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
                 {logoImageUrl && (
-                  <Image
-                    src={logoImageUrl as string}
-                    alt={siteName || ''}
-                    width={100}
-                    height={100}
-                    className="h-auto"
-                  />
+                  <div className="relative w-[100px] h-[40px] overflow-hidden flex items-center">
+                    <Image
+                      src={logoImageUrl as string}
+                      alt={siteName || ''}
+                      fill
+                      sizes="100px"
+                      className="object-contain object-left"
+                    />
+                  </div>
                 )}
                 <span className="text-xl font-bold text-gray-900">{siteName}</span>
               </div>

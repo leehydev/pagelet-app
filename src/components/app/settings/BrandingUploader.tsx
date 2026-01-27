@@ -1,5 +1,61 @@
 'use client';
 
+/**
+ * 브랜딩 이미지 업로더 컴포넌트 (BrandingUploader.tsx)
+ *
+ * 로고, 파비콘, OG 이미지 등 브랜딩 에셋을 업로드하는 UI 컴포넌트입니다.
+ *
+ * ============================================================================
+ * UI 상태별 동작
+ * ============================================================================
+ *
+ * [기본 상태 (idle)]
+ * ┌─────────────────────────────────────────────────────────┐
+ * │  로고                                                    │
+ * │  권장: 가로형 200×60px 이상                    [미리보기] │
+ * │                                                          │
+ * │  [업로드] [삭제]                                          │
+ * └─────────────────────────────────────────────────────────┘
+ *
+ * [업로드 중 (uploading)]
+ * ┌─────────────────────────────────────────────────────────┐
+ * │  로고                                                    │
+ * │  권장: 가로형 200×60px 이상                    [미리보기] │
+ * │                                                ← 로컬    │
+ * │  [업로드 중...]                                          │
+ * │  ████████░░░░░░ 60%                                      │
+ * └─────────────────────────────────────────────────────────┘
+ *
+ * [업로드 완료, 적용 대기 (uploaded)]
+ * ┌─────────────────────────────────────────────────────────┐
+ * │  로고                                                    │
+ * │  권장: 가로형 200×60px 이상                    [미리보기] │
+ * │                                                ← 로컬    │
+ * │  [지금 적용하기] [취소]                                   │
+ * └─────────────────────────────────────────────────────────┘
+ *
+ * [적용 중 (committing)]
+ * ┌─────────────────────────────────────────────────────────┐
+ * │  로고                                                    │
+ * │  권장: 가로형 200×60px 이상                    [미리보기] │
+ * │                                                          │
+ * │  [적용 중...] [취소]  ← 비활성화                          │
+ * └─────────────────────────────────────────────────────────┘
+ *
+ *
+ * ============================================================================
+ * 이미지 URL 우선순위
+ * ============================================================================
+ *
+ * 1. localPreviewUrl (로컬 blob) - 파일 선택 즉시 표시, 캐시 영향 없음
+ * 2. currentUrl (서버 URL) - commit된 이미지, 캐시 버스트 적용
+ *
+ * 왜 이 순서인가?
+ * → 파일 선택 시 즉각적인 피드백 제공
+ * → CDN 캐시로 인한 이전 이미지 표시 문제 방지
+ *
+ */
+
 import { useRef, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,23 +72,49 @@ import { useBrandingUpload } from '@/hooks/use-branding-upload';
 import { BrandingType } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
+// ============================================================================
+// 타입 정의
+// ============================================================================
+
 interface BrandingUploaderProps {
+  /** 사이트 ID */
   siteId: string;
+
+  /** 브랜딩 타입 (logo, favicon, og, cta) */
   type: BrandingType;
+
+  /** 표시 제목 (예: "로고", "파비콘") */
   title: string;
+
+  /** 설명 텍스트 (권장 사이즈 등) */
   description: string;
+
+  /** 현재 서버에 저장된 이미지 URL (없으면 null) */
   currentUrl: string | null;
+
+  /** 마지막 업데이트 시간 (캐시 버스트용) */
   updatedAt?: string;
+
+  /** commit 완료 시 호출되는 콜백 */
   onCommit?: () => void;
 }
 
+// ============================================================================
 // 타입별 검증 규칙
+// ============================================================================
+
+/**
+ * 브랜딩 타입별 파일 검증 규칙
+ *
+ * 백엔드(BrandingAssetService)와 동일한 규칙 적용
+ * → 프론트에서 먼저 검증하여 불필요한 API 호출 방지
+ */
 const VALIDATION_RULES: Record<
   BrandingType,
   {
-    maxSize: number;
-    allowedTypes: string[];
-    accept: string;
+    maxSize: number; // 최대 파일 크기 (bytes)
+    allowedTypes: string[]; // 허용 MIME 타입
+    accept: string; // input[type=file] accept 속성
   }
 > = {
   logo: {
@@ -57,6 +139,10 @@ const VALIDATION_RULES: Record<
   },
 };
 
+// ============================================================================
+// 메인 컴포넌트
+// ============================================================================
+
 export function BrandingUploader({
   siteId,
   type,
@@ -66,24 +152,64 @@ export function BrandingUploader({
   updatedAt,
   onCommit,
 }: BrandingUploaderProps) {
+  // --------------------------------------------------------------------------
+  // 상태 및 훅
+  // --------------------------------------------------------------------------
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { state, upload, commit, reset, deleteAsset, isUploading, isUploaded, isCommitting, isDeleting } = useBrandingUpload(
-    siteId,
-    type,
-  );
+
+  const {
+    state,
+    upload,
+    commit,
+    reset,
+    deleteAsset,
+    isUploading,
+    isUploaded,
+    isCommitting,
+    isDeleting,
+  } = useBrandingUpload(siteId, type);
 
   const rules = VALIDATION_RULES[type];
 
-  // 표시할 이미지 URL (업로드 중이면 tmp, 아니면 현재 URL)
-  const displayUrl = state.tmpPreviewUrl || currentUrl;
-  // 캐시 버스트 적용 (tmp URL은 이미 유니크하므로 버스트 불필요)
+  // --------------------------------------------------------------------------
+  // 이미지 URL 결정
+  // --------------------------------------------------------------------------
+
+  /**
+   * 표시할 이미지 URL 결정
+   *
+   * 우선순위:
+   * 1. localPreviewUrl - 파일 선택 즉시 표시 (캐시 영향 없음)
+   * 2. currentUrl - 서버에 저장된 이미지 (캐시 버스트 적용)
+   */
+  const displayUrl = state.localPreviewUrl || currentUrl;
+
+  /**
+   * 최종 이미지 URL (캐시 버스트 적용)
+   *
+   * - 로컬 blob URL: 캐시 버스트 불필요 (매번 새 URL)
+   * - 서버 URL: ?v=timestamp 쿼리 파라미터로 캐시 무효화
+   */
   const imageUrl = displayUrl
-    ? state.tmpPreviewUrl
-      ? displayUrl
-      : `${displayUrl}?v=${updatedAt || ''}`
+    ? state.localPreviewUrl
+      ? displayUrl // 로컬 blob URL은 그대로 사용
+      : `${displayUrl}?v=${updatedAt || ''}` // 서버 URL은 캐시 버스트
     : null;
 
+  // --------------------------------------------------------------------------
+  // 이벤트 핸들러
+  // --------------------------------------------------------------------------
+
+  /**
+   * 파일 선택 핸들러
+   *
+   * 프로세스:
+   * 1. 파일 크기 검증
+   * 2. MIME 타입 검증
+   * 3. upload() 호출 → presign → S3 업로드
+   */
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -107,7 +233,7 @@ export function BrandingUploader({
         // 에러는 state.error로 표시됨
       }
 
-      // input 초기화
+      // input 초기화 (같은 파일 재선택 가능하도록)
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -115,11 +241,18 @@ export function BrandingUploader({
     [upload, rules],
   );
 
-  const handleReplace = useCallback(() => {
+  /** 업로드/변경 버튼 클릭 → 파일 선택 다이얼로그 열기 */
+  const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
-  const handleRemove = useCallback(() => {
+  /**
+   * 삭제/취소 버튼 클릭
+   *
+   * - uploaded 상태: 로컬 리셋 (업로드 취소)
+   * - idle 상태 + 서버 이미지 있음: 삭제 확인 다이얼로그 표시
+   */
+  const handleRemoveClick = useCallback(() => {
     if (isUploaded) {
       // 업로드 상태 취소 (로컬 리셋)
       reset();
@@ -129,17 +262,19 @@ export function BrandingUploader({
     }
   }, [isUploaded, currentUrl, reset]);
 
+  /** 삭제 확인 → 서버 이미지 삭제 */
   const handleConfirmDelete = useCallback(async () => {
     setShowDeleteConfirm(false);
     try {
       await deleteAsset();
-      onCommit?.(); // 부모에게 변경 알림
+      onCommit?.();
     } catch {
-      // 에러는 훅에서 처리됨
+      // 에러는 훅에서 toast로 표시됨
     }
   }, [deleteAsset, onCommit]);
 
-  const handleSave = useCallback(async () => {
+  /** 적용하기 버튼 클릭 → commit API 호출 */
+  const handleCommitClick = useCallback(async () => {
     try {
       await commit();
       onCommit?.();
@@ -147,6 +282,10 @@ export function BrandingUploader({
       // 에러는 state.error로 표시됨
     }
   }, [commit, onCommit]);
+
+  // --------------------------------------------------------------------------
+  // 렌더링
+  // --------------------------------------------------------------------------
 
   return (
     <>
@@ -156,6 +295,7 @@ export function BrandingUploader({
           <h3 className="text-sm font-medium text-gray-900">{title}</h3>
           <p className="text-xs text-gray-500 mt-0.5">{description}</p>
 
+          {/* 액션 버튼 */}
           <div className="flex items-center gap-2 mt-3">
             {/* 숨겨진 file input */}
             <input
@@ -167,27 +307,34 @@ export function BrandingUploader({
             />
 
             {isUploaded ? (
+              // 업로드 완료 상태: 적용하기 + 취소 버튼
               <>
-                <Button type="button" size="sm" onClick={handleSave} disabled={isCommitting}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleCommitClick}
+                  disabled={isCommitting}
+                >
                   {isCommitting ? '적용 중...' : '지금 적용하기'}
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={handleRemove}
+                  onClick={handleRemoveClick}
                   disabled={isCommitting}
                 >
                   취소
                 </Button>
               </>
             ) : (
+              // 기본 상태: 업로드/변경 + 삭제 버튼
               <>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleReplace}
+                  onClick={handleUploadClick}
                   disabled={isUploading}
                 >
                   {isUploading ? '업로드 중...' : currentUrl ? '변경' : '업로드'}
@@ -197,7 +344,7 @@ export function BrandingUploader({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={handleRemove}
+                    onClick={handleRemoveClick}
                     disabled={isUploading || isDeleting}
                   >
                     {isDeleting ? '삭제 중...' : '삭제'}
@@ -210,7 +357,7 @@ export function BrandingUploader({
           {/* 에러 메시지 */}
           {state.error && <p className="text-xs text-red-500 mt-2">{state.error}</p>}
 
-          {/* 업로드 진행률 */}
+          {/* 업로드 진행률 바 */}
           {isUploading && state.progress > 0 && (
             <div className="mt-2 w-32 h-1 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -237,6 +384,7 @@ export function BrandingUploader({
               alt={title}
               className="max-w-full max-h-full object-contain"
               onError={(e) => {
+                // 이미지 로드 실패 시 숨김 (placeholder 표시)
                 e.currentTarget.style.display = 'none';
               }}
             />
@@ -267,6 +415,13 @@ export function BrandingUploader({
   );
 }
 
+// ============================================================================
+// 서브 컴포넌트
+// ============================================================================
+
+/**
+ * 이미지 없을 때 표시되는 플레이스홀더 아이콘
+ */
 function PlaceholderIcon({ type }: { type: BrandingType }) {
   if (type === 'favicon') {
     return (
@@ -276,6 +431,7 @@ function PlaceholderIcon({ type }: { type: BrandingType }) {
     );
   }
 
+  // logo, og, cta 공통 아이콘
   return (
     <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
       <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

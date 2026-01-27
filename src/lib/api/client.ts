@@ -7,6 +7,7 @@
  */
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getCurrentSiteId } from '@/stores/site-store';
 import type {
   ApiResponse,
   User,
@@ -63,6 +64,24 @@ export function getAccessToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+// ===== Site ID 헬퍼 함수 =====
+
+/**
+ * 현재 siteId를 가져오는 함수
+ * 우선순위: 1) Zustand 스토어 → 2) URL 폴백
+ */
+export function extractSiteIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  // 1. 스토어에서 먼저 확인
+  const storeId = getCurrentSiteId();
+  if (storeId) return storeId;
+
+  // 2. URL 폴백 (마이그레이션 기간 동안 유지)
+  const match = window.location.pathname.match(/^\/admin\/([a-f0-9-]{36})\//);
+  return match ? match[1] : null;
+}
+
 export function setAccessToken(token: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem('accessToken', token);
@@ -73,25 +92,63 @@ export function removeAccessToken(): void {
   localStorage.removeItem('accessToken');
 }
 
-// Request interceptor - Authorization 헤더 추가
+// Request interceptor - Authorization 및 X-Site-Id 헤더 추가
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // X-Site-Id 헤더 추가 (Admin v2 API용, v1 API에서는 무시됨)
+  const siteId = extractSiteIdFromUrl();
+  if (siteId) {
+    config.headers['X-Site-Id'] = siteId;
+  }
+
   return config;
 });
 
 // ===== 토큰 리프레시 로직 (클라이언트 전용) =====
-// 브라우저 탭당 하나의 인스턴스이므로 모듈 레벨 변수 사용 가능
+/**
+ * 401 에러 발생 시 자동으로 토큰을 갱신하고 원래 요청을 재시도하는 interceptor
+ *
+ * ## 동작 방식
+ * 1. API 요청 → 401 에러 발생
+ * 2. /api/auth/refresh 호출 (Next.js API 라우트 → httpOnly 쿠키의 refreshToken 사용)
+ * 3. 새 accessToken 발급 → localStorage에 저장
+ * 4. 원래 요청 재시도
+ *
+ * ## 동시 요청 처리
+ * 여러 API 요청이 동시에 401을 받을 경우:
+ * - 첫 번째 요청만 리프레시 수행 (isRefreshing 플래그)
+ * - 나머지 요청은 failedQueue에 대기
+ * - 리프레시 완료 후 대기 중인 요청들 일괄 재시도
+ *
+ * ## 무한 루프 방지
+ * - _retry 플래그: 같은 요청의 중복 리프레시 방지
+ * - isSessionExpired 플래그: 리프레시 실패 후 추가 시도 차단
+ *
+ * ## 순환 의존성 방지
+ * - auth-utils.ts를 동적 import로 가져옴
+ * - client.ts → auth-utils.ts → client.ts 순환 방지
+ */
 
+/** 현재 토큰 리프레시 진행 중 여부 */
 let isRefreshing = false;
-let isSessionExpired = false; // 세션 만료 시 모든 리프레시 시도 차단
+
+/** 세션 만료 여부 (true면 모든 리프레시 시도 차단) */
+let isSessionExpired = false;
+
+/** 리프레시 대기 중인 요청들의 Promise resolve/reject 함수 */
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
 }> = [];
 
+/**
+ * 대기 중인 요청들을 일괄 처리
+ * @param error null이면 성공 처리, Error면 실패 처리
+ */
 const processQueue = (error: Error | null) => {
   failedQueue.forEach((promise) => {
     if (error) {
@@ -103,7 +160,7 @@ const processQueue = (error: Error | null) => {
   failedQueue = [];
 };
 
-// Response interceptor - 401 에러 시 프론트 서버 경유 토큰 리프레시 후 재시도
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -121,48 +178,45 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 이미 리프레시 중이면 대기열에 추가
+    // 이미 리프레시 중이면 대기열에 추가하고 리프레시 완료까지 대기
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
-        .then(() => api(originalRequest))
+        .then(() => api(originalRequest)) // 리프레시 성공 시 원래 요청 재시도
         .catch((err) => Promise.reject(err));
     }
 
+    // 이 요청이 리프레시를 담당
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
-      // 프론트 서버 경유 토큰 리프레시 요청
-      const res = await fetch('/api/auth/refresh', { method: 'POST' });
-      const data = await res.json();
+      // 토큰 리프레시 시도 (auth-utils.ts의 공통 함수 사용)
+      const { refreshToken } = await import('./auth-utils');
+      const success = await refreshToken();
 
-      if (!res.ok || !data.accessToken) {
+      if (!success) {
         throw new Error('토큰 갱신 실패');
       }
 
-      // 새 accessToken 저장
-      setAccessToken(data.accessToken);
-
-      // 대기 중인 요청들 성공 처리
+      // 대기 중인 요청들에게 성공 알림 → 각자 재시도
       processQueue(null);
 
       // 원래 요청 재시도 (새 토큰으로)
-      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+      const newToken = getAccessToken();
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return api(originalRequest);
     } catch (refreshError) {
-      // 세션 만료 플래그 설정 - 이후 모든 리프레시 시도 차단
+      // 리프레시 실패 → 세션 만료 처리
       isSessionExpired = true;
 
-      // 리프레시 실패 시 대기 중인 요청들 실패 처리
+      // 대기 중인 요청들에게 실패 알림
       processQueue(refreshError as Error);
 
-      // 토큰 삭제 및 로그인 페이지로 이동 (이미 /signin이면 리다이렉트 안 함)
-      removeAccessToken();
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/signin')) {
-        window.location.href = '/signin';
-      }
+      // 로그아웃 처리 (토큰 삭제 + 로그인 페이지 이동)
+      const { logout } = await import('./auth-utils');
+      logout();
 
       return Promise.reject(refreshError);
     } finally {
@@ -481,6 +535,345 @@ export async function deleteCategory(siteId: string, id: string): Promise<void> 
   await api.delete(`/admin/sites/${siteId}/categories/${id}`);
 }
 
+// ===== Admin Category API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 카테고리 목록 조회
+ * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
+ */
+export async function getAdminCategoriesV2(): Promise<Category[]> {
+  const response = await api.get<ApiResponse<Category[]>>('/admin/v2/categories');
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 생성
+ */
+export async function createCategoryV2(data: CreateCategoryRequest): Promise<Category> {
+  const response = await api.post<ApiResponse<Category>>('/admin/v2/categories', data);
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 수정
+ */
+export async function updateCategoryV2(id: string, data: UpdateCategoryRequest): Promise<Category> {
+  const response = await api.put<ApiResponse<Category>>(`/admin/v2/categories/${id}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 카테고리 삭제
+ */
+export async function deleteCategoryV2(id: string): Promise<void> {
+  await api.delete(`/admin/v2/categories/${id}`);
+}
+
+// ===== Admin Post API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 게시글 생성
+ */
+export async function createAdminPostV2(data: CreatePostRequest): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>('/admin/v2/posts', data);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 목록 조회
+ */
+export async function getAdminPostsV2(params?: {
+  categoryId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<PostListItem>> {
+  const response = await api.get<ApiResponse<PaginatedResponse<PostListItem>>>('/admin/v2/posts', {
+    params: {
+      ...(params?.categoryId && { categoryId: params.categoryId }),
+      ...(params?.page && { page: params.page }),
+      ...(params?.limit && { limit: params.limit }),
+    },
+  });
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 슬러그 중복 확인
+ */
+export async function checkPostSlugAvailabilityV2(slug: string): Promise<boolean> {
+  try {
+    const response = await api.get<ApiResponse<{ available: boolean }>>(
+      '/admin/v2/posts/check-slug',
+      {
+        params: { slug },
+      },
+    );
+    return response.data.data.available;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * v2 게시글 상세 조회
+ */
+export async function getAdminPostV2(postId: string): Promise<Post> {
+  const response = await api.get<ApiResponse<Post>>(`/admin/v2/posts/${postId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 수정
+ */
+export async function updateAdminPostV2(postId: string, data: UpdatePostRequest): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(`/admin/v2/posts/${postId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 삭제
+ */
+export async function deleteAdminPostV2(postId: string): Promise<void> {
+  await api.delete(`/admin/v2/posts/${postId}`);
+}
+
+/**
+ * v2 게시글 검색
+ */
+export async function searchPostsV2(
+  query: string,
+  limit: number = 10,
+): Promise<PostSearchResult[]> {
+  const response = await api.get<ApiResponse<PostSearchResult[]>>('/admin/v2/posts/search', {
+    params: { q: query, limit },
+  });
+  return response.data.data;
+}
+
+// ===== Admin Draft API v2 =====
+
+/**
+ * v2 임시저장 조회
+ */
+export async function getDraftV2(postId: string): Promise<PostDraft | null> {
+  try {
+    const response = await api.get<ApiResponse<PostDraft>>(`/admin/v2/posts/${postId}/draft`);
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * v2 임시저장
+ */
+export async function saveDraftV2(postId: string, data: SaveDraftRequest): Promise<PostDraft> {
+  const response = await api.put<ApiResponse<PostDraft>>(`/admin/v2/posts/${postId}/draft`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 삭제
+ */
+export async function deleteDraftV2(postId: string): Promise<void> {
+  await api.delete(`/admin/v2/posts/${postId}/draft`);
+}
+
+/**
+ * v2 게시글 발행
+ */
+export async function publishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/publish`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 재발행
+ */
+export async function republishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/republish`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 비공개
+ */
+export async function unpublishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/unpublish`);
+  return response.data.data;
+}
+
+// ===== Admin Settings API v2 =====
+
+/**
+ * v2 사이트 설정 조회
+ */
+export async function getAdminSiteSettingsV2(): Promise<SiteSettings> {
+  const response = await api.get<ApiResponse<SiteSettings>>('/admin/v2/settings');
+  return response.data.data;
+}
+
+/**
+ * v2 사이트 설정 수정
+ */
+export async function updateAdminSiteSettingsV2(
+  data: UpdateSiteSettingsRequest,
+): Promise<SiteSettings> {
+  const response = await api.put<ApiResponse<SiteSettings>>('/admin/v2/settings', data);
+  return response.data.data;
+}
+
+// ===== Admin Upload API v2 =====
+
+/**
+ * v2 업로드 pre-sign URL 요청
+ */
+export async function presignUploadV2(data: PresignUploadRequest): Promise<PresignUploadResponse> {
+  const response = await api.post<ApiResponse<PresignUploadResponse>>(
+    '/admin/v2/uploads/presign',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 업로드 완료
+ */
+export async function completeUploadV2(
+  data: CompleteUploadRequest,
+): Promise<CompleteUploadResponse> {
+  const response = await api.post<ApiResponse<CompleteUploadResponse>>(
+    '/admin/v2/uploads/complete',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 업로드 취소
+ */
+export async function abortUploadV2(data: AbortUploadRequest): Promise<void> {
+  await api.post('/admin/v2/uploads/abort', data);
+}
+
+// ===== Admin Branding API v2 =====
+
+/**
+ * v2 브랜딩 업로드 pre-sign URL 요청
+ */
+export async function presignBrandingUploadV2(
+  data: BrandingPresignRequest,
+): Promise<BrandingPresignResponse> {
+  const response = await api.post<ApiResponse<BrandingPresignResponse>>(
+    '/admin/v2/assets/branding/presign',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 브랜딩 업로드 커밋
+ */
+export async function commitBrandingUploadV2(
+  data: BrandingCommitRequest,
+): Promise<BrandingCommitResponse> {
+  const response = await api.post<ApiResponse<BrandingCommitResponse>>(
+    '/admin/v2/assets/branding/commit',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 브랜딩 자산 삭제
+ */
+export async function deleteBrandingAssetV2(type: BrandingType): Promise<BrandingDeleteResponse> {
+  const response = await api.delete<ApiResponse<BrandingDeleteResponse>>(
+    `/admin/v2/assets/branding/${type}`,
+  );
+  return response.data.data;
+}
+
+// ===== Admin Banner API v2 =====
+
+/**
+ * v2 배너 생성
+ */
+export async function createBannerV2(data: CreateBannerRequest): Promise<Banner> {
+  const response = await api.post<ApiResponse<Banner>>('/admin/v2/banners', data);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 목록 조회
+ */
+export async function getAdminBannersV2(): Promise<Banner[]> {
+  const response = await api.get<ApiResponse<Banner[]>>('/admin/v2/banners');
+  return response.data.data;
+}
+
+/**
+ * v2 배너 상세 조회
+ */
+export async function getAdminBannerV2(bannerId: string): Promise<Banner> {
+  const response = await api.get<ApiResponse<Banner>>(`/admin/v2/banners/${bannerId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 수정
+ */
+export async function updateBannerV2(bannerId: string, data: UpdateBannerRequest): Promise<Banner> {
+  const response = await api.put<ApiResponse<Banner>>(`/admin/v2/banners/${bannerId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 삭제
+ */
+export async function deleteBannerV2(bannerId: string): Promise<void> {
+  await api.delete(`/admin/v2/banners/${bannerId}`);
+}
+
+/**
+ * v2 배너 순서 변경
+ */
+export async function updateBannerOrderV2(data: BannerOrderRequest): Promise<Banner[]> {
+  const response = await api.put<ApiResponse<Banner[]>>('/admin/v2/banners/order', data);
+  return response.data.data;
+}
+
+// ===== Admin Analytics API v2 =====
+
+/**
+ * v2 분석 개요 조회
+ */
+export async function getAnalyticsOverviewV2(): Promise<AnalyticsOverview> {
+  const response = await api.get<ApiResponse<AnalyticsOverview>>('/admin/v2/analytics/overview');
+  return response.data.data;
+}
+
+/**
+ * v2 게시글별 분석 조회
+ */
+export async function getPostsAnalyticsV2(): Promise<PostAnalytics[]> {
+  const response = await api.get<ApiResponse<PostAnalytics[]>>('/admin/v2/analytics/posts');
+  return response.data.data;
+}
+
+/**
+ * v2 일별 분석 조회
+ */
+export async function getDailyAnalyticsV2(days: number = 7): Promise<DailyAnalytics[]> {
+  const response = await api.get<ApiResponse<DailyAnalytics[]>>('/admin/v2/analytics/daily', {
+    params: { days },
+  });
+  return response.data.data;
+}
+
 // ===== Public Category API (클라이언트) =====
 
 export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {
@@ -573,7 +966,10 @@ export async function getPostsAnalytics(siteId: string): Promise<PostAnalytics[]
   return response.data.data;
 }
 
-export async function getDailyAnalytics(siteId: string, days: number = 7): Promise<DailyAnalytics[]> {
+export async function getDailyAnalytics(
+  siteId: string,
+  days: number = 7,
+): Promise<DailyAnalytics[]> {
   const response = await api.get<ApiResponse<DailyAnalytics[]>>(
     `/admin/sites/${siteId}/analytics/daily`,
     {

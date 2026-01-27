@@ -50,10 +50,10 @@ export function CtaSettingsSection({
     );
   }, [ctaEnabled, ctaType, ctaText, ctaLink, settings]);
 
-  // 이미지 URL (업로드 중이면 tmp, 아니면 현재 URL)
-  const displayImageUrl = state.tmpPreviewUrl || settings.ctaImageUrl;
+  // 이미지 URL 우선순위: 로컬 미리보기 > 서버 URL
+  const displayImageUrl = state.localPreviewUrl || settings.ctaImageUrl;
   const imageUrl = displayImageUrl
-    ? state.tmpPreviewUrl
+    ? state.localPreviewUrl
       ? displayImageUrl
       : `${displayImageUrl}?v=${settings.updatedAt || ''}`
     : null;

@@ -8,6 +8,11 @@ import {
   deleteAdminPost,
   updateAdminPost,
   searchPosts,
+  createAdminPostV2,
+  getAdminPostsV2,
+  deleteAdminPostV2,
+  updateAdminPostV2,
+  searchPostsV2,
   CreatePostRequest,
   UpdatePostRequest,
   PublicPost,
@@ -22,6 +27,8 @@ export const postKeys = {
   all: ['posts'] as const,
   admin: (siteId: string) => [...postKeys.all, 'admin', siteId] as const,
   adminList: (siteId: string) => [...postKeys.admin(siteId), 'list'] as const,
+  adminV2: (siteId: string) => [...postKeys.all, 'admin', 'v2', siteId] as const,
+  adminListV2: (siteId: string) => [...postKeys.adminV2(siteId), 'list'] as const,
   public: () => [...postKeys.all, 'public'] as const,
   publicList: (siteSlug: string) => [...postKeys.public(), 'list', siteSlug] as const,
 };
@@ -122,5 +129,87 @@ export function useSearchPosts(siteId: string, query: string, enabled: boolean =
     queryFn: () => searchPosts(siteId, query, 10),
     enabled: !!siteId && !!query && query.length >= 1 && enabled,
     staleTime: 30000, // 30초간 캐시 유지
+  });
+}
+
+// ===== Admin v2 Hooks (X-Site-Id 헤더 사용) =====
+
+/**
+ * Admin 게시글 목록 조회 훅 (v2)
+ * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
+ * @param siteId 캐시 키 용도로만 사용
+ */
+export function useAdminPostsV2(
+  siteId: string,
+  params?: { categoryId?: string; page?: number; limit?: number },
+) {
+  return useQuery<PaginatedResponse<PostListItem>, AxiosError>({
+    queryKey: [...postKeys.adminListV2(siteId), params?.categoryId || 'all', params?.page || 1],
+    queryFn: () => getAdminPostsV2(params),
+    enabled: !!siteId,
+  });
+}
+
+/**
+ * 게시글 생성 mutation 훅 (v2)
+ */
+export function useCreatePostV2(siteId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreatePostRequest) => createAdminPostV2(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: postKeys.adminListV2(siteId) });
+    },
+    onError: (error: AxiosError<{ message?: string; code?: string }>) => {
+      console.error('Failed to create post:', error.response?.data);
+    },
+  });
+}
+
+/**
+ * 게시글 삭제 mutation 훅 (v2)
+ */
+export function useDeletePostV2(siteId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (postId: string) => deleteAdminPostV2(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: postKeys.adminListV2(siteId) });
+    },
+    onError: (error: AxiosError<{ message?: string; code?: string }>) => {
+      console.error('Failed to delete post:', error.response?.data);
+    },
+  });
+}
+
+/**
+ * 게시글 상태 변경 mutation 훅 (v2)
+ */
+export function useUpdatePostStatusV2(siteId: string, postId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePostRequest) => updateAdminPostV2(postId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: postKeys.adminListV2(siteId) });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', 'v2', siteId, postId] });
+    },
+    onError: (error: AxiosError<{ message?: string; code?: string }>) => {
+      console.error('Failed to update post status:', error.response?.data);
+    },
+  });
+}
+
+/**
+ * 게시글 검색 훅 (v2)
+ */
+export function useSearchPostsV2(siteId: string, query: string, enabled: boolean = true) {
+  return useQuery<PostSearchResult[], AxiosError>({
+    queryKey: [...postKeys.adminV2(siteId), 'search', query],
+    queryFn: () => searchPostsV2(query, 10),
+    enabled: !!siteId && !!query && query.length >= 1 && enabled,
+    staleTime: 30000,
   });
 }
