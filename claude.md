@@ -6,22 +6,22 @@
 
 ## 기술 스택
 
-| 카테고리 | 기술 | 버전 |
-|---------|------|------|
-| Framework | Next.js | 16.1.3 |
-| Runtime | React | 19.2.3 |
-| Language | TypeScript | ^5 |
-| State (Server) | TanStack React Query | ^5.90.19 |
-| State (Client) | Zustand | ^5.0.10 |
-| HTTP Client | Axios | ^1.13.2 |
-| Styling | Tailwind CSS | ^4 |
-| UI Components | Radix UI + shadcn/ui | v1.1-2.0 |
-| Editor | Tiptap | ^3.16.0 |
-| Form | React Hook Form + Zod | ^7.71.1 / ^4.3.5 |
-| Animation | Framer Motion | ^12.29.0 |
-| Icons | Lucide React | ^0.562.0 |
-| Date | Day.js | ^1.11.19 |
-| Testing | Vitest + Testing Library | ^1.0.4 |
+| 카테고리       | 기술                     | 버전             |
+| -------------- | ------------------------ | ---------------- |
+| Framework      | Next.js                  | 16.1.3           |
+| Runtime        | React                    | 19.2.3           |
+| Language       | TypeScript               | ^5               |
+| State (Server) | TanStack React Query     | ^5.90.19         |
+| State (Client) | Zustand                  | ^5.0.10          |
+| HTTP Client    | Axios                    | ^1.13.2          |
+| Styling        | Tailwind CSS             | ^4               |
+| UI Components  | Radix UI + shadcn/ui     | v1.1-2.0         |
+| Editor         | Tiptap                   | ^3.16.0          |
+| Form           | React Hook Form + Zod    | ^7.71.1 / ^4.3.5 |
+| Animation      | Framer Motion            | ^12.29.0         |
+| Icons          | Lucide React             | ^0.562.0         |
+| Date           | Day.js                   | ^1.11.19         |
+| Testing        | Vitest + Testing Library | ^1.0.4           |
 
 ## 디렉토리 구조
 
@@ -77,13 +77,13 @@ pnpm test:coverage  # 커버리지 리포트
 
 ### 파일 네이밍
 
-| 유형 | 규칙 | 예시 |
-|-----|------|-----|
-| 컴포넌트 | PascalCase | `AdminSidebar.tsx` |
-| 훅 | kebab-case + `use-` | `use-posts.ts` |
-| 유틸리티 | kebab-case | `error-handler.ts` |
-| 스토어 | kebab-case + `-store` | `modal-store.ts` |
-| 타입 | kebab-case | `types.ts` |
+| 유형     | 규칙                  | 예시               |
+| -------- | --------------------- | ------------------ |
+| 컴포넌트 | PascalCase            | `AdminSidebar.tsx` |
+| 훅       | kebab-case + `use-`   | `use-posts.ts`     |
+| 유틸리티 | kebab-case            | `error-handler.ts` |
+| 스토어   | kebab-case + `-store` | `modal-store.ts`   |
+| 타입     | kebab-case            | `types.ts`         |
 
 ### Import 순서
 
@@ -155,21 +155,23 @@ Backend
 
 ### 상태 관리 원칙
 
-| 상태 유형 | 도구 | 예시 |
-|----------|------|-----|
-| 서버 상태 | React Query | 포스트, 카테고리, 사용자 데이터 |
-| UI 상태 | Zustand | 사이드바 열림/닫힘, 모달 |
-| 폼 상태 | React Hook Form | 입력값, 유효성 검사 |
-| 로컬 상태 | useState | 임시 UI 상태 |
+| 상태 유형 | 도구            | 예시                            |
+| --------- | --------------- | ------------------------------- |
+| 서버 상태 | React Query     | 포스트, 카테고리, 사용자 데이터 |
+| UI 상태   | Zustand         | 사이드바 열림/닫힘, 모달        |
+| 폼 상태   | React Hook Form | 입력값, 유효성 검사             |
+| 로컬 상태 | useState        | 임시 UI 상태                    |
 
 ### API 호출 패턴
 
 **클라이언트 (lib/api/client.ts)**
+
 - Axios + 인터셉터
 - 401 시 자동 토큰 갱신
 - 요청 큐잉 (토큰 갱신 중)
 
 **서버 (lib/api/server.ts)**
+
 - Native fetch
 - ISR 60초 revalidate
 - 태그 기반 on-demand revalidation
@@ -222,15 +224,15 @@ const form = useForm({
 
 ### 환경 변수 (.env.local)
 
-| 변수 | 필수 | 설명 |
-|-----|:----:|------|
-| `NEXT_PUBLIC_API_BASE_URL` | * | API 서버 URL |
-| `NEXT_PUBLIC_APP_URL` | * | 앱 URL |
-| `NEXT_PUBLIC_TENANT_DOMAIN` | * | 멀티테넌트 도메인 |
-| `REVALIDATE_SECRET` | * | ISR 재검증 시크릿 |
-| `NEXT_PUBLIC_KAKAO_CLIENT_ID` | | 카카오 OAuth |
-| `NEXT_PUBLIC_NAVER_CLIENT_ID` | | 네이버 OAuth |
-| `GITHUB_TOKEN` | | GitHub API 토큰 |
+| 변수                          | 필수 | 설명              |
+| ----------------------------- | :--: | ----------------- |
+| `NEXT_PUBLIC_API_BASE_URL`    |  \*  | API 서버 URL      |
+| `NEXT_PUBLIC_APP_URL`         |  \*  | 앱 URL            |
+| `NEXT_PUBLIC_TENANT_DOMAIN`   |  \*  | 멀티테넌트 도메인 |
+| `REVALIDATE_SECRET`           |  \*  | ISR 재검증 시크릿 |
+| `NEXT_PUBLIC_KAKAO_CLIENT_ID` |      | 카카오 OAuth      |
+| `NEXT_PUBLIC_NAVER_CLIENT_ID` |      | 네이버 OAuth      |
+| `GITHUB_TOKEN`                |      | GitHub API 토큰   |
 
 ### 멀티테넌트 구조
 
