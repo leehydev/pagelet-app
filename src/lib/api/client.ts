@@ -569,6 +569,311 @@ export async function deleteCategoryV2(id: string): Promise<void> {
   await api.delete(`/admin/v2/categories/${id}`);
 }
 
+// ===== Admin Post API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 게시글 생성
+ */
+export async function createAdminPostV2(data: CreatePostRequest): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>('/admin/v2/posts', data);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 목록 조회
+ */
+export async function getAdminPostsV2(params?: {
+  categoryId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<PostListItem>> {
+  const response = await api.get<ApiResponse<PaginatedResponse<PostListItem>>>('/admin/v2/posts', {
+    params: {
+      ...(params?.categoryId && { categoryId: params.categoryId }),
+      ...(params?.page && { page: params.page }),
+      ...(params?.limit && { limit: params.limit }),
+    },
+  });
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 슬러그 중복 확인
+ */
+export async function checkPostSlugAvailabilityV2(slug: string): Promise<boolean> {
+  try {
+    const response = await api.get<ApiResponse<{ available: boolean }>>(
+      '/admin/v2/posts/check-slug',
+      {
+        params: { slug },
+      },
+    );
+    return response.data.data.available;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * v2 게시글 상세 조회
+ */
+export async function getAdminPostV2(postId: string): Promise<Post> {
+  const response = await api.get<ApiResponse<Post>>(`/admin/v2/posts/${postId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 수정
+ */
+export async function updateAdminPostV2(postId: string, data: UpdatePostRequest): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(`/admin/v2/posts/${postId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 삭제
+ */
+export async function deleteAdminPostV2(postId: string): Promise<void> {
+  await api.delete(`/admin/v2/posts/${postId}`);
+}
+
+/**
+ * v2 게시글 검색
+ */
+export async function searchPostsV2(
+  query: string,
+  limit: number = 10,
+): Promise<PostSearchResult[]> {
+  const response = await api.get<ApiResponse<PostSearchResult[]>>('/admin/v2/posts/search', {
+    params: { q: query, limit },
+  });
+  return response.data.data;
+}
+
+// ===== Admin Draft API v2 =====
+
+/**
+ * v2 임시저장 조회
+ */
+export async function getDraftV2(postId: string): Promise<PostDraft | null> {
+  try {
+    const response = await api.get<ApiResponse<PostDraft>>(`/admin/v2/posts/${postId}/draft`);
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * v2 임시저장
+ */
+export async function saveDraftV2(postId: string, data: SaveDraftRequest): Promise<PostDraft> {
+  const response = await api.put<ApiResponse<PostDraft>>(`/admin/v2/posts/${postId}/draft`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 삭제
+ */
+export async function deleteDraftV2(postId: string): Promise<void> {
+  await api.delete(`/admin/v2/posts/${postId}/draft`);
+}
+
+/**
+ * v2 게시글 발행
+ */
+export async function publishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/publish`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 재발행
+ */
+export async function republishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/republish`);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 비공개
+ */
+export async function unpublishPostV2(postId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/posts/${postId}/unpublish`);
+  return response.data.data;
+}
+
+// ===== Admin Settings API v2 =====
+
+/**
+ * v2 사이트 설정 조회
+ */
+export async function getAdminSiteSettingsV2(): Promise<SiteSettings> {
+  const response = await api.get<ApiResponse<SiteSettings>>('/admin/v2/settings');
+  return response.data.data;
+}
+
+/**
+ * v2 사이트 설정 수정
+ */
+export async function updateAdminSiteSettingsV2(
+  data: UpdateSiteSettingsRequest,
+): Promise<SiteSettings> {
+  const response = await api.put<ApiResponse<SiteSettings>>('/admin/v2/settings', data);
+  return response.data.data;
+}
+
+// ===== Admin Upload API v2 =====
+
+/**
+ * v2 업로드 pre-sign URL 요청
+ */
+export async function presignUploadV2(data: PresignUploadRequest): Promise<PresignUploadResponse> {
+  const response = await api.post<ApiResponse<PresignUploadResponse>>(
+    '/admin/v2/uploads/presign',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 업로드 완료
+ */
+export async function completeUploadV2(
+  data: CompleteUploadRequest,
+): Promise<CompleteUploadResponse> {
+  const response = await api.post<ApiResponse<CompleteUploadResponse>>(
+    '/admin/v2/uploads/complete',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 업로드 취소
+ */
+export async function abortUploadV2(data: AbortUploadRequest): Promise<void> {
+  await api.post('/admin/v2/uploads/abort', data);
+}
+
+// ===== Admin Branding API v2 =====
+
+/**
+ * v2 브랜딩 업로드 pre-sign URL 요청
+ */
+export async function presignBrandingUploadV2(
+  data: BrandingPresignRequest,
+): Promise<BrandingPresignResponse> {
+  const response = await api.post<ApiResponse<BrandingPresignResponse>>(
+    '/admin/v2/assets/branding/presign',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 브랜딩 업로드 커밋
+ */
+export async function commitBrandingUploadV2(
+  data: BrandingCommitRequest,
+): Promise<BrandingCommitResponse> {
+  const response = await api.post<ApiResponse<BrandingCommitResponse>>(
+    '/admin/v2/assets/branding/commit',
+    data,
+  );
+  return response.data.data;
+}
+
+/**
+ * v2 브랜딩 자산 삭제
+ */
+export async function deleteBrandingAssetV2(type: BrandingType): Promise<BrandingDeleteResponse> {
+  const response = await api.delete<ApiResponse<BrandingDeleteResponse>>(
+    `/admin/v2/assets/branding/${type}`,
+  );
+  return response.data.data;
+}
+
+// ===== Admin Banner API v2 =====
+
+/**
+ * v2 배너 생성
+ */
+export async function createBannerV2(data: CreateBannerRequest): Promise<Banner> {
+  const response = await api.post<ApiResponse<Banner>>('/admin/v2/banners', data);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 목록 조회
+ */
+export async function getAdminBannersV2(): Promise<Banner[]> {
+  const response = await api.get<ApiResponse<Banner[]>>('/admin/v2/banners');
+  return response.data.data;
+}
+
+/**
+ * v2 배너 상세 조회
+ */
+export async function getAdminBannerV2(bannerId: string): Promise<Banner> {
+  const response = await api.get<ApiResponse<Banner>>(`/admin/v2/banners/${bannerId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 수정
+ */
+export async function updateBannerV2(bannerId: string, data: UpdateBannerRequest): Promise<Banner> {
+  const response = await api.put<ApiResponse<Banner>>(`/admin/v2/banners/${bannerId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 배너 삭제
+ */
+export async function deleteBannerV2(bannerId: string): Promise<void> {
+  await api.delete(`/admin/v2/banners/${bannerId}`);
+}
+
+/**
+ * v2 배너 순서 변경
+ */
+export async function updateBannerOrderV2(data: BannerOrderRequest): Promise<Banner[]> {
+  const response = await api.put<ApiResponse<Banner[]>>('/admin/v2/banners/order', data);
+  return response.data.data;
+}
+
+// ===== Admin Analytics API v2 =====
+
+/**
+ * v2 분석 개요 조회
+ */
+export async function getAnalyticsOverviewV2(): Promise<AnalyticsOverview> {
+  const response = await api.get<ApiResponse<AnalyticsOverview>>('/admin/v2/analytics/overview');
+  return response.data.data;
+}
+
+/**
+ * v2 게시글별 분석 조회
+ */
+export async function getPostsAnalyticsV2(): Promise<PostAnalytics[]> {
+  const response = await api.get<ApiResponse<PostAnalytics[]>>('/admin/v2/analytics/posts');
+  return response.data.data;
+}
+
+/**
+ * v2 일별 분석 조회
+ */
+export async function getDailyAnalyticsV2(days: number = 7): Promise<DailyAnalytics[]> {
+  const response = await api.get<ApiResponse<DailyAnalytics[]>>('/admin/v2/analytics/daily', {
+    params: { days },
+  });
+  return response.data.data;
+}
+
 // ===== Public Category API (클라이언트) =====
 
 export async function getPublicCategories(siteSlug: string): Promise<PublicCategory[]> {

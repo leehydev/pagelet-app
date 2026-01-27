@@ -73,6 +73,9 @@ import {
   presignBrandingUpload,
   commitBrandingUpload,
   deleteBrandingAsset,
+  presignBrandingUploadV2,
+  commitBrandingUploadV2,
+  deleteBrandingAssetV2,
   BrandingType,
   BrandingPresignResponse,
 } from '@/lib/api';
@@ -350,6 +353,157 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
     deleteAsset,
 
     // 편의 플래그
+    isUploading: state.status === 'uploading',
+    isUploaded: state.status === 'uploaded',
+    isCommitting: state.status === 'committing',
+    isDeleting: deleteMutation.isPending,
+    hasChanges: state.status === 'uploaded',
+  };
+}
+
+// ============================================================================
+// v2 훅 (X-Site-Id 헤더 사용)
+// ============================================================================
+
+/**
+ * 브랜딩 에셋 업로드 훅 (v2)
+ * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
+ *
+ * @param siteId - 캐시 키 용도로만 사용
+ * @param type - 브랜딩 타입 (logo, favicon, og, cta)
+ */
+export function useBrandingUploadV2(siteId: string, type: BrandingType) {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<BrandingUploadState>(initialState);
+
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  /** Presign API v2 */
+  const presignMutation = useMutation({
+    mutationFn: (data: { type: BrandingType; filename: string; size: number; mimeType: string }) =>
+      presignBrandingUploadV2(data),
+  });
+
+  /** Commit API v2 */
+  const commitMutation = useMutation({
+    mutationFn: (data: { type: BrandingType; tmpKey: string }) => commitBrandingUploadV2(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.adminV2(siteId) });
+    },
+  });
+
+  /** Delete API v2 */
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteBrandingAssetV2(type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.adminV2(siteId) });
+    },
+  });
+
+  const revokeLocalPreview = useCallback(() => {
+    if (stateRef.current.localPreviewUrl) {
+      URL.revokeObjectURL(stateRef.current.localPreviewUrl);
+    }
+  }, []);
+
+  const upload = useCallback(
+    async (file: File) => {
+      const localPreviewUrl = URL.createObjectURL(file);
+
+      setState({
+        status: 'uploading',
+        progress: 0,
+        localPreviewUrl,
+      });
+
+      try {
+        const presignResponse: BrandingPresignResponse = await presignMutation.mutateAsync({
+          type,
+          filename: file.name,
+          size: file.size,
+          mimeType: file.type,
+        });
+
+        await uploadFileToS3(presignResponse.uploadUrl, file, file.type, (progress) => {
+          setState((prev) => ({ ...prev, progress }));
+        });
+
+        setState({
+          status: 'uploaded',
+          progress: 100,
+          localPreviewUrl,
+          tmpPreviewUrl: presignResponse.tmpPublicUrl,
+          tmpKey: presignResponse.tmpKey,
+        });
+
+        return presignResponse;
+      } catch (error) {
+        URL.revokeObjectURL(localPreviewUrl);
+
+        const errorMessage = getErrorDisplayMessage(error, '파일 업로드에 실패했습니다.');
+        setState({
+          status: 'error',
+          progress: 0,
+          error: errorMessage,
+        });
+        throw error;
+      }
+    },
+    [type, presignMutation],
+  );
+
+  const commit = useCallback(async () => {
+    const currentTmpKey = stateRef.current.tmpKey;
+    if (!currentTmpKey) {
+      throw new Error('업로드된 파일이 없습니다.');
+    }
+
+    setState((prev) => ({ ...prev, status: 'committing' }));
+
+    try {
+      const response = await commitMutation.mutateAsync({
+        type,
+        tmpKey: currentTmpKey,
+      });
+
+      revokeLocalPreview();
+      setState(initialState);
+
+      return response;
+    } catch (error) {
+      const errorMessage = getErrorDisplayMessage(error, '저장에 실패했습니다.');
+      setState((prev) => ({ ...prev, status: 'error', error: errorMessage }));
+      throw error;
+    }
+  }, [type, commitMutation, revokeLocalPreview]);
+
+  const reset = useCallback(() => {
+    revokeLocalPreview();
+    setState(initialState);
+  }, [revokeLocalPreview]);
+
+  const deleteAsset = useCallback(async () => {
+    try {
+      const response = await deleteMutation.mutateAsync();
+      toast.success('이미지가 삭제되었습니다');
+      return response;
+    } catch (error) {
+      const errorMessage = getErrorDisplayMessage(error, '이미지 삭제에 실패했습니다');
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, [deleteMutation]);
+
+  return {
+    state,
+    upload,
+    commit,
+    reset,
+    deleteAsset,
     isUploading: state.status === 'uploading',
     isUploaded: state.status === 'uploaded',
     isCommitting: state.status === 'committing',
