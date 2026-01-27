@@ -5,13 +5,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 /**
  * 네비게이션 스택 Store
- * 
+ *
  * 현재 비활성화 상태입니다.
  * 활성화하려면:
  * 1. app/layout.tsx에서 NavigationTracker 주석 해제
  * 2. src/components/NavigationTracker.tsx에서 pushIfNeeded 호출 주석 해제
  * 3. src/hooks/use-app-back.ts에서 네비게이션 스택 로직 주석 해제
- * 
+ *
  * 사용 사례:
  * - 복잡한 마법사 플로우에서 뒤로가기 지원
  * - 깊은 중첩 네비게이션 관리
@@ -86,7 +86,7 @@ export const useNavStack = create<NavStackState>()(
     {
       name: 'nav-stack',
       storage: createJSONStorage(() => sessionStorage), // 새로고침 유지, 탭 닫으면 삭제
-      partialize: state => ({ stack: state.stack }), // lastUrl은 굳이 영속화 안 해도 됨
+      partialize: (state) => ({ stack: state.stack }), // lastUrl은 굳이 영속화 안 해도 됨
     },
   ),
 );

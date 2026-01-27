@@ -72,10 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-async function getPosts(
-  siteSlug: string,
-  page: number,
-): Promise<PaginatedResponse<PublicPost>> {
+async function getPosts(siteSlug: string, page: number): Promise<PaginatedResponse<PublicPost>> {
   try {
     return await fetchPublicPosts(siteSlug, { page, limit: POSTS_PER_PAGE });
   } catch (error) {

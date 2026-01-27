@@ -24,6 +24,7 @@ lib/
 ## API 모듈
 
 ### types.ts
+
 ```typescript
 // 주요 엔티티
 User, Post, SiteSettings, Category, AdminSite
@@ -36,32 +37,38 @@ ApiResponse<T> = { success: boolean; data: T }
 ```
 
 ### client.ts (CSR)
+
 Axios 기반, 클라이언트 컴포넌트용:
+
 - 401 토큰 갱신 인터셉터
 - 자동 재시도 로직
 
 주요 함수:
+
 - `fetchUser()`, `fetchPosts()`, `createPost()`, `updatePost()`, `deletePost()`
 - `updatePostStatus()` - 발행/비공개 전환
 - `presignUpload()`, `completeUpload()`
 
 ### server.ts (SSR/ISR)
+
 Native Fetch 기반, 서버 컴포넌트용:
+
 - ISR 재검증 태그 지원
 - X-Site-Slug 헤더 사용
 
 주요 함수:
+
 - `fetchPublicPosts()`, `fetchPublicPostBySlug()`
 - `fetchSiteSettings()`, `fetchPublicCategories()`
 
 ## 유틸리티
 
-| 파일 | 용도 |
-|------|------|
-| `error-handler.ts` | API 에러 → 토스트 표시 |
-| `error-messages.ts` | 에러 코드 → 한글 메시지 |
-| `sanitize.ts` | HTML XSS 방지 |
-| `utils.ts` | `cn()` Tailwind 클래스 병합 |
+| 파일                | 용도                        |
+| ------------------- | --------------------------- |
+| `error-handler.ts`  | API 에러 → 토스트 표시      |
+| `error-messages.ts` | 에러 코드 → 한글 메시지     |
+| `sanitize.ts`       | HTML XSS 방지               |
+| `utils.ts`          | `cn()` Tailwind 클래스 병합 |
 
 ## 이중 API 패턴
 

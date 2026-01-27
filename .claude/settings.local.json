@@ -20,7 +20,9 @@
       "Bash(ls:*)",
       "Bash(gh api graphql:*)",
       "Bash(npx tsc:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(npx prettier:*)",
+      "Bash(gh pr create:*)"
     ]
   }
 }

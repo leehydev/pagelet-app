@@ -5,6 +5,7 @@ Zustand 클라이언트 상태 관리
 ## 스토어 목록
 
 ### admin-sidebar-store.ts
+
 관리자 사이드바 열기/닫기
 
 ```typescript
@@ -17,6 +18,7 @@ interface AdminSidebarStore {
 ```
 
 ### modal-store.ts
+
 전역 모달 관리
 
 ```typescript
@@ -29,6 +31,7 @@ interface ModalStore {
 ```
 
 ### nav-stack.ts
+
 네비게이션 히스토리 스택
 
 ```typescript
@@ -54,8 +57,8 @@ export const useModalStore = create<ModalStore>()(
       openModal: (content) => set({ isOpen: true, content }),
       closeModal: () => set({ isOpen: false, content: null }),
     }),
-    { name: 'modal-store' }
-  )
+    { name: 'modal-store' },
+  ),
 );
 ```
 

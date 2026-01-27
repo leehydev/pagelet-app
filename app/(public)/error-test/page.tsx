@@ -18,13 +18,14 @@ export default function ErrorTestPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">에러 테스트 페이지</h1>
-        
+
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">에러 바운더리 테스트</h2>
           <p className="text-gray-600 mb-4">
-            아래 버튼을 클릭하면 의도적으로 에러를 발생시켜 에러 바운더리가 작동하는지 확인할 수 있습니다.
+            아래 버튼을 클릭하면 의도적으로 에러를 발생시켜 에러 바운더리가 작동하는지 확인할 수
+            있습니다.
           </p>
-          
+
           <button
             onClick={() => setShouldThrow(true)}
             className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"

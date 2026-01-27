@@ -1,6 +1,7 @@
 # [FE] 베타 버전 가입 대기(Waitlist) UI 구현
 
 ## GitHub 이슈
+
 - **이슈 번호**: #44
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/44
 - **생성일**: 2026-01-23
@@ -15,6 +16,7 @@
 ## 작업 범위
 
 ### 포함
+
 - `PENDING` 계정 상태 타입 추가
 - 가입 대기 페이지 (`/waiting`) 구현
 - 온보딩 완료 후 대기 페이지로 리다이렉트
@@ -22,6 +24,7 @@
 - 에러 메시지 매핑 추가 (`ACCOUNT_PENDING`)
 
 ### 제외
+
 - 슈퍼 관리자 대시보드 UI (MVP 이후)
 - 승인 알림 (이메일 등)
 
@@ -77,20 +80,25 @@ export default function WaitingPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center max-w-md px-6">
         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-8 h-8 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          가입 신청이 완료되었습니다
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">가입 신청이 완료되었습니다</h1>
         <p className="text-gray-600 mb-6">
-          현재 베타 서비스 운영 중이므로 관리자 승인 후
-          서비스를 이용하실 수 있습니다.
+          현재 베타 서비스 운영 중이므로 관리자 승인 후 서비스를 이용하실 수 있습니다.
         </p>
-        <p className="text-sm text-gray-500">
-          승인이 완료되면 등록하신 이메일로 안내드리겠습니다.
-        </p>
+        <p className="text-sm text-gray-500">승인이 완료되면 등록하신 이메일로 안내드리겠습니다.</p>
       </div>
     </div>
   );
@@ -154,7 +162,7 @@ useEffect(() => {
 // src/lib/api/types.ts
 export const AccountStatus = {
   ONBOARDING: 'ONBOARDING',
-  PENDING: 'PENDING',     // 추가: 가입 대기
+  PENDING: 'PENDING', // 추가: 가입 대기
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
   WITHDRAWN: 'WITHDRAWN',
@@ -167,7 +175,7 @@ export const AccountStatus = {
 // src/lib/error-messages.ts
 const errorMessages: Record<string, string> = {
   // ... 기존 에러 메시지
-  'ACCOUNT_003': '계정이 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.',
+  ACCOUNT_003: '계정이 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.',
 };
 ```
 

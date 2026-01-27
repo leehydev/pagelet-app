@@ -1,6 +1,7 @@
 # [FE] 통계 대시보드
 
 ## GitHub 이슈
+
 - **이슈 번호**: #48
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/48
 - **생성일**: 2026-01-23
@@ -19,18 +20,21 @@
 ## 작업 범위
 
 ### 포함
+
 - 기존 대시보드 placeholder를 실제 통계 UI로 교체
 - 개요 카드: 총 조회수, 방문자, 오늘/어제 비교, CTA 클릭
 - 게시글별 조회수 테이블
 - 일별 추이 차트 (선택사항)
 
 ### 제외
+
 - 통계 조회 API (pagelet-api#43)
 - 통계 추적 (pagelet-app#47)
 
 ## 기술 명세
 
 ### 영향받는 파일
+
 - `app/(app)/admin/[siteId]/page.tsx` (기존 교체)
 - `src/components/app/dashboard/StatCard.tsx` (신규)
 - `src/components/app/dashboard/PostStatsTable.tsx` (신규)
@@ -96,15 +100,13 @@ function StatCard({ title, value, change, icon }: StatCardProps) {
 ```typescript
 function useAdminAnalytics(siteId: string) {
   const { data: overview, isLoading: overviewLoading } = useSWR(
-    `/admin/sites/${siteId}/analytics/overview`
+    `/admin/sites/${siteId}/analytics/overview`,
   );
 
-  const { data: posts, isLoading: postsLoading } = useSWR(
-    `/admin/sites/${siteId}/analytics/posts`
-  );
+  const { data: posts, isLoading: postsLoading } = useSWR(`/admin/sites/${siteId}/analytics/posts`);
 
   const { data: daily, isLoading: dailyLoading } = useSWR(
-    `/admin/sites/${siteId}/analytics/daily?days=7`
+    `/admin/sites/${siteId}/analytics/daily?days=7`,
   );
 
   return {
@@ -117,6 +119,7 @@ function useAdminAnalytics(siteId: string) {
 ```
 
 ## 구현 체크리스트
+
 - [ ] useAdminAnalytics 훅 구현
 - [ ] StatCard 컴포넌트 구현
 - [ ] PostStatsTable 컴포넌트 구현
@@ -128,6 +131,7 @@ function useAdminAnalytics(siteId: string) {
 - [ ] (선택) DailyChart 구현
 
 ## 테스트 계획
+
 - [ ] 통계 데이터 로딩 확인
 - [ ] 개요 카드 표시 확인
 - [ ] 게시글 테이블 표시 확인

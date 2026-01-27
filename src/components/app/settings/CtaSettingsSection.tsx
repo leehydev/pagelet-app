@@ -331,12 +331,7 @@ export function CtaSettingsSection({
             <div className="space-y-2 pt-4 border-t border-gray-100">
               <Label className="text-sm font-medium text-gray-700">미리보기</Label>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <CtaPreview
-                  type={ctaType}
-                  text={ctaText}
-                  imageUrl={imageUrl}
-                  link={ctaLink}
-                />
+                <CtaPreview type={ctaType} text={ctaText} imageUrl={imageUrl} link={ctaLink} />
               </div>
             </div>
           </>

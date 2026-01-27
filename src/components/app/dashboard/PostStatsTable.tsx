@@ -59,9 +59,7 @@ export function PostStatsTable({ posts }: PostStatsTableProps) {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <div className="text-sm text-gray-900">
-                    {post.views.toLocaleString('ko-KR')}
-                  </div>
+                  <div className="text-sm text-gray-900">{post.views.toLocaleString('ko-KR')}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
                   <div className="text-sm text-gray-900">

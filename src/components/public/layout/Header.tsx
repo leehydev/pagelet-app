@@ -21,7 +21,14 @@ export function Header({ logoImageUrl, siteSlug, siteName, categories = [] }: He
             <div className="flex items-center gap-2">
               {logoImageUrl && (
                 <div className="relative w-[100px] h-[40px] overflow-hidden flex items-center">
-                  <Image src={logoImageUrl} alt={siteName} fill sizes="100px" className="object-contain object-left" priority />
+                  <Image
+                    src={logoImageUrl}
+                    alt={siteName}
+                    fill
+                    sizes="100px"
+                    className="object-contain object-left"
+                    priority
+                  />
                 </div>
               )}
               <h1 className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">

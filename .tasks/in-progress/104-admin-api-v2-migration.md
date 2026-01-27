@@ -19,17 +19,20 @@
 v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 
 ### 배경
+
 - v1: `/admin/sites/:siteId/posts` - URL에 siteId 포함
 - v2: `/admin/v2/posts` + 헤더 `X-Site-Id: {uuid}`
 
 ## 작업 범위
 
 ### 포함
+
 - 모든 Admin API 함수 v2 버전 추가 (34개)
 - 관련 Hook v2 버전 추가
 - 기존 v1 함수 deprecation 표시
 
 ### 제외
+
 - v1 API 삭제 (하위 호환성 유지)
 - 백엔드 v2 API 추가 (별도 백엔드 작업)
 
@@ -38,6 +41,7 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 ### 영향받는 파일
 
 **수정:**
+
 - `src/lib/api/client.ts` - v2 API 함수 추가
 - `src/hooks/use-posts.ts` - v2 Hook 추가
 - `src/hooks/use-categories.ts` - v2 Hook 추가 (완료)
@@ -48,15 +52,15 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 
 ### API 변경 목록
 
-| 기존 (v1) | 변경 (v2) |
-|-----------|-----------|
-| `/admin/sites/:siteId/posts` | `/admin/v2/posts` |
+| 기존 (v1)                            | 변경 (v2)                 |
+| ------------------------------------ | ------------------------- |
+| `/admin/sites/:siteId/posts`         | `/admin/v2/posts`         |
 | `/admin/sites/:siteId/posts/:postId` | `/admin/v2/posts/:postId` |
-| `/admin/sites/:siteId/categories` | `/admin/v2/categories` |
-| `/admin/sites/:siteId/settings` | `/admin/v2/settings` |
-| `/admin/sites/:siteId/uploads/*` | `/admin/v2/uploads/*` |
-| `/admin/sites/:siteId/banners` | `/admin/v2/banners` |
-| `/admin/sites/:siteId/analytics/*` | `/admin/v2/analytics/*` |
+| `/admin/sites/:siteId/categories`    | `/admin/v2/categories`    |
+| `/admin/sites/:siteId/settings`      | `/admin/v2/settings`      |
+| `/admin/sites/:siteId/uploads/*`     | `/admin/v2/uploads/*`     |
+| `/admin/sites/:siteId/banners`       | `/admin/v2/banners`       |
+| `/admin/sites/:siteId/analytics/*`   | `/admin/v2/analytics/*`   |
 
 ## 구현 체크리스트
 
@@ -68,6 +72,7 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 - [x] Analytics v2 API 준비 여부 확인
 
 ### Phase 2: API 함수 추가
+
 - [x] Category v2 API (완료 - #101)
 - [x] Posts v2 API 함수 추가
 - [x] Settings v2 API 함수 추가
@@ -77,6 +82,7 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 - [x] Branding v2 API 함수 추가
 
 ### Phase 3: Hook 추가
+
 - [x] Category v2 Hook (완료 - #101)
 - [x] Posts v2 Hook 추가
 - [x] Settings v2 Hook 추가

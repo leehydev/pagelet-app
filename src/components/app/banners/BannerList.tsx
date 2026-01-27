@@ -111,11 +111,7 @@ export function BannerList({ siteId }: BannerListProps) {
 
   if (error) {
     return (
-      <QueryError
-        error={error}
-        onRetry={refetch}
-        fallbackMessage="배너를 불러올 수 없습니다."
-      />
+      <QueryError error={error} onRetry={refetch} fallbackMessage="배너를 불러올 수 없습니다." />
     );
   }
 

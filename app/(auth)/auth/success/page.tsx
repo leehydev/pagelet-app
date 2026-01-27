@@ -90,7 +90,5 @@ export default function AuthSuccessPage() {
     );
   }
 
-  return (
-    <LoadingSpinner fullScreen size="lg" message="로그인 확인 중..." />
-  );
+  return <LoadingSpinner fullScreen size="lg" message="로그인 확인 중..." />;
 }

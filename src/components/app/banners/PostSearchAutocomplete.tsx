@@ -39,11 +39,11 @@ export function PostSearchAutocomplete({
   }, [query]);
 
   // 검색 쿼리
-  const { data: results, isLoading, error } = useSearchPosts(
-    siteId,
-    debouncedQuery,
-    isOpen && debouncedQuery.length >= 1,
-  );
+  const {
+    data: results,
+    isLoading,
+    error,
+  } = useSearchPosts(siteId, debouncedQuery, isOpen && debouncedQuery.length >= 1);
 
   // 외부 클릭 감지
   useEffect(() => {
