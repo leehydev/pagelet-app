@@ -2,29 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getMe, getAccessToken, setAccessToken, removeAccessToken, type User } from '@/lib/api';
-
-async function tryRefreshToken(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/auth/refresh', { method: 'POST' });
-    const data = await res.json();
-
-    if (res.ok && data.accessToken) {
-      setAccessToken(data.accessToken);
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function logout() {
-  removeAccessToken();
-  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/signin')) {
-    window.location.href = '/signin';
-  }
-}
+import { getMe, type User } from '@/lib/api';
+import { hasAccessToken, refreshToken, logout } from '@/lib/api/auth-utils';
 
 export function useUser() {
   const [isReady, setIsReady] = useState(false);
@@ -33,14 +12,14 @@ export function useUser() {
   useEffect(() => {
     async function initializeAuth() {
       // 1. accessToken 있으면 바로 준비 완료
-      if (getAccessToken()) {
+      if (hasAccessToken()) {
         setHasToken(true);
         setIsReady(true);
         return;
       }
 
       // 2. accessToken 없으면 리프레시 시도
-      const refreshed = await tryRefreshToken();
+      const refreshed = await refreshToken();
 
       if (refreshed) {
         // 리프레시 성공

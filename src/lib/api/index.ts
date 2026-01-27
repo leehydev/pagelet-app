@@ -13,4 +13,7 @@ export * from './types';
 // 클라이언트 API export (기본)
 export * from './client';
 
+// 인증 유틸리티 export
+export * from './auth-utils';
+
 // 서버 API는 별도 import 필요: '@/lib/api/server'
