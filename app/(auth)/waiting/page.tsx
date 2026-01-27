@@ -29,7 +29,7 @@ export default function WaitingPage() {
     }
   }, [user, isLoading, error, router]);
 
-  if (isLoading || error) {
+  if (isLoading || error || !user) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 

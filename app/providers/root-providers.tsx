@@ -1,19 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 
 import { GlobalModal } from '@/components/app/modal/GlobalModal';
 
 import { ReactQueryProvider } from '@/lib/react-query';
 import { ThemeProvider } from './theme-provider';
+import { useMounted } from '@/hooks/use-mounted';
 
 export function RootProviders({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   return (
     <ThemeProvider>

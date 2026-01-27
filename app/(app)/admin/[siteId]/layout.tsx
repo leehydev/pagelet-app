@@ -26,8 +26,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     }
   }, [sites, siteId, isLoading, isError, router]);
 
-  // 로딩 중 또는 유효성 검증 중
-  if (isLoading) {
+  // 로딩 중 또는 사이트 정보 없음 (유효성 검증 대기)
+  if (isLoading || !sites) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
