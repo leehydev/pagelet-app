@@ -59,11 +59,12 @@ export function Pagination({ meta, basePath, className }: PaginationProps) {
   const buttonActiveClass = 'bg-gray-900 text-white hover:bg-gray-800';
 
   return (
-    <nav className={cn('flex flex-col items-center gap-4', className)} aria-label="페이지 네비게이션">
+    <nav
+      className={cn('flex flex-col items-center gap-4', className)}
+      aria-label="페이지 네비게이션"
+    >
       {/* 총 게시글 수 */}
-      <p className="text-sm text-gray-500">
-        총 {totalItems.toLocaleString()}개의 게시글
-      </p>
+      <p className="text-sm text-gray-500">총 {totalItems.toLocaleString()}개의 게시글</p>
 
       {/* 페이지네이션 버튼 */}
       <div className="flex items-center gap-1">
@@ -99,7 +100,7 @@ export function Pagination({ meta, basePath, className }: PaginationProps) {
 
         {/* 페이지 번호 */}
         <div className="flex items-center gap-1 mx-2">
-          {pageNumbers.map((pageNum) => (
+          {pageNumbers.map((pageNum) =>
             pageNum === page ? (
               <span
                 key={pageNum}
@@ -116,8 +117,8 @@ export function Pagination({ meta, basePath, className }: PaginationProps) {
               >
                 {pageNum}
               </Link>
-            )
-          ))}
+            ),
+          )}
         </div>
 
         {/* 다음 페이지 */}

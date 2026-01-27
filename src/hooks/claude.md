@@ -6,32 +6,33 @@
 
 ### 데이터 페칭 (React Query)
 
-| 훅 | 용도 |
-|---|---|
-| `use-posts.ts` | 게시글 CRUD (목록, 생성, 수정, 삭제, 상태변경) |
-| `use-categories.ts` | 카테고리 CRUD |
-| `use-admin-sites.ts` | 관리자 사이트 목록 |
-| `use-site-settings.ts` | 사이트 설정 조회/수정 |
-| `use-user.ts` | 현재 사용자 정보 |
+| 훅                     | 용도                                           |
+| ---------------------- | ---------------------------------------------- |
+| `use-posts.ts`         | 게시글 CRUD (목록, 생성, 수정, 삭제, 상태변경) |
+| `use-categories.ts`    | 카테고리 CRUD                                  |
+| `use-admin-sites.ts`   | 관리자 사이트 목록                             |
+| `use-site-settings.ts` | 사이트 설정 조회/수정                          |
+| `use-user.ts`          | 현재 사용자 정보                               |
 
 ### 업로드
 
-| 훅 | 용도 |
-|---|---|
-| `use-upload.ts` | 게시글 이미지 업로드 (Pre-signed URL) |
+| 훅                       | 용도                                  |
+| ------------------------ | ------------------------------------- |
+| `use-upload.ts`          | 게시글 이미지 업로드 (Pre-signed URL) |
 | `use-branding-upload.ts` | 브랜딩 자산 업로드 (로고, 파비콘, OG) |
 
 ### UI
 
-| 훅 | 용도 |
-|---|---|
-| `use-auto-save.ts` | 임시저장 자동 저장 |
-| `use-mobile.ts` | 반응형 모바일 감지 |
-| `use-app-back.ts` | 네비게이션 히스토리 관리 |
+| 훅                 | 용도                     |
+| ------------------ | ------------------------ |
+| `use-auto-save.ts` | 임시저장 자동 저장       |
+| `use-mobile.ts`    | 반응형 모바일 감지       |
+| `use-app-back.ts`  | 네비게이션 히스토리 관리 |
 
 ## 패턴
 
 ### React Query 래핑
+
 ```typescript
 export function usePosts(siteId: string) {
   return useQuery({
@@ -52,6 +53,7 @@ export function useCreatePost() {
 ```
 
 ### 업로드 플로우
+
 ```typescript
 // 1. Pre-signed URL 요청
 const { uploadUrl, publicUrl, s3Key } = await presignUpload(params);
@@ -67,9 +69,9 @@ await completeUpload({ s3Key });
 
 ## 쿼리 키
 
-| 키 | 용도 |
-|---|---|
-| `['posts', siteId]` | 사이트별 게시글 |
-| `['categories', siteId]` | 사이트별 카테고리 |
-| `['site-settings', siteId]` | 사이트 설정 |
-| `['user']` | 현재 사용자 |
+| 키                          | 용도              |
+| --------------------------- | ----------------- |
+| `['posts', siteId]`         | 사이트별 게시글   |
+| `['categories', siteId]`    | 사이트별 카테고리 |
+| `['site-settings', siteId]` | 사이트 설정       |
+| `['user']`                  | 현재 사용자       |

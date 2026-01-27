@@ -177,18 +177,8 @@ interface SiteContextValue {
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 
-export function SiteProvider({ 
-  siteId, 
-  children 
-}: { 
-  siteId: string; 
-  children: React.ReactNode;
-}) {
-  return (
-    <SiteContext.Provider value={{ siteId }}>
-      {children}
-    </SiteContext.Provider>
-  );
+export function SiteProvider({ siteId, children }: { siteId: string; children: React.ReactNode }) {
+  return <SiteContext.Provider value={{ siteId }}>{children}</SiteContext.Provider>;
 }
 
 export function useSiteContext() {
@@ -238,7 +228,13 @@ export default function SiteLayout({
 'use client';
 
 import { useRouter, usePathname, useParams } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAdminSites } from '@/hooks/use-admin-sites';
 
 export function SiteSwitcher() {
@@ -246,15 +242,12 @@ export function SiteSwitcher() {
   const pathname = usePathname();
   const params = useParams();
   const currentSiteId = params.siteId as string;
-  
+
   const { data: sites, isLoading } = useAdminSites();
 
   const handleSiteChange = (newSiteId: string) => {
     // /admin/{oldSiteId}/posts/123 → /admin/{newSiteId}/posts/123
-    const newPathname = pathname.replace(
-      `/admin/${currentSiteId}`,
-      `/admin/${newSiteId}`
-    );
+    const newPathname = pathname.replace(`/admin/${currentSiteId}`, `/admin/${newSiteId}`);
     router.push(newPathname);
   };
 
@@ -264,11 +257,7 @@ export function SiteSwitcher() {
 
   // 사이트 1개면 Select 비활성화
   if (sites.length <= 1) {
-    return (
-      <div className="text-sm font-medium">
-        {sites[0]?.name ?? '사이트 없음'}
-      </div>
-    );
+    return <div className="text-sm font-medium">{sites[0]?.name ?? '사이트 없음'}</div>;
   }
 
   return (
@@ -329,8 +318,8 @@ export default function AdminIndexPage() {
 
     // 사이트 N개 → localStorage에서 마지막 선택 복구
     const lastSiteId = localStorage.getItem('pagelet.admin.lastSiteId');
-    const validSite = sites.find(s => s.id === lastSiteId);
-    
+    const validSite = sites.find((s) => s.id === lastSiteId);
+
     if (validSite) {
       router.replace(`/admin/${validSite.id}`);
     }
@@ -401,7 +390,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
@@ -414,9 +403,9 @@ api.interceptors.response.use(
 export default function SiteLayout({ params, children }) {
   const { data: sites } = useAdminSites();
   const router = useRouter();
-  
+
   useEffect(() => {
-    if (sites && !sites.find(s => s.id === params.siteId)) {
+    if (sites && !sites.find((s) => s.id === params.siteId)) {
       // 유효하지 않은 siteId → /admin으로 리다이렉트
       router.replace('/admin');
     }
@@ -435,10 +424,7 @@ export default function SiteLayout({ params, children }) {
 siteId를 queryKey에 포함하지 않음 (URL이 이미 siteId를 포함하므로):
 
 ```ts
-['admin', 'posts']      // X-Site-Id 헤더로 구분
-['admin', 'categories']
-['admin', 'settings']
-['admin', 'sites']      // 사이트 목록 (siteId 무관)
+['admin', 'posts'][('admin', 'categories')][('admin', 'settings')][('admin', 'sites')]; // X-Site-Id 헤더로 구분 // 사이트 목록 (siteId 무관)
 ```
 
 ### 사이트 전환 시 Invalidate
@@ -450,8 +436,7 @@ URL이 바뀌면 자동으로 컴포넌트가 리마운트되므로, 대부분�
 ```ts
 const handleSiteChange = (newSiteId: string) => {
   queryClient.removeQueries({
-    predicate: (query) =>
-      query.queryKey[0] === 'admin' && query.queryKey[1] !== 'sites',
+    predicate: (query) => query.queryKey[0] === 'admin' && query.queryKey[1] !== 'sites',
   });
   router.push(`/admin/${newSiteId}`);
 };

@@ -68,15 +68,15 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
     };
   }, [isResizing, startPos, startSize, updateAttributes]);
 
-  const alignClass = isInline ? '' : {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
-  }[textAlign as string] || '';
+  const alignClass = isInline
+    ? ''
+    : {
+        left: 'text-left',
+        center: 'text-center',
+        right: 'text-right',
+      }[textAlign as string] || '';
 
-  const wrapperClass = isInline
-    ? 'inline-block align-top'
-    : `block ${alignClass}`;
+  const wrapperClass = isInline ? 'inline-block align-top' : `block ${alignClass}`;
 
   return (
     <NodeViewWrapper as={isInline ? 'span' : 'div'} className={wrapperClass}>

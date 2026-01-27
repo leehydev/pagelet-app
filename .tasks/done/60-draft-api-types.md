@@ -13,17 +13,18 @@
 ## 변경된 버전 관리 전략
 
 ### Status 정의
+
 - **PRIVATE**: 비공개 (새 글 또는 비공개 전환)
 - **PUBLISHED**: 공개
 
 ### 상태 판단 로직
 
-| posts.status | post_drafts | 상태 |
-|--------------|-------------|------|
-| PRIVATE | 있음 | 새 글 작성 중 |
-| PRIVATE | 없음 | 비공개 글 |
-| PUBLISHED | 없음 | 발행됨 |
-| PUBLISHED | 있음 | 발행됨 + 편집 중 |
+| posts.status | post_drafts | 상태             |
+| ------------ | ----------- | ---------------- |
+| PRIVATE      | 있음        | 새 글 작성 중    |
+| PRIVATE      | 없음        | 비공개 글        |
+| PUBLISHED    | 없음        | 발행됨           |
+| PUBLISHED    | 있음        | 발행됨 + 편집 중 |
 
 ## 요구사항
 
@@ -86,8 +87,8 @@ interface SaveDraftRequest {
 // Post 응답 타입 수정
 interface Post {
   // ... 기존 필드
-  status: PostStatus;  // PRIVATE | PUBLISHED
-  hasDraft: boolean;   // 신규 필드
+  status: PostStatus; // PRIVATE | PUBLISHED
+  hasDraft: boolean; // 신규 필드
 }
 ```
 
@@ -113,7 +114,7 @@ export async function getDraft(siteId: string, postId: string): Promise<PostDraf
 export async function saveDraft(
   siteId: string,
   postId: string,
-  data: SaveDraftRequest
+  data: SaveDraftRequest,
 ): Promise<PostDraft> {
   const response = await apiClient.put(`/admin/sites/${siteId}/posts/${postId}/draft`, data);
   return response.data;
@@ -145,14 +146,14 @@ export async function unpublishPost(siteId: string, postId: string): Promise<Pos
 
 ### API 엔드포인트 매핑
 
-| 함수 | Method | Path |
-|------|--------|------|
-| getDraft | GET | /admin/sites/:siteId/posts/:postId/draft |
-| saveDraft | PUT | /admin/sites/:siteId/posts/:postId/draft |
-| deleteDraft | DELETE | /admin/sites/:siteId/posts/:postId/draft |
-| publishPost | POST | /admin/sites/:siteId/posts/:postId/publish |
-| republishPost | POST | /admin/sites/:siteId/posts/:postId/republish |
-| unpublishPost | POST | /admin/sites/:siteId/posts/:postId/unpublish |
+| 함수          | Method | Path                                         |
+| ------------- | ------ | -------------------------------------------- |
+| getDraft      | GET    | /admin/sites/:siteId/posts/:postId/draft     |
+| saveDraft     | PUT    | /admin/sites/:siteId/posts/:postId/draft     |
+| deleteDraft   | DELETE | /admin/sites/:siteId/posts/:postId/draft     |
+| publishPost   | POST   | /admin/sites/:siteId/posts/:postId/publish   |
+| republishPost | POST   | /admin/sites/:siteId/posts/:postId/republish |
+| unpublishPost | POST   | /admin/sites/:siteId/posts/:postId/unpublish |
 
 ### 의존성
 
@@ -162,12 +163,14 @@ export async function unpublishPost(siteId: string, postId: string): Promise<Pos
 ## 구현 체크리스트
 
 ### 타입 정의
+
 - [ ] `PostStatus` 수정 (DRAFT -> PRIVATE)
 - [ ] `PostDraft` 인터페이스
 - [ ] `SaveDraftRequest` 인터페이스
 - [ ] `Post` 인터페이스에 `hasDraft` 추가
 
 ### API 함수
+
 - [ ] `getDraft()` - 드래프트 조회
 - [ ] `saveDraft()` - 드래프트 저장
 - [ ] `deleteDraft()` - 변경 취소
@@ -176,6 +179,7 @@ export async function unpublishPost(siteId: string, postId: string): Promise<Pos
 - [ ] `unpublishPost()` - 비공개 전환
 
 ### 기타
+
 - [ ] 에러 핸들링 (404 시 null 반환 등)
 - [ ] TypeScript 타입 체크 통과
 
@@ -196,6 +200,7 @@ export async function unpublishPost(siteId: string, postId: string): Promise<Pos
 ## 진행 로그
 
 ### 2026-01-24
+
 - 태스크 파일 생성
 - 버전 관리 전략 변경 (DRAFT -> PRIVATE/PUBLISHED)
 - 발행/비공개 전환 API 추가

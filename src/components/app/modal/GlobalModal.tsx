@@ -34,7 +34,7 @@ export function GlobalModal() {
   if (current.type === 'custom') {
     const CustomComponent = current.component;
     return (
-      <AlertDialog open={isOpen} onOpenChange={open => !open && close()}>
+      <AlertDialog open={isOpen} onOpenChange={(open) => !open && close()}>
         <AlertDialogContent ref={contentRef} onOpenAutoFocus={handleOpenAutoFocus}>
           <CustomComponent onClose={() => close()} {...current.props} />
         </AlertDialogContent>
@@ -43,7 +43,7 @@ export function GlobalModal() {
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={open => !open && close()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <AlertDialogContent ref={contentRef} onOpenAutoFocus={handleOpenAutoFocus}>
         <AlertDialogHeader>
           {current.title && <AlertDialogTitle>{current.title}</AlertDialogTitle>}

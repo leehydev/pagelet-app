@@ -19,8 +19,8 @@ export const useAppStore = create<AppState>()(
       decrement: () => set((state) => ({ count: state.count - 1 }), false, 'decrement'),
       reset: () => set({ count: 0 }, false, 'reset'),
     }),
-    { name: 'AppStore' }
-  )
+    { name: 'AppStore' },
+  ),
 );
 
 // Persist가 필요한 store 예시 (주석 처리)

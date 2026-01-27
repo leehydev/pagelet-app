@@ -7,7 +7,7 @@ export function useMenuEditorState(editor: Editor | null): EditorState | null {
     editor,
     selector: (ctx) => {
       if (!ctx.editor) return null;
-      
+
       return {
         isBold: ctx.editor.isActive('bold') ?? false,
         canBold: ctx.editor.can().chain().toggleBold().run() ?? false,

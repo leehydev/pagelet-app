@@ -61,7 +61,7 @@ export const useModalStore = create<ModalStore>()(
       current: null,
       queue: [],
 
-      alert: options => {
+      alert: (options) => {
         // 중복 내용 방지
         if (
           get().current?.type === 'alert' &&
@@ -71,36 +71,36 @@ export const useModalStore = create<ModalStore>()(
           return;
         }
 
-        return new Promise<void>(resolve => {
+        return new Promise<void>((resolve) => {
           const modal: AlertModal = {
             type: 'alert',
             ...options,
             resolve: () => resolve(),
           };
-          set(state => enqueueOrShow(state, modal));
+          set((state) => enqueueOrShow(state, modal));
         });
       },
 
-      confirm: options => {
-        return new Promise<boolean>(resolve => {
+      confirm: (options) => {
+        return new Promise<boolean>((resolve) => {
           const modal: ConfirmModal = {
             type: 'confirm',
             ...options,
             resolve,
           };
-          set(state => enqueueOrShow(state, modal));
+          set((state) => enqueueOrShow(state, modal));
         });
       },
 
       openCustom: (component, props) => {
-        return new Promise<void>(resolve => {
+        return new Promise<void>((resolve) => {
           const modal: CustomModal = {
             type: 'custom',
             component: component as ComponentType<{ onClose: () => void }>,
             props: props as Record<string, unknown>,
             resolve: () => resolve(),
           };
-          set(state => enqueueOrShow(state, modal));
+          set((state) => enqueueOrShow(state, modal));
         });
       },
 

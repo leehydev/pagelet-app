@@ -16,11 +16,7 @@ export default function AuthHeader() {
         {/* 로고 */}
         <Link href="/" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/logos/gray_logo_200.png"
-            alt="Pagelet"
-            className="h-7 w-auto"
-          />
+          <img src="/images/logos/gray_logo_200.png" alt="Pagelet" className="h-7 w-auto" />
         </Link>
 
         {/* 로그인/회원가입 버튼 */}

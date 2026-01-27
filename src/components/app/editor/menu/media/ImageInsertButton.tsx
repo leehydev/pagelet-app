@@ -106,9 +106,7 @@ export function ImageInsertButton({ editor, siteId, postId }: ImageInsertButtonP
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>이미지 추가</AlertDialogTitle>
-            <AlertDialogDescription>
-              파일을 업로드하거나 URL을 입력하세요.
-            </AlertDialogDescription>
+            <AlertDialogDescription>파일을 업로드하거나 URL을 입력하세요.</AlertDialogDescription>
           </AlertDialogHeader>
 
           {/* 모드 선택 탭 */}
@@ -184,9 +182,7 @@ export function ImageInsertButton({ editor, siteId, postId }: ImageInsertButtonP
                     <p className="text-sm text-gray-600 text-center">
                       클릭하여 이미지 선택
                       <br />
-                      <span className="text-xs text-gray-400">
-                        JPEG, PNG, WebP (최대 2MB)
-                      </span>
+                      <span className="text-xs text-gray-400">JPEG, PNG, WebP (최대 2MB)</span>
                     </p>
                   </div>
                 )}

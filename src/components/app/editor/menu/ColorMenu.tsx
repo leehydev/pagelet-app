@@ -24,7 +24,10 @@ export function ColorMenu({ editor, editorState }: MenuComponentProps) {
           className="w-8 h-8 rounded border border-border cursor-pointer opacity-0 absolute"
           style={{ appearance: 'none', WebkitAppearance: 'none' }}
         />
-        <div className="w-8 h-8 rounded border border-border flex items-center justify-center bg-background" title="색상 선택">
+        <div
+          className="w-8 h-8 rounded border border-border flex items-center justify-center bg-background"
+          title="색상 선택"
+        >
           <Palette className="h-4 w-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
@@ -56,10 +59,7 @@ export function ColorMenu({ editor, editorState }: MenuComponentProps) {
               color: editorState[color.isActive] ? '#fff' : undefined,
             }}
           >
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: color.value }}
-            />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color.value }} />
           </Button>
         );
       })}

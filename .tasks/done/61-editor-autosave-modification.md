@@ -13,10 +13,12 @@
 ## 변경된 버전 관리 전략
 
 ### Status 정의
+
 - **PRIVATE**: 비공개 (새 글 또는 비공개 전환)
 - **PUBLISHED**: 공개
 
 ### 자동저장 로직 (변경됨)
+
 - **PRIVATE 상태**: post_drafts에 UPSERT
 - **PUBLISHED 상태**: post_drafts에 UPSERT
 
@@ -47,11 +49,13 @@
 ### 자동저장 로직 변경
 
 **현재 동작:**
+
 ```
 변경 감지 -> debounce -> PATCH /posts/:id
 ```
 
 **새로운 동작:**
+
 ```
 변경 감지 -> debounce -> PUT /posts/:id/draft (모든 상태)
 ```
@@ -59,6 +63,7 @@
 ### 에디터 진입 시 데이터 로드
 
 **새로운 동작:**
+
 ```
 GET /posts/:id ->
   if (hasDraft) -> GET /posts/:id/draft -> 에디터 초기화 (드래프트 내용)
@@ -69,11 +74,11 @@ GET /posts/:id ->
 
 ```typescript
 interface EditorState {
-  post: Post;                    // 원본 게시글
-  draft: PostDraft | null;       // 편집 중인 드래프트
-  isEditingDraft: boolean;       // 드래프트 편집 모드 여부
-  hasUnsavedChanges: boolean;    // 저장되지 않은 변경 있음
-  lastSavedAt: Date | null;      // 마지막 저장 시간
+  post: Post; // 원본 게시글
+  draft: PostDraft | null; // 편집 중인 드래프트
+  isEditingDraft: boolean; // 드래프트 편집 모드 여부
+  hasUnsavedChanges: boolean; // 저장되지 않은 변경 있음
+  lastSavedAt: Date | null; // 마지막 저장 시간
 }
 ```
 
@@ -127,14 +132,14 @@ async function loadPostForEditor(postId: string) {
 
 ### UI 표시 변경
 
-| 상태 | 표시 |
-|------|------|
-| PRIVATE, 드래프트 없음 | "비공개" |
-| PRIVATE, 드래프트 있음 | "작성 중" |
-| PRIVATE, 저장 중 | "저장 중..." |
-| PUBLISHED, 드래프트 없음 | "발행됨" |
+| 상태                     | 표시                             |
+| ------------------------ | -------------------------------- |
+| PRIVATE, 드래프트 없음   | "비공개"                         |
+| PRIVATE, 드래프트 있음   | "작성 중"                        |
+| PRIVATE, 저장 중         | "저장 중..."                     |
+| PUBLISHED, 드래프트 없음 | "발행됨"                         |
 | PUBLISHED, 드래프트 있음 | "편집 중 (미발행 변경사항 있음)" |
-| PUBLISHED, 저장 중 | "저장 중..." |
+| PUBLISHED, 저장 중       | "저장 중..."                     |
 
 ### 의존성
 
@@ -144,17 +149,20 @@ async function loadPostForEditor(postId: string) {
 ## 구현 체크리스트
 
 ### 자동저장 로직 수정
+
 - [ ] 모든 상태에서 saveDraft() 호출
 - [ ] 저장 성공/실패 처리
 - [ ] 에러 핸들링 및 재시도 로직
 
 ### 에디터 진입 시 드래프트 로드
+
 - [ ] 게시글 조회 후 hasDraft 확인
 - [ ] hasDraft === true면 드래프트 조회
 - [ ] 드래프트 내용으로 에디터 초기화
 - [ ] isEditingDraft 상태 설정
 
 ### 저장 상태 표시
+
 - [ ] 상태별 표시 텍스트 수정
 - [ ] "작성 중" / "편집 중" 표시
 - [ ] 드래프트 마지막 수정 시간 표시 (선택)
@@ -163,12 +171,14 @@ async function loadPostForEditor(postId: string) {
 ## 테스트 시나리오
 
 ### PRIVATE 게시글 편집 (새 글)
+
 1. 새 글 작성 시작 (PRIVATE 상태로 생성)
 2. 내용 입력
 3. 자동저장 발동
 4. 기대: 드래프트에 저장됨, "작성 중" 표시
 
 ### PRIVATE 게시글 편집 (드래프트 있음)
+
 1. PRIVATE + 드래프트 있는 게시글 열기
 2. 기대: 드래프트 내용으로 에디터 로드
 3. 내용 수정
@@ -176,12 +186,14 @@ async function loadPostForEditor(postId: string) {
 5. 기대: 드래프트 업데이트됨
 
 ### PUBLISHED 게시글 편집 - 드래프트 없음
+
 1. PUBLISHED 상태 게시글 열기
 2. 내용 수정
 3. 자동저장 발동
 4. 기대: 드래프트 생성됨, "편집 중" 표시
 
 ### PUBLISHED 게시글 편집 - 드래프트 있음
+
 1. PUBLISHED + 드래프트 있는 게시글 열기
 2. 기대: 드래프트 내용으로 에디터 로드
 3. 내용 수정
@@ -206,6 +218,7 @@ async function loadPostForEditor(postId: string) {
 ## 진행 로그
 
 ### 2026-01-24
+
 - 태스크 파일 생성
 - 버전 관리 전략 변경 (DRAFT -> PRIVATE/PUBLISHED)
 - 자동저장 로직 단순화 (항상 drafts에 저장)
