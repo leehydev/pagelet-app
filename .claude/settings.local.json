@@ -22,7 +22,8 @@
       "Bash(npx tsc:*)",
       "Bash(gh pr list:*)",
       "Bash(npx prettier:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(pnpm prettier:*)"
     ]
   }
 }

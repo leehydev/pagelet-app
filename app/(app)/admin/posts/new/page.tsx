@@ -4,9 +4,9 @@
  * 새 게시글 작성 페이지
  *
  * 저장 로직:
- * - 5분마다 PRIVATE 상태로 post 자동 생성/저장
- * - 발행 버튼: PUBLISHED 상태로 발행
- * - 저장 버튼: 수동으로 즉시 저장
+ * - 저장 버튼: 선택된 공개 상태로 post 생성
+ * - 임시저장 버튼: PRIVATE post 생성 후 draft 저장
+ * - 자동저장: 5분마다 draft로 저장
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -23,7 +23,7 @@ import {
   PostStatus,
   revalidatePost,
   createAdminPost,
-  publishPost,
+  saveDraft,
   CreatePostRequest,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
+import { PostStatusRadio } from '@/components/app/post/PostStatusRadio';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
@@ -95,16 +96,16 @@ export default function NewPostPage() {
   const [editorReady, setEditorReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdPostId, setCreatedPostId] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<PostStatus>(PostStatus.PRIVATE);
 
   // --------------------------------------------------------------------------
   // 자동 저장
   // --------------------------------------------------------------------------
 
-  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged, saveNow, getPostId } =
+  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged, getPostId } =
     useAutoSave({
       siteId,
       postId: createdPostId,
-      postStatus: null, // 새 글은 상태 없음 (PRIVATE로 생성됨)
       intervalMs: 5 * 60 * 1000,
       onSaveSuccess: () => {
         toast.success('자동 저장되었습니다', { duration: 2000 });
@@ -177,16 +178,20 @@ export default function NewPostPage() {
     const contentJson = editor.getJSON();
     if (!contentJson) return null;
 
+    const trimOrNull = (value: string | undefined): string | null =>
+      value?.trim() ? value.trim() : null;
+
     return {
       title: data.title?.trim(),
       subtitle: data.subtitle?.trim(),
+      slug: data.slug?.trim() || null,
       contentJson,
       contentHtml: editor.getHTML(),
       contentText: editor.getText().trim(),
-      categoryId: data.categoryId?.trim() || undefined,
-      seoTitle: data.seoTitle?.trim() || undefined,
-      seoDescription: data.seoDescription?.trim() || undefined,
-      ogImageUrl: data.ogImageUrl?.trim() || undefined,
+      categoryId: data.categoryId?.trim() || null,
+      seoTitle: trimOrNull(data.seoTitle),
+      seoDescription: trimOrNull(data.seoDescription),
+      ogImageUrl: trimOrNull(data.ogImageUrl),
     };
   }, [methods]);
 
@@ -203,47 +208,30 @@ export default function NewPostPage() {
   }, []);
 
   // --------------------------------------------------------------------------
-  // 발행 Mutations
+  // 저장 Mutation
   // --------------------------------------------------------------------------
 
-  // postId가 있을 때: publishPost API 호출
-  const publishMutation = useMutation({
-    mutationFn: (postId: string) => publishPost(siteId, postId),
-    onSuccess: async (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && updatedPost.slug) {
-        try {
-          await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (e) {
-          console.warn('Failed to revalidate:', e);
-        }
-      }
-      toast.success('게시글이 발행되었습니다');
-      router.push('/admin/posts');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
-    },
-  });
-
-  // postId가 없을 때: 바로 PUBLISHED로 생성
-  const createAndPublishMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
     onSuccess: async (createdPost) => {
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && createdPost.slug) {
+      if (createdPost.status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
         try {
           await revalidatePost(siteSettings.slug, createdPost.slug);
         } catch (e) {
           console.warn('Failed to revalidate:', e);
         }
       }
-      toast.success('게시글이 발행되었습니다');
+      toast.success(
+        createdPost.status === PostStatus.PUBLISHED
+          ? '게시글이 발행되었습니다'
+          : '게시글이 저장되었습니다',
+      );
       router.push('/admin/posts');
     },
     onError: (err) => {
       const errorCode = getErrorCode(err);
-      const errorMessage = getErrorDisplayMessage(err, '게시글 발행에 실패했습니다.');
+      const errorMessage = getErrorDisplayMessage(err, '게시글 저장에 실패했습니다.');
 
       if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
         methods.setError('slug', { type: 'manual', message: errorMessage });
@@ -259,11 +247,10 @@ export default function NewPostPage() {
   // 핸들러
   // --------------------------------------------------------------------------
 
-  /** 발행 버튼 */
-  const handlePublish = async () => {
+  /** 저장 버튼 */
+  const handleSave = async () => {
     setError(null);
 
-    // 폼 검증
     const isValid = await methods.trigger();
     if (!isValid) {
       setTimeout(() => scrollToFirstError(methods.formState.errors), 150);
@@ -281,7 +268,6 @@ export default function NewPostPage() {
     const contentHtml = editor.getHTML();
     const contentText = editor.getText().trim();
 
-    // 내용 검증
     const isEmpty =
       !contentJson?.content ||
       (Array.isArray(contentJson.content) &&
@@ -295,50 +281,85 @@ export default function NewPostPage() {
       return;
     }
 
-    const currentPostId = getPostId();
+    const trimOrNull = (value: string | undefined): string | null =>
+      value?.trim() ? value.trim() : null;
 
-    if (currentPostId) {
-      // 이미 저장된 게시글이 있으면 publishPost 호출
-      publishMutation.mutate(currentPostId);
-    } else {
-      // 새 글이면 바로 PUBLISHED로 생성
-      createAndPublishMutation.mutate({
-        title: data.title.trim(),
-        subtitle: data.subtitle.trim(),
-        slug: data.slug?.trim() || undefined,
-        contentJson,
-        contentHtml,
-        contentText,
-        status: PostStatus.PUBLISHED,
-        categoryId: data.categoryId?.trim() || undefined,
-        seoTitle: data.seoTitle?.trim() || undefined,
-        seoDescription: data.seoDescription?.trim() || undefined,
-        ogImageUrl: data.ogImageUrl?.trim() || undefined,
-      });
-    }
+    saveMutation.mutate({
+      title: data.title.trim(),
+      subtitle: data.subtitle.trim(),
+      slug: data.slug?.trim() || null,
+      contentJson,
+      contentHtml,
+      contentText,
+      status: selectedStatus,
+      categoryId: data.categoryId?.trim() || null,
+      seoTitle: trimOrNull(data.seoTitle),
+      seoDescription: trimOrNull(data.seoDescription),
+      ogImageUrl: trimOrNull(data.ogImageUrl),
+    });
   };
 
-  /** 저장 버튼 (수동) */
-  const handleSave = async () => {
-    // 저장 전에 최신 데이터 수집
+  /** 임시저장 버튼 */
+  const handleDraftSave = async () => {
     const data = collectFormData();
-    if (data) {
-      markAsChanged(data);
+    if (!data) {
+      toast.error('에디터가 준비되지 않았습니다');
+      return;
     }
 
-    const saved = await saveNow();
-    if (saved) {
-      toast.success('저장되었습니다');
-      const savedPostId = getPostId();
-      if (savedPostId) {
-        router.push(`/admin/posts/${savedPostId}`);
+    let id = createdPostId || getPostId();
+
+    // 새 글이면 먼저 PRIVATE post 생성
+    if (!id) {
+      const isEmpty =
+        !data.contentJson?.content ||
+        (Array.isArray(data.contentJson.content) &&
+          (data.contentJson.content.length === 0 ||
+            (data.contentJson.content.length === 1 &&
+              data.contentJson.content[0].type === 'paragraph' &&
+              (!data.contentJson.content[0].content ||
+                data.contentJson.content[0].content.length === 0))));
+
+      if (isEmpty || !data.contentText) {
+        toast.error('임시저장할 내용을 입력해주세요');
+        return;
+      }
+
+      try {
+        const post = await createAdminPost(siteId, {
+          title: data.title || '제목 없음',
+          subtitle: data.subtitle || ' ',
+          slug: data.slug,
+          contentJson: data.contentJson,
+          contentHtml: data.contentHtml,
+          contentText: data.contentText,
+          status: PostStatus.PRIVATE,
+          categoryId: data.categoryId,
+          seoTitle: data.seoTitle,
+          seoDescription: data.seoDescription,
+          ogImageUrl: data.ogImageUrl,
+        });
+        id = post.id;
+        setCreatedPostId(id);
+        queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+        toast.success('임시저장되었습니다');
+      } catch (err) {
+        toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
+        return;
       }
     } else {
-      toast.error('저장할 내용이 없습니다. 본문을 입력해주세요.');
+      // 기존 글이면 draft 저장
+      try {
+        await saveDraft(siteId, id, data);
+        queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+        toast.success('임시저장되었습니다');
+      } catch (err) {
+        toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
+      }
     }
   };
 
-  const isPending = isSaving || publishMutation.isPending || createAndPublishMutation.isPending;
+  const isPending = isSaving || saveMutation.isPending;
 
   // --------------------------------------------------------------------------
   // 렌더링
@@ -392,25 +413,33 @@ export default function NewPostPage() {
               {/* 게시글 관리 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-4">게시글 관리</h3>
+
+                {/* 공개 여부 */}
+                <div className="mb-4">
+                  <PostStatusRadio
+                    value={selectedStatus}
+                    onChange={setSelectedStatus}
+                    disabled={isPending}
+                  />
+                </div>
+
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
                     className="w-full"
-                    onClick={handlePublish}
+                    onClick={handleSave}
                     disabled={isPending}
                   >
-                    {publishMutation.isPending || createAndPublishMutation.isPending
-                      ? '발행 중...'
-                      : '발행'}
+                    {saveMutation.isPending ? '저장 중...' : '저장'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={handleSave}
-                    disabled={isPending || !hasUnsavedChanges}
+                    onClick={handleDraftSave}
+                    disabled={isPending}
                   >
-                    {isSaving ? '저장 중...' : '저장'}
+                    임시저장
                   </Button>
                   <Button
                     type="button"
@@ -503,7 +532,7 @@ export default function NewPostPage() {
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
                     const data = collectFormData();
-                    if (data) markAsChanged({ ...data, ogImageUrl: url || undefined });
+                    if (data) markAsChanged({ ...data, ogImageUrl: url || null });
                   }}
                   disabled={isPending}
                 />

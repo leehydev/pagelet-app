@@ -21,6 +21,7 @@ import type {
   CreateSiteRequest,
   CreatePostRequest,
   UpdatePostRequest,
+  ReplacePostRequest,
   UpdateSiteSettingsRequest,
   PresignUploadRequest,
   PresignUploadResponse,
@@ -305,6 +306,20 @@ export async function updateAdminPost(
     `/admin/sites/${siteId}/posts/${postId}`,
     data,
   );
+  return response.data.data;
+}
+
+/**
+ * PUT으로 게시글 전체 교체
+ * 모든 필드를 명시적으로 전달하여 덮어씁니다.
+ * 백엔드에서 draft가 있으면 자동 삭제됩니다.
+ */
+export async function replaceAdminPost(
+  siteId: string,
+  postId: string,
+  data: ReplacePostRequest,
+): Promise<Post> {
+  const response = await api.put<ApiResponse<Post>>(`/admin/sites/${siteId}/posts/${postId}`, data);
   return response.data.data;
 }
 
@@ -627,6 +642,14 @@ export async function getAdminPostV2(postId: string): Promise<Post> {
  */
 export async function updateAdminPostV2(postId: string, data: UpdatePostRequest): Promise<Post> {
   const response = await api.patch<ApiResponse<Post>>(`/admin/v2/posts/${postId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 게시글 전체 교체 (PUT)
+ */
+export async function replaceAdminPostV2(postId: string, data: ReplacePostRequest): Promise<Post> {
+  const response = await api.put<ApiResponse<Post>>(`/admin/v2/posts/${postId}`, data);
   return response.data.data;
 }
 

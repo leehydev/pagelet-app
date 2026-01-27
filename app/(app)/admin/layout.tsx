@@ -10,11 +10,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { QueryError } from '@/components/common/QueryError';
 import { AdminSidebar } from '@/components/app/layout/AdminSidebar';
 
-const ONBOARDING_PATHS = {
-  1: '/onboarding/profile',
-  2: '/onboarding/site',
-  3: '/onboarding/first-post',
-} as const;
+const ONBOARDING_PATH = '/onboarding/site';
 
 /**
  * Admin 레이아웃
@@ -45,9 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     if (user?.accountStatus === AccountStatus.ONBOARDING) {
-      const step = user.onboardingStep || 1;
-      const path = ONBOARDING_PATHS[step as keyof typeof ONBOARDING_PATHS];
-      router.replace(path || '/onboarding/profile');
+      router.replace(ONBOARDING_PATH);
     }
   }, [user, userLoading, userError, router]);
 

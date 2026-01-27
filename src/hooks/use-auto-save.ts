@@ -4,9 +4,8 @@
  * 게시글 자동 저장 훅
  *
  * 저장 로직:
- * - 새 글 작성: 5분마다 PRIVATE 상태로 post 생성/저장
- * - PRIVATE 수정: 5분마다 post에 직접 저장 (드래프트 사용 안함)
- * - PUBLIC 수정: 5분마다 draft로 저장 (발행본 유지)
+ * - 새 글 작성: 5분마다 PRIVATE post 생성 후 draft 저장
+ * - 기존 글 수정: 5분마다 draft로 저장 (상태 무관)
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -15,10 +14,8 @@ import dayjs from 'dayjs';
 import {
   saveDraft,
   createAdminPost,
-  updateAdminPost,
   CreatePostRequest,
   SaveDraftRequest,
-  UpdatePostRequest,
   PostStatus,
 } from '@/lib/api';
 
@@ -29,7 +26,6 @@ import {
 interface UseAutoSaveOptions {
   siteId: string;
   postId: string | null; // null이면 새 글 모드
-  postStatus: PostStatus | null; // 현재 게시글 상태 (새 글이면 null)
   intervalMs?: number; // 자동저장 간격 (기본 5분)
   onSaveSuccess?: () => void;
   onSaveError?: (error: Error) => void;
@@ -42,7 +38,7 @@ interface AutoSaveState {
   hasUnsavedChanges: boolean;
 }
 
-type FormData = SaveDraftRequest | UpdatePostRequest;
+type FormData = SaveDraftRequest;
 
 // ============================================================================
 // 유틸리티 함수
@@ -94,7 +90,6 @@ function toCreateRequest(data: FormData): CreatePostRequest {
 export function useAutoSave({
   siteId,
   postId: initialPostId,
-  postStatus,
   intervalMs = 5 * 60 * 1000, // 5분
   onSaveSuccess,
   onSaveError,
@@ -147,33 +142,7 @@ export function useAutoSave({
   });
 
   /**
-   * PRIVATE 게시글 직접 저장 (post 테이블에 저장)
-   */
-  const updatePostMutation = useMutation({
-    mutationFn: (data: UpdatePostRequest) => {
-      if (!postIdRef.current) throw new Error('postId is required');
-      return updateAdminPost(siteId, postIdRef.current, data);
-    },
-    onSuccess: () => {
-      setState((prev) => ({
-        ...prev,
-        lastSavedAt: dayjs().toDate(),
-        isSaving: false,
-        hasUnsavedChanges: false,
-      }));
-      if (pendingDataRef.current) {
-        lastSavedDataRef.current = JSON.stringify(pendingDataRef.current);
-      }
-      onSaveSuccess?.();
-    },
-    onError: (error: Error) => {
-      setState((prev) => ({ ...prev, isSaving: false }));
-      onSaveError?.(error);
-    },
-  });
-
-  /**
-   * PUBLIC 게시글 드래프트 저장
+   * draft 저장 (항상 draft로 저장)
    */
   const saveDraftMutation = useMutation({
     mutationFn: (data: SaveDraftRequest) => {
@@ -217,9 +186,8 @@ export function useAutoSave({
    * 저장 실행
    *
    * 저장 분기:
-   * 1. postId 없음 → 새 글 생성 (PRIVATE)
-   * 2. postStatus === PRIVATE → post 직접 저장
-   * 3. postStatus === PUBLISHED → draft 저장
+   * 1. postId 없음 → 새 글 생성 (PRIVATE) → draft 저장
+   * 2. postId 있음 → draft 저장
    *
    * @returns 저장 성공 여부
    */
@@ -228,41 +196,38 @@ export function useAutoSave({
     if (!data) return false;
 
     // 이미 저장 중이면 스킵
-    const isPending =
-      createMutation.isPending || updatePostMutation.isPending || saveDraftMutation.isPending;
+    const isPending = createMutation.isPending || saveDraftMutation.isPending;
     if (isPending) return false;
 
     setState((prev) => ({ ...prev, isSaving: true }));
 
-    // Case 1: 새 글 (postId 없음)
+    // Case 1: 새 글 (postId 없음) → post 생성 후 draft 저장
     if (!postIdRef.current) {
       // 내용이 비어있으면 저장하지 않음
       if (isContentEmpty(data.contentJson)) {
         setState((prev) => ({ ...prev, isSaving: false }));
         return false;
       }
-      const post = await createMutation.mutateAsync(toCreateRequest(data));
-      // mutateAsync 완료 후 즉시 postIdRef 설정 (onSuccess보다 먼저)
-      postIdRef.current = post.id;
-      return true;
+
+      try {
+        const post = await createMutation.mutateAsync(toCreateRequest(data));
+        // post 생성 후 draft도 저장
+        postIdRef.current = post.id;
+        await saveDraftMutation.mutateAsync(data);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
-    // Case 2: PRIVATE 게시글 → post 직접 저장
-    if (postStatus === PostStatus.PRIVATE) {
-      await updatePostMutation.mutateAsync(data as UpdatePostRequest);
+    // Case 2: 기존 글 → draft 저장 (상태 무관)
+    try {
+      await saveDraftMutation.mutateAsync(data);
       return true;
+    } catch {
+      return false;
     }
-
-    // Case 3: PUBLISHED 게시글 → draft 저장
-    if (postStatus === PostStatus.PUBLISHED) {
-      await saveDraftMutation.mutateAsync(data as SaveDraftRequest);
-      return true;
-    }
-
-    // 그 외 상태는 저장하지 않음
-    setState((prev) => ({ ...prev, isSaving: false }));
-    return false;
-  }, [postStatus, createMutation, updatePostMutation, saveDraftMutation]);
+  }, [createMutation, saveDraftMutation]);
 
   /**
    * 수동 저장 트리거
@@ -285,8 +250,7 @@ export function useAutoSave({
   useEffect(() => {
     const interval = setInterval(() => {
       if (pendingDataRef.current && state.hasUnsavedChanges) {
-        const isPending =
-          createMutation.isPending || updatePostMutation.isPending || saveDraftMutation.isPending;
+        const isPending = createMutation.isPending || saveDraftMutation.isPending;
         if (!isPending) {
           executeSave();
         }
@@ -298,7 +262,6 @@ export function useAutoSave({
     intervalMs,
     state.hasUnsavedChanges,
     createMutation.isPending,
-    updatePostMutation.isPending,
     saveDraftMutation.isPending,
     executeSave,
   ]);

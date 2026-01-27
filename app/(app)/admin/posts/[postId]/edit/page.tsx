@@ -4,16 +4,10 @@
  * 게시글 수정 페이지
  *
  * 저장 로직:
- * - PRIVATE 상태: 5분마다 post에 직접 저장 (드래프트 사용 안함)
- * - PUBLIC 상태: 5분마다 draft로 저장 (발행본 유지)
- *
- * 드래프트 처리:
- * - PUBLIC 진입 시 draft 있으면 → 불러올지 확인 모달
- * - PRIVATE 진입 시 draft 있으면 → 불러올지 확인 모달 (불러오면 post에 저장 후 draft 삭제)
- *
- * 버튼 분리:
- * - PRIVATE: 저장하기 (post 직접 저장), 발행하기
- * - PUBLIC: 임시저장 (draft), 업데이트 (재발행)
+ * - 저장 버튼: PUT으로 전체 교체 (draft 자동 삭제)
+ * - 임시저장 버튼: draft만 저장
+ * - 불러오기 버튼: draft 내용을 폼에 로드
+ * - 자동저장: 5분마다 draft로 저장
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -27,35 +21,24 @@ import {
   getAdminPost,
   getDraft,
   PostStatus,
-  UpdatePostRequest,
+  ReplacePostRequest,
   revalidatePost,
-  publishPost,
-  republishPost,
-  deleteDraft,
-  unpublishPost,
-  updateAdminPost,
+  replaceAdminPost,
   saveDraft,
 } from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
+import { PostStatusRadio } from '@/components/app/post/PostStatusRadio';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
-import { getErrorDisplayMessage } from '@/lib/error-handler';
+import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
+import { scrollToFirstError } from '@/lib/scroll-to-error';
+import { AxiosError } from 'axios';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { toast } from 'sonner';
 
@@ -88,9 +71,6 @@ const postSchema = z.object({
 
 type PostFormData = z.infer<typeof postSchema>;
 
-// 드래프트 선택 모달 결과
-type DraftChoice = 'pending' | 'use-draft' | 'use-original';
-
 // ============================================================================
 // 메인 컴포넌트
 // ============================================================================
@@ -108,15 +88,8 @@ export default function EditPostPage() {
 
   const editorRef = useRef<TiptapEditorRef>(null);
   const [editorReady, setEditorReady] = useState(false);
-
-  // 드래프트 선택 상태: pending(선택 대기), use-draft(드래프트 사용), use-original(원본 사용)
-  const [draftChoice, setDraftChoice] = useState<DraftChoice>('pending');
-
-  // 모달 상태
-  const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [republishModalOpen, setRepublishModalOpen] = useState(false);
-  const [discardModalOpen, setDiscardModalOpen] = useState(false);
-  const [unpublishModalOpen, setUnpublishModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<PostStatus>(PostStatus.PRIVATE);
 
   // --------------------------------------------------------------------------
   // 데이터 조회
@@ -148,26 +121,12 @@ export default function EditPostPage() {
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // --------------------------------------------------------------------------
-  // 드래프트 선택 모달 (파생 상태)
-  // --------------------------------------------------------------------------
-
-  // 드래프트가 있고 아직 선택하지 않았으면 모달 표시
-  const showDraftModal = !postLoading && post?.hasDraft && !!draft && draftChoice === 'pending';
-
-  // 드래프트가 없으면 자동으로 원본 사용으로 설정
-  const effectiveDraftChoice: DraftChoice =
-    !postLoading && post && !post.hasDraft && draftChoice === 'pending'
-      ? 'use-original'
-      : draftChoice;
-
-  // --------------------------------------------------------------------------
   // 자동 저장
   // --------------------------------------------------------------------------
 
   const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged } = useAutoSave({
     siteId,
     postId,
-    postStatus: post?.status ?? null,
     intervalMs: 5 * 60 * 1000,
     onSaveSuccess: () => {
       toast.success('자동 저장되었습니다', { duration: 2000 });
@@ -188,13 +147,12 @@ export default function EditPostPage() {
     if (!post) return null;
 
     if (post.status === PostStatus.PUBLISHED) {
-      if (effectiveDraftChoice === 'use-draft' || post.hasDraft) {
+      if (post.hasDraft) {
         return { text: '편집 중 (미발행 변경사항)', color: 'text-amber-600' };
       }
       return { text: '발행됨', color: 'text-green-600' };
     }
 
-    // PRIVATE 상태
     return { text: '비공개', color: 'text-gray-600' };
   };
 
@@ -229,39 +187,22 @@ export default function EditPostPage() {
     },
   });
 
-  // 폼 초기화 (드래프트 선택 후)
+  // 폼 초기화 (post 데이터 로드 시)
   useEffect(() => {
-    if (!post || effectiveDraftChoice === 'pending') return;
+    if (!post) return;
 
-    if (effectiveDraftChoice === 'use-draft' && draft) {
-      // 드래프트 내용으로 초기화
-      methods.reset({
-        title: draft.title || '',
-        subtitle: draft.subtitle || '',
-        slug: post.slug || '', // slug는 원본에서
-        categoryId: draft.categoryId || '',
-        seoTitle: draft.seoTitle || '',
-        seoDescription: draft.seoDescription || '',
-        ogImageUrl: draft.ogImageUrl || '',
-      });
-      // 에디터 내용도 드래프트로 업데이트
-      const editor = editorRef.current?.getEditor();
-      if (editor && draft.contentJson) {
-        editor.commands.setContent(draft.contentJson);
-      }
-    } else {
-      // 원본 게시글로 초기화
-      methods.reset({
-        title: post.title || '',
-        subtitle: post.subtitle || '',
-        slug: post.slug || '',
-        categoryId: post.categoryId || '',
-        seoTitle: post.seoTitle || '',
-        seoDescription: post.seoDescription || '',
-        ogImageUrl: post.ogImageUrl || '',
-      });
-    }
-  }, [post, draft, effectiveDraftChoice, methods]);
+    methods.reset({
+      title: post.title || '',
+      subtitle: post.subtitle || '',
+      slug: post.slug || '',
+      categoryId: post.categoryId || '',
+      seoTitle: post.seoTitle || '',
+      seoDescription: post.seoDescription || '',
+      ogImageUrl: post.ogImageUrl || '',
+    });
+
+    setSelectedStatus(post.status);
+  }, [post, methods]);
 
   const watchedOgImageUrl = useWatch({
     control: methods.control,
@@ -272,7 +213,7 @@ export default function EditPostPage() {
   // 데이터 수집 & 변경 감지
   // --------------------------------------------------------------------------
 
-  const collectFormData = useCallback((): UpdatePostRequest | null => {
+  const collectFormData = useCallback((): ReplacePostRequest | null => {
     const data = methods.getValues();
     const editor = editorRef.current;
     if (!editor) return null;
@@ -280,27 +221,31 @@ export default function EditPostPage() {
     const contentJson = editor.getJSON();
     if (!contentJson) return null;
 
+    const trimOrNull = (value: string | undefined): string | null =>
+      value?.trim() ? value.trim() : null;
+
     return {
-      title: data.title?.trim(),
-      subtitle: data.subtitle?.trim(),
-      slug: data.slug?.trim() || undefined,
+      title: data.title?.trim() || '',
+      subtitle: data.subtitle?.trim() || '',
+      slug: data.slug?.trim() || null,
       contentJson,
       contentHtml: editor.getHTML(),
       contentText: editor.getText().trim(),
-      categoryId: data.categoryId?.trim() || undefined,
-      seoTitle: data.seoTitle?.trim() || undefined,
-      seoDescription: data.seoDescription?.trim() || undefined,
-      ogImageUrl: data.ogImageUrl?.trim() || undefined,
+      status: selectedStatus,
+      categoryId: data.categoryId?.trim() || null,
+      seoTitle: trimOrNull(data.seoTitle),
+      seoDescription: trimOrNull(data.seoDescription),
+      ogImageUrl: trimOrNull(data.ogImageUrl),
     };
-  }, [methods]);
+  }, [methods, selectedStatus]);
 
   const watchedValues = useWatch({ control: methods.control });
 
   useEffect(() => {
-    if (!editorReady || effectiveDraftChoice === 'pending') return;
+    if (!editorReady || !post) return;
     const data = collectFormData();
     if (data) markAsChanged(data);
-  }, [watchedValues, editorReady, effectiveDraftChoice, collectFormData, markAsChanged]);
+  }, [watchedValues, editorReady, post, collectFormData, markAsChanged]);
 
   const handleEditorReady = useCallback(() => {
     setEditorReady(true);
@@ -310,13 +255,14 @@ export default function EditPostPage() {
   // Mutations
   // --------------------------------------------------------------------------
 
-  // PRIVATE → PUBLISHED (발행)
-  const publishMutation = useMutation({
-    mutationFn: () => publishPost(siteId, postId),
+  // PUT으로 전체 교체 (draft 자동 삭제)
+  const saveMutation = useMutation({
+    mutationFn: (data: ReplacePostRequest) => replaceAdminPost(siteId, postId, data),
     onSuccess: async (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
+
       if (siteSettings?.slug && updatedPost.slug) {
         try {
           await revalidatePost(siteSettings.slug, updatedPost.slug);
@@ -324,121 +270,24 @@ export default function EditPostPage() {
           console.warn('Failed to revalidate:', e);
         }
       }
-      toast.success('게시글이 발행되었습니다');
+
+      toast.success(
+        updatedPost.status === PostStatus.PUBLISHED ? '게시글이 발행되었습니다' : '저장되었습니다',
+      );
       router.push('/admin/posts');
     },
     onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
-    },
-  });
+      const errorCode = getErrorCode(err);
+      const errorMessage = getErrorDisplayMessage(err, '저장에 실패했습니다');
 
-  // PUBLIC + draft → PUBLISHED (재발행/업데이트)
-  const republishMutation = useMutation({
-    mutationFn: () => republishPost(siteId, postId),
-    onSuccess: async (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && updatedPost.slug) {
-        try {
-          await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (e) {
-          console.warn('Failed to revalidate:', e);
-        }
+      if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
+        methods.setError('slug', { type: 'manual', message: errorMessage });
+        setError(errorMessage);
+        setTimeout(() => scrollToFirstError(errorMessage), 150);
+      } else {
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
-      toast.success('변경사항이 발행되었습니다');
-      router.push('/admin/posts');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '업데이트에 실패했습니다'));
-    },
-  });
-
-  // 드래프트 삭제 (변경 취소)
-  const discardMutation = useMutation({
-    mutationFn: () => deleteDraft(siteId, postId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      toast.success('변경사항이 취소되었습니다');
-      window.location.reload();
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '변경 취소에 실패했습니다'));
-    },
-  });
-
-  // PUBLISHED → PRIVATE (비공개 전환)
-  const unpublishMutation = useMutation({
-    mutationFn: () => unpublishPost(siteId, postId),
-    onSuccess: async (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && updatedPost.slug) {
-        try {
-          await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (e) {
-          console.warn('Failed to revalidate:', e);
-        }
-      }
-      toast.success('게시글이 비공개로 전환되었습니다');
-      router.push('/admin/posts');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '비공개 전환에 실패했습니다'));
-    },
-  });
-
-  // PRIVATE post 직접 저장
-  const savePostMutation = useMutation({
-    mutationFn: (data: UpdatePostRequest) => updateAdminPost(siteId, postId, data),
-    onSuccess: async (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (updatedPost.status === PostStatus.PUBLISHED && siteSettings?.slug && updatedPost.slug) {
-        try {
-          await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (e) {
-          console.warn('Failed to revalidate:', e);
-        }
-      }
-      toast.success('저장되었습니다');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '저장에 실패했습니다'));
-    },
-  });
-
-  // PUBLIC draft 저장 (임시저장)
-  const saveDraftMutation = useMutation({
-    mutationFn: (data: UpdatePostRequest) => saveDraft(siteId, postId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      toast.success('임시저장되었습니다');
-      router.push(`/admin/posts/${postId}`);
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
-    },
-  });
-
-  // PRIVATE에서 드래프트 불러온 후 저장 + 드래프트 삭제
-  const applyDraftAndDeleteMutation = useMutation({
-    mutationFn: async (data: UpdatePostRequest) => {
-      // 1. post에 저장
-      await updateAdminPost(siteId, postId, data);
-      // 2. draft 삭제
-      await deleteDraft(siteId, postId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      toast.success('저장되었습니다');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '저장에 실패했습니다'));
     },
   });
 
@@ -446,66 +295,82 @@ export default function EditPostPage() {
   // 핸들러
   // --------------------------------------------------------------------------
 
-  /** 드래프트 선택: 드래프트 사용 */
-  const handleUseDraft = () => {
-    setDraftChoice('use-draft');
-    // showDraftModal은 draftChoice가 'pending'이 아니면 자동으로 false가 됨
-  };
+  /** 저장 버튼 */
+  const handleSave = async () => {
+    setError(null);
 
-  /** 드래프트 선택: 원본 사용 (드래프트 폐기) */
-  const handleUseOriginal = async () => {
-    // 드래프트 삭제
-    try {
-      await deleteDraft(siteId, postId);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-    } catch (e) {
-      console.warn('Failed to delete draft:', e);
+    const isValid = await methods.trigger();
+    if (!isValid) {
+      setTimeout(() => scrollToFirstError(methods.formState.errors), 150);
+      return;
     }
-    setDraftChoice('use-original');
-  };
 
-  /** PRIVATE: 저장하기 버튼 */
-  const handleSavePrivate = () => {
     const data = collectFormData();
     if (!data) {
       toast.error('에디터가 준비되지 않았습니다');
       return;
     }
 
-    // PRIVATE에서 드래프트 불러온 경우 → post 저장 + draft 삭제
-    if (effectiveDraftChoice === 'use-draft') {
-      applyDraftAndDeleteMutation.mutate(data);
-    } else {
-      savePostMutation.mutate(data);
+    const isEmpty =
+      !data.contentJson?.content ||
+      (Array.isArray(data.contentJson.content) &&
+        (data.contentJson.content.length === 0 ||
+          (data.contentJson.content.length === 1 &&
+            data.contentJson.content[0].type === 'paragraph' &&
+            (!data.contentJson.content[0].content ||
+              data.contentJson.content[0].content.length === 0))));
+
+    if (isEmpty || !data.contentText) {
+      toast.error('내용을 입력해주세요');
+      return;
     }
+
+    saveMutation.mutate(data);
   };
 
-  /** PUBLIC: 임시저장 버튼 */
-  const handleSaveDraft = () => {
+  /** 임시저장 버튼 */
+  const handleDraftSave = async () => {
     const data = collectFormData();
     if (!data) {
       toast.error('에디터가 준비되지 않았습니다');
       return;
     }
-    saveDraftMutation.mutate(data);
-  };
 
-  /** PUBLIC: 업데이트(재발행) 버튼 - 먼저 드래프트 저장 후 재발행 */
-  const handleUpdate = async () => {
-    const data = collectFormData();
-    if (!data) {
-      toast.error('에디터가 준비되지 않았습니다');
-      return;
-    }
-
-    // 현재 폼 내용을 드래프트에 저장 후 재발행
     try {
       await saveDraft(siteId, postId, data);
-      republishMutation.mutate();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
+      toast.success('임시저장되었습니다');
     } catch (err) {
-      toast.error(getErrorDisplayMessage(err, '업데이트에 실패했습니다'));
+      toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
     }
+  };
+
+  /** 불러오기 버튼 */
+  const handleLoadDraft = async () => {
+    if (!draft) {
+      toast.error('불러올 임시저장 내용이 없습니다');
+      return;
+    }
+
+    // 폼에 draft 내용 로드
+    methods.reset({
+      title: draft.title || '',
+      subtitle: draft.subtitle || '',
+      slug: post?.slug || '', // slug는 원본에서
+      categoryId: draft.categoryId || '',
+      seoTitle: draft.seoTitle || '',
+      seoDescription: draft.seoDescription || '',
+      ogImageUrl: draft.ogImageUrl || '',
+    });
+
+    // 에디터에 content 로드
+    const editor = editorRef.current?.getEditor();
+    if (editor && draft.contentJson) {
+      editor.commands.setContent(draft.contentJson);
+    }
+
+    toast.success('임시저장 내용을 불러왔습니다');
   };
 
   // --------------------------------------------------------------------------
@@ -543,21 +408,7 @@ export default function EditPostPage() {
     );
   }
 
-  const isPrivate = post.status === PostStatus.PRIVATE;
-  const isPublished = post.status === PostStatus.PUBLISHED;
-  const hasDraftChanges =
-    effectiveDraftChoice === 'use-draft' ||
-    (post.hasDraft && effectiveDraftChoice !== 'use-original');
-
-  const isPending =
-    isSaving ||
-    publishMutation.isPending ||
-    republishMutation.isPending ||
-    discardMutation.isPending ||
-    unpublishMutation.isPending ||
-    savePostMutation.isPending ||
-    saveDraftMutation.isPending ||
-    applyDraftAndDeleteMutation.isPending;
+  const isPending = isSaving || saveMutation.isPending;
 
   // --------------------------------------------------------------------------
   // 렌더링
@@ -568,6 +419,12 @@ export default function EditPostPage() {
       <>
         <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
         <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
+              {error}
+            </div>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-6 max-w-7xl">
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
@@ -594,11 +451,7 @@ export default function EditPostPage() {
                     ref={editorRef}
                     siteId={siteId}
                     postId={postId}
-                    content={
-                      effectiveDraftChoice === 'use-draft' && draft?.contentJson
-                        ? draft.contentJson
-                        : post.contentJson || undefined
-                    }
+                    content={post.contentJson || undefined}
                     onEditorReady={handleEditorReady}
                   />
                 </Field>
@@ -610,82 +463,52 @@ export default function EditPostPage() {
               {/* 게시글 관리 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-4">게시글 관리</h3>
+
+                {/* 공개 여부 */}
+                <div className="mb-4">
+                  <PostStatusRadio
+                    value={selectedStatus}
+                    onChange={setSelectedStatus}
+                    disabled={isPending}
+                  />
+                </div>
+
                 <div className="flex flex-col gap-2">
-                  {/* PRIVATE 상태 버튼 */}
-                  {isPrivate && (
-                    <>
-                      {/* 발행 버튼 */}
-                      <Button
-                        type="button"
-                        className="w-full"
-                        onClick={() => setPublishModalOpen(true)}
-                        disabled={isPending}
-                      >
-                        {publishMutation.isPending ? '발행 중...' : '발행'}
-                      </Button>
-                      {/* 저장하기 버튼 (post 직접 저장) */}
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={handleSave}
+                    disabled={isPending}
+                  >
+                    {saveMutation.isPending ? '저장 중...' : '저장'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleDraftSave}
+                    disabled={isPending}
+                  >
+                    임시저장
+                  </Button>
+
+                  {/* 불러오기 버튼 (draft 있을 때만) */}
+                  {post.hasDraft && draft && (
+                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-700 mb-2">임시저장된 내용이 있습니다</p>
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full"
-                        onClick={handleSavePrivate}
+                        size="sm"
+                        className="w-full text-amber-700 border-amber-300 hover:bg-amber-100"
+                        onClick={handleLoadDraft}
                         disabled={isPending}
                       >
-                        {savePostMutation.isPending || applyDraftAndDeleteMutation.isPending
-                          ? '저장 중...'
-                          : '저장하기'}
+                        불러오기
                       </Button>
-                    </>
+                    </div>
                   )}
 
-                  {/* PUBLIC 상태 버튼 */}
-                  {isPublished && (
-                    <>
-                      {/* 업데이트(재발행) 버튼 */}
-                      <Button
-                        type="button"
-                        className="w-full"
-                        onClick={() => setRepublishModalOpen(true)}
-                        disabled={isPending}
-                      >
-                        {republishMutation.isPending ? '업데이트 중...' : '업데이트'}
-                      </Button>
-                      {/* 임시저장 버튼 (draft 저장) */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleSaveDraft}
-                        disabled={isPending}
-                      >
-                        {saveDraftMutation.isPending ? '저장 중...' : '임시저장'}
-                      </Button>
-                      {/* 변경 취소 (드래프트가 있을 때만) */}
-                      {hasDraftChanges && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="w-full text-amber-600 hover:text-amber-700"
-                          onClick={() => setDiscardModalOpen(true)}
-                          disabled={isPending}
-                        >
-                          {discardMutation.isPending ? '취소 중...' : '임시 저장본 삭제'}
-                        </Button>
-                      )}
-                      {/* 비공개 전환 */}
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        className="w-full"
-                        onClick={() => setUnpublishModalOpen(true)}
-                        disabled={isPending}
-                      >
-                        {unpublishMutation.isPending ? '처리 중...' : '비공개 전환'}
-                      </Button>
-                    </>
-                  )}
-
-                  {/* 뒤로 가기 */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -774,7 +597,7 @@ export default function EditPostPage() {
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
                     const data = collectFormData();
-                    if (data) markAsChanged({ ...data, ogImageUrl: url || undefined });
+                    if (data) markAsChanged({ ...data, ogImageUrl: url || null });
                   }}
                   disabled={isSaving}
                 />
@@ -812,113 +635,6 @@ export default function EditPostPage() {
             </div>
           </div>
         </div>
-
-        {/* ================================================================== */}
-        {/* 모달들 */}
-        {/* ================================================================== */}
-
-        {/* 드래프트 선택 모달 */}
-        <AlertDialog open={showDraftModal} onOpenChange={() => {}}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>임시저장된 내용이 있습니다</AlertDialogTitle>
-              <AlertDialogDescription>
-                이전에 저장하지 않은 변경사항이 있습니다. 어떤 버전으로 편집하시겠습니까?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleUseOriginal}>
-                {isPublished ? '발행본으로 시작' : '저장된 내용으로 시작'}
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleUseDraft}>임시저장 불러오기</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 발행 확인 모달 */}
-        <AlertDialog open={publishModalOpen} onOpenChange={setPublishModalOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>게시글 발행</AlertDialogTitle>
-              <AlertDialogDescription>
-                게시글을 발행하시겠습니까? 발행된 게시글은 모든 방문자가 볼 수 있습니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => publishMutation.mutate()}
-                disabled={publishMutation.isPending}
-              >
-                {publishMutation.isPending ? '발행 중...' : '발행'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 업데이트(재발행) 확인 모달 */}
-        <AlertDialog open={republishModalOpen} onOpenChange={setRepublishModalOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>게시글 업데이트</AlertDialogTitle>
-              <AlertDialogDescription>
-                현재 편집 내용을 발행하시겠습니까? 기존 발행본이 새 내용으로 교체됩니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction onClick={handleUpdate} disabled={republishMutation.isPending}>
-                {republishMutation.isPending ? '업데이트 중...' : '업데이트'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 변경 취소 확인 모달 */}
-        <AlertDialog open={discardModalOpen} onOpenChange={setDiscardModalOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>변경사항 취소</AlertDialogTitle>
-              <AlertDialogDescription>
-                편집 중인 내용을 취소하시겠습니까? 현재 발행된 내용은 유지됩니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>돌아가기</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => discardMutation.mutate()}
-                disabled={discardMutation.isPending}
-                className="bg-amber-600 hover:bg-amber-700"
-              >
-                {discardMutation.isPending ? '취소 중...' : '임시 저장본 삭제'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 비공개 전환 확인 모달 */}
-        <AlertDialog open={unpublishModalOpen} onOpenChange={setUnpublishModalOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>비공개로 전환</AlertDialogTitle>
-              <AlertDialogDescription>
-                {hasDraftChanges
-                  ? '게시글을 비공개로 전환하시겠습니까? 편집 중인 내용이 적용되어 비공개 상태가 됩니다.'
-                  : '게시글을 비공개로 전환하시겠습니까? 방문자가 더 이상 볼 수 없게 됩니다.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => unpublishMutation.mutate()}
-                disabled={unpublishMutation.isPending}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {unpublishMutation.isPending ? '처리 중...' : '비공개 전환'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </>
     </FormProvider>
   );
