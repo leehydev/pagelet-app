@@ -13,6 +13,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSiteId } from '@/stores/site-store';
 import { getAdminPost, getDraft, PostStatus, revalidatePost } from '@/lib/api';
 import { PostContent } from '@/components/app/post/PostContent';
 import { Badge } from '@/components/ui/badge';
@@ -59,10 +60,11 @@ type ViewTab = 'published' | 'draft';
 // ============================================================================
 
 export default function AdminPostDetailPage() {
-  const params = useParams<{ siteId: string; postId: string }>();
+  const params = useParams<{ postId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { siteId, postId } = params;
+  const siteId = useSiteId();
+  const { postId } = params;
 
   // --------------------------------------------------------------------------
   // 로컬 상태
@@ -117,8 +119,7 @@ export default function AdminPostDetailPage() {
 
   // 현재 탭에 따른 콘텐츠
   const displayContent = activeTab === 'draft' && draft ? draft : post;
-  const displayHtml =
-    activeTab === 'draft' && draft ? draft.contentHtml : post?.contentHtml;
+  const displayHtml = activeTab === 'draft' && draft ? draft.contentHtml : post?.contentHtml;
 
   // --------------------------------------------------------------------------
   // 상태 배너 정보
@@ -200,7 +201,7 @@ export default function AdminPostDetailPage() {
           console.warn('Failed to revalidate post:', revalidateError);
         }
       }
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     } catch (err) {
       console.error('Failed to delete post:', err);
       setIsDeleting(false);
@@ -231,11 +232,7 @@ export default function AdminPostDetailPage() {
   if (isLoading) {
     return (
       <>
-        <AdminPageHeader
-          breadcrumb="Posts"
-          breadcrumbHref={`/admin/${siteId}/posts`}
-          title="게시글 상세"
-        />
+        <AdminPageHeader breadcrumb="Posts" breadcrumbHref="/admin/posts" title="게시글 상세" />
         <div className="p-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/4" />
@@ -251,13 +248,13 @@ export default function AdminPostDetailPage() {
   if (error || !post) {
     return (
       <>
-        <AdminPageHeader
-          breadcrumb="Posts"
-          breadcrumbHref={`/admin/${siteId}/posts`}
-          title="게시글 상세"
-        />
+        <AdminPageHeader breadcrumb="Posts" breadcrumbHref="/admin/posts" title="게시글 상세" />
         <div className="p-8">
-          <QueryError error={error} onRetry={refetch} fallbackMessage="게시글을 찾을 수 없습니다." />
+          <QueryError
+            error={error}
+            onRetry={refetch}
+            fallbackMessage="게시글을 찾을 수 없습니다."
+          />
         </div>
       </>
     );
@@ -271,11 +268,11 @@ export default function AdminPostDetailPage() {
     <>
       <AdminPageHeader
         breadcrumb="Posts"
-        breadcrumbHref={`/admin/${siteId}/posts`}
+        breadcrumbHref="/admin/posts"
         title={post.title || '(제목없음)'}
         action={{
           label: '편집',
-          href: `/admin/${siteId}/posts/${postId}/edit`,
+          href: `/admin/posts/${postId}/edit`,
           icon: Pencil,
         }}
       />
@@ -325,7 +322,7 @@ export default function AdminPostDetailPage() {
                 'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
                 activeTab === 'published'
                   ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700',
               )}
             >
               {post.status === PostStatus.PUBLISHED ? '발행본' : '저장본'}
@@ -336,7 +333,7 @@ export default function AdminPostDetailPage() {
                 'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
                 activeTab === 'draft'
                   ? 'border-amber-500 text-amber-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700',
               )}
             >
               임시저장
@@ -433,7 +430,7 @@ export default function AdminPostDetailPage() {
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => router.push(`/admin/${siteId}/posts/${postId}/edit`)}
+                    onClick={() => router.push(`/admin/posts/${postId}/edit`)}
                   >
                     <Pencil className="w-4 h-4 mr-2" />
                     게시글 편집

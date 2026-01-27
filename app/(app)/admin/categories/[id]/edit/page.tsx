@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useSiteId } from '@/stores/site-store';
 import { useAdminCategories, useUpdateCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
   const categoryId = params.id as string;
 
   const {
@@ -45,7 +46,6 @@ export default function EditCategoryPage() {
 
     // category가 변경되었을 때만 업데이트
     prevCategoryIdRef.current = category.id;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData({
       name: category.name,
       description: category.description || '',
@@ -63,7 +63,7 @@ export default function EditCategoryPage() {
 
     try {
       await updateCategory.mutateAsync({ id: categoryId, data: formData });
-      router.push(`/admin/${siteId}/categories`);
+      router.push('/admin/categories');
     } catch (err) {
       setError(getErrorDisplayMessage(err, '카테고리 수정에 실패했습니다.'));
     }

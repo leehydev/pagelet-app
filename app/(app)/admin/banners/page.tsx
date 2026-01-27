@@ -1,7 +1,7 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { useSiteId } from '@/stores/site-store';
 import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 import { BannerList } from '@/components/app/banners/BannerList';
 import { BannerFormSheet } from '@/components/app/banners/BannerFormSheet';
@@ -9,8 +9,7 @@ import { useAdminBanners } from '@/hooks/use-banners';
 import { Plus } from 'lucide-react';
 
 export default function AdminBannersPage() {
-  const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // 기존 배너의 게시글 ID 목록 가져오기
@@ -33,11 +32,15 @@ export default function AdminBannersPage() {
       <AdminPageHeader
         breadcrumb="Management"
         title="배너 관리"
-        action={canAddBanner ? {
-          label: '배너 추가',
-          onClick: handleAddBanner,
-          icon: Plus,
-        } : undefined}
+        action={
+          canAddBanner
+            ? {
+                label: '배너 추가',
+                onClick: handleAddBanner,
+                icon: Plus,
+              }
+            : undefined
+        }
       />
       <div className="p-6">
         <BannerList siteId={siteId} />

@@ -1,17 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
-import { LayoutDashboard, FileText, Settings, FolderTree, ExternalLink, LogOut, Image as ImageIcon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  FileText,
+  Settings,
+  FolderTree,
+  ExternalLink,
+  LogOut,
+  Image as ImageIcon,
+} from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
+import { useSiteId } from '@/stores/site-store';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { SiteSwitcher } from './SiteSwitcher';
 import { removeAccessToken } from '@/lib/api';
 
 const menuItems = [
-  { path: '', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/posts', label: 'Posts', icon: FileText },
   { path: '/categories', label: 'Categories', icon: FolderTree },
   { path: '/banners', label: 'Banners', icon: ImageIcon },
@@ -20,20 +29,20 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
   const isSidebarOpen = useAdminSidebarStore((s) => s.isSidebarOpen);
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 기본 경로 prefix
-  const baseHref = `/admin/${siteId}`;
+  const baseHref = '/admin';
 
   // 블로그 full URL 생성 (https://[slug].pagelet-dev.kr 또는 https://[slug].pagelet.kr)
   // 에러 발생 시 조용히 처리 (블로그 URL은 선택적 기능)
   const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet-dev.kr';
-  const blogUrl = siteSettings?.slug && !siteSettingsError
-    ? `https://${siteSettings.slug}.${tenantDomain}`
-    : null;
+  const blogUrl =
+    siteSettings?.slug && !siteSettingsError
+      ? `https://${siteSettings.slug}.${tenantDomain}`
+      : null;
 
   const handleLogout = async () => {
     try {
@@ -48,9 +57,9 @@ export function AdminSidebar() {
 
   const isActive = (path: string) => {
     const fullPath = `${baseHref}${path}`;
-    if (path === '') {
-      // Dashboard: 정확히 /admin/{siteId}인 경우만
-      return pathname === baseHref;
+    if (path === '/dashboard') {
+      // Dashboard: 정확히 /admin/dashboard인 경우만
+      return pathname === fullPath;
     }
     return pathname.startsWith(fullPath);
   };
@@ -64,7 +73,7 @@ export function AdminSidebar() {
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-center border-b px-4">
-        <Link href={baseHref} className="flex items-center">
+        <Link href={`${baseHref}/dashboard`} className="flex items-center">
           <Image
             src="/images/logos/admin_logo_200.png"
             alt="Pagelet"

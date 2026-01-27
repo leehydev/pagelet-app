@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
 import { Select, SelectOption } from '@/components/ui/select';
 import { useAdminSites } from '@/hooks/use-admin-sites';
 import { useSiteStore } from '@/stores/site-store';
@@ -12,9 +11,7 @@ const LAST_SITE_KEY = 'pagelet.admin.lastSiteId';
  * 어드민 헤더 또는 사이드바에서 사용
  */
 export function SiteSwitcher() {
-  const router = useRouter();
-  const params = useParams();
-  const currentSiteId = params.siteId as string;
+  const currentSiteId = useSiteStore((state) => state.currentSiteId);
   const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
 
   const { data: sites, isLoading, isError } = useAdminSites();
@@ -26,10 +23,8 @@ export function SiteSwitcher() {
     // 마지막 선택 저장
     localStorage.setItem(LAST_SITE_KEY, newSiteId);
 
-    // 스토어 업데이트
+    // 스토어 업데이트 (URL 변경 없음)
     setCurrentSiteId(newSiteId);
-
-    router.push(`/admin/${newSiteId}`);
   };
 
   if (isLoading || !sites) {
@@ -50,7 +45,7 @@ export function SiteSwitcher() {
   }
 
   return (
-    <Select value={currentSiteId} onChange={handleSiteChange} className="w-40">
+    <Select value={currentSiteId || ''} onChange={handleSiteChange} className="w-40">
       {sites.map((site) => (
         <SelectOption key={site.id} value={site.id}>
           {site.name}
