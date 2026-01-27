@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { useSiteStore } from '@/stores/site-store';
 
 interface SiteContextValue {
   siteId: string;
@@ -15,9 +16,16 @@ interface SiteProviderProps {
 
 /**
  * 어드민 사이트 컨텍스트 Provider
- * URL의 siteId를 하위 컴포넌트에 제공
+ * URL의 siteId를 하위 컴포넌트에 제공하고 Zustand 스토어와 동기화
  */
 export function SiteProvider({ siteId, children }: SiteProviderProps) {
+  const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
+
+  // siteId가 변경될 때마다 스토어 동기화
+  useEffect(() => {
+    setCurrentSiteId(siteId);
+  }, [siteId, setCurrentSiteId]);
+
   return <SiteContext.Provider value={{ siteId }}>{children}</SiteContext.Provider>;
 }
 
