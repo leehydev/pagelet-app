@@ -25,7 +25,7 @@ mv .tasks/backlog/[이슈번호]-[이름].md .tasks/in-progress/
 gh project item-list 1 --owner @me --format json | jq '.items[] | select(.content.number == [이슈번호])'
 
 # 상태를 "In Progress"로 변경
-gh project item-edit --project-id [PROJECT_ID] --id [ITEM_ID] --field-id [STATUS_FIELD_ID] --single-select-option-id 47fc9ee4
+gh project item-edit --project-id PVT_kwHODhZUJs4BNL9F --id [ITEM_ID] --field-id PVTSSF_lAHODhZUJs4BNL9Fzg8QUyw --single-select-option-id 47fc9ee4
 ```
 
 ### 3. 브랜치 생성

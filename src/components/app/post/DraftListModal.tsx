@@ -133,10 +133,17 @@ export function DraftListModal({
               <ul className="space-y-2">
                 {drafts.map((draft) => (
                   <li key={draft.id}>
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleSelectDraft(draft)}
-                      className="w-full flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-left group"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectDraft(draft);
+                        }
+                      }}
+                      className="w-full flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-left group cursor-pointer"
                     >
                       <FileText className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
@@ -158,7 +165,7 @@ export function DraftListModal({
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                    </button>
+                    </div>
                   </li>
                 ))}
               </ul>

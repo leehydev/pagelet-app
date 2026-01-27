@@ -14,8 +14,8 @@ interface UseLeaveConfirmOptions {
   hasChanges: boolean;
   /** 에디터 모드 */
   mode: EditorMode;
-  /** 이탈 확인 모달을 표시할 콜백 */
-  onShowConfirm?: () => void;
+  /** 브라우저 뒤로가기 시 이탈 확인 모달을 표시할 콜백 */
+  onBrowserBack?: () => void;
 }
 
 interface UseLeaveConfirmReturn {
@@ -47,19 +47,26 @@ interface UseLeaveConfirmReturn {
  * ```
  */
 export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfirmReturn {
-  const { hasChanges } = options;
+  const { hasChanges, onBrowserBack } = options;
   const [isLeaveAllowed, setIsLeaveAllowed] = useState(false);
   const hasChangesRef = useRef(hasChanges);
+  const isLeaveAllowedRef = useRef(isLeaveAllowed);
+  const historyPushedRef = useRef(false);
 
   // hasChanges 변경 시 ref 업데이트
   useEffect(() => {
     hasChangesRef.current = hasChanges;
   }, [hasChanges]);
 
+  // isLeaveAllowed 변경 시 ref 업데이트
+  useEffect(() => {
+    isLeaveAllowedRef.current = isLeaveAllowed;
+  }, [isLeaveAllowed]);
+
   // beforeunload 이벤트 핸들러 (브라우저 기본 경고)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasChangesRef.current && !isLeaveAllowed) {
+      if (hasChangesRef.current && !isLeaveAllowedRef.current) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -67,7 +74,31 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isLeaveAllowed]);
+  }, []);
+
+  // popstate 이벤트 핸들러 (브라우저 뒤로가기/앞으로가기)
+  useEffect(() => {
+    if (!onBrowserBack) return;
+
+    // 변경사항이 있으면 히스토리에 더미 상태 추가
+    if (hasChanges && !historyPushedRef.current) {
+      window.history.pushState({ leaveConfirm: true }, '');
+      historyPushedRef.current = true;
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (hasChangesRef.current && !isLeaveAllowedRef.current) {
+        // 뒤로가기 방지: 다시 앞으로
+        window.history.pushState({ leaveConfirm: true }, '');
+        onBrowserBack();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [hasChanges, onBrowserBack]);
 
   // 이탈 허용
   const allowLeave = useCallback(() => {

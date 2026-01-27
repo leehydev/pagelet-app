@@ -120,6 +120,7 @@ export default function NewPostPage() {
   const { allowLeave, isLeaveAllowed } = useLeaveConfirm({
     hasChanges,
     mode: editorMode,
+    onBrowserBack: () => setShowLeaveModal(true),
   });
 
   // --------------------------------------------------------------------------
@@ -147,9 +148,39 @@ export default function NewPostPage() {
   // 변경 감지
   const watchedValues = useWatch({ control: methods.control });
 
+  const isContentEmpty = useCallback((contentJson: Record<string, unknown> | undefined) => {
+    if (!contentJson) return true;
+    const content = contentJson.content as Array<Record<string, unknown>> | undefined;
+    if (!content || content.length === 0) return true;
+    if (
+      content.length === 1 &&
+      content[0].type === 'paragraph' &&
+      (!content[0].content || (content[0].content as Array<unknown>).length === 0)
+    ) {
+      return true;
+    }
+    return false;
+  }, []);
+
   useEffect(() => {
     if (editorReady) {
-      setHasChanges(true);
+      // 폼 필드에 실제 내용이 있는지 확인
+      const formHasContent = Boolean(
+        watchedValues.title?.trim() ||
+          watchedValues.subtitle?.trim() ||
+          watchedValues.slug?.trim() ||
+          watchedValues.categoryId?.trim() ||
+          watchedValues.seoTitle?.trim() ||
+          watchedValues.seoDescription?.trim() ||
+          watchedValues.ogImageUrl?.trim(),
+      );
+
+      // 에디터에 내용이 있는지 확인
+      const editor = editorRef.current;
+      const editorJson = editor?.getJSON();
+      const editorHasContent = editorJson ? !isContentEmpty(editorJson) : false;
+
+      setHasChanges(formHasContent || editorHasContent);
     }
   }, [watchedValues, editorReady]);
 
@@ -185,20 +216,6 @@ export default function NewPostPage() {
       ogImageUrl: trimOrNull(data.ogImageUrl),
     };
   }, [methods]);
-
-  const isContentEmpty = useCallback((contentJson: Record<string, unknown> | undefined) => {
-    if (!contentJson) return true;
-    const content = contentJson.content as Array<Record<string, unknown>> | undefined;
-    if (!content || content.length === 0) return true;
-    if (
-      content.length === 1 &&
-      content[0].type === 'paragraph' &&
-      (!content[0].content || (content[0].content as Array<unknown>).length === 0)
-    ) {
-      return true;
-    }
-    return false;
-  }, []);
 
   // --------------------------------------------------------------------------
   // Mutations

@@ -1,6 +1,7 @@
 # Developer Agent (Next.js)
 
 태스크 파일을 기반으로 코드를 구현하는 개발자 에이전트입니다.
+(테스트는 .claude/agents/05-tester.md가 따로 진행)
 
 ## 레포지토리
 

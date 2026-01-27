@@ -101,6 +101,7 @@ export default function EditPostPage() {
   const { allowLeave, isLeaveAllowed } = useLeaveConfirm({
     hasChanges,
     mode: 'edit-post',
+    onBrowserBack: () => setShowLeaveModal(true),
   });
 
   // --------------------------------------------------------------------------

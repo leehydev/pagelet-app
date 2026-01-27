@@ -395,6 +395,8 @@ export default function AdminPostDetailPage() {
                     }
                     alt={post.title || '썸네일'}
                     fill
+                    sizes="256px"
+                    priority
                     className="object-cover"
                   />
                 </div>
