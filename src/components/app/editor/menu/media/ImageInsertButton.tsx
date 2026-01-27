@@ -36,9 +36,10 @@ type InputMode = 'url' | 'upload';
 interface ImageInsertButtonProps {
   editor: Editor;
   siteId: string;
+  postId?: string;
 }
 
-export function ImageInsertButton({ editor, siteId }: ImageInsertButtonProps) {
+export function ImageInsertButton({ editor, siteId, postId }: ImageInsertButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [mode, setMode] = useState<InputMode>('upload');
@@ -71,7 +72,7 @@ export function ImageInsertButton({ editor, siteId }: ImageInsertButtonProps) {
     if (!file) return;
 
     try {
-      await upload(file, { imageType: 'CONTENT' });
+      await upload(file, { imageType: 'CONTENT', postId });
     } catch (error) {
       console.error('Upload failed:', error);
     }

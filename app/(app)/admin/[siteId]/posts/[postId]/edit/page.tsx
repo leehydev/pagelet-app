@@ -242,6 +242,11 @@ export default function EditPostPage() {
         seoDescription: draft.seoDescription || '',
         ogImageUrl: draft.ogImageUrl || '',
       });
+      // 에디터 내용도 드래프트로 업데이트
+      const editor = editorRef.current?.getEditor();
+      if (editor && draft.contentJson) {
+        editor.commands.setContent(draft.contentJson);
+      }
     } else {
       // 원본 게시글로 초기화
       methods.reset({
@@ -410,6 +415,7 @@ export default function EditPostPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
       toast.success('임시저장되었습니다');
+      router.push(`/admin/${siteId}/posts/${postId}`);
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
@@ -537,7 +543,9 @@ export default function EditPostPage() {
 
   const isPrivate = post.status === PostStatus.PRIVATE;
   const isPublished = post.status === PostStatus.PUBLISHED;
-  const hasDraftChanges = effectiveDraftChoice === 'use-draft' || (post.hasDraft && effectiveDraftChoice !== 'use-original');
+  const hasDraftChanges =
+    effectiveDraftChoice === 'use-draft' ||
+    (post.hasDraft && effectiveDraftChoice !== 'use-original');
 
   const isPending =
     isSaving ||
@@ -583,6 +591,7 @@ export default function EditPostPage() {
                   <TiptapEditor
                     ref={editorRef}
                     siteId={siteId}
+                    postId={postId}
                     content={
                       effectiveDraftChoice === 'use-draft' && draft?.contentJson
                         ? draft.contentJson
@@ -658,7 +667,7 @@ export default function EditPostPage() {
                           onClick={() => setDiscardModalOpen(true)}
                           disabled={isPending}
                         >
-                          {discardMutation.isPending ? '취소 중...' : '변경 취소'}
+                          {discardMutation.isPending ? '취소 중...' : '임시 저장본 삭제'}
                         </Button>
                       )}
                       {/* 비공개 전환 */}
@@ -675,7 +684,12 @@ export default function EditPostPage() {
                   )}
 
                   {/* 뒤로 가기 */}
-                  <Button type="button" variant="ghost" className="w-full" onClick={() => router.back()}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => router.back()}
+                  >
                     돌아가기
                   </Button>
                 </div>
@@ -753,6 +767,7 @@ export default function EditPostPage() {
                 <h3 className="font-medium text-gray-900 mb-3">썸네일</h3>
                 <ThumbnailInput
                   siteId={siteId}
+                  postId={postId}
                   value={watchedOgImageUrl || ''}
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
@@ -768,7 +783,9 @@ export default function EditPostPage() {
                 <h3 className="font-medium text-gray-900 mb-3">SEO 설정</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SEO 제목</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      SEO 제목
+                    </label>
                     <Input
                       {...methods.register('seoTitle')}
                       type="text"
@@ -777,7 +794,9 @@ export default function EditPostPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">SEO 설명</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      SEO 설명
+                    </label>
                     <textarea
                       {...methods.register('seoDescription')}
                       placeholder="검색 결과에 표시될 설명"
@@ -869,7 +888,7 @@ export default function EditPostPage() {
                 disabled={discardMutation.isPending}
                 className="bg-amber-600 hover:bg-amber-700"
               >
-                {discardMutation.isPending ? '취소 중...' : '변경 취소'}
+                {discardMutation.isPending ? '취소 중...' : '임시 저장본 삭제'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
