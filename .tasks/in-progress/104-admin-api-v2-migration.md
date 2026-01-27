@@ -65,45 +65,45 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 ## 구현 체크리스트
 
 ### Phase 1: 백엔드 v2 API 확인
-
-- [ ] Posts v2 API 준비 여부 확인
-- [ ] Settings v2 API 준비 여부 확인
-- [ ] Uploads v2 API 준비 여부 확인
-- [ ] Banners v2 API 준비 여부 확인
-- [ ] Analytics v2 API 준비 여부 확인
+- [x] Posts v2 API 준비 여부 확인
+- [x] Settings v2 API 준비 여부 확인
+- [x] Uploads v2 API 준비 여부 확인
+- [x] Banners v2 API 준비 여부 확인
+- [x] Analytics v2 API 준비 여부 확인
 
 ### Phase 2: API 함수 추가
 
 - [x] Category v2 API (완료 - #101)
-- [ ] Posts v2 API 함수 추가
-- [ ] Settings v2 API 함수 추가
-- [ ] Uploads v2 API 함수 추가
-- [ ] Banners v2 API 함수 추가
-- [ ] Analytics v2 API 함수 추가
+- [x] Posts v2 API 함수 추가
+- [x] Settings v2 API 함수 추가
+- [x] Uploads v2 API 함수 추가
+- [x] Banners v2 API 함수 추가
+- [x] Analytics v2 API 함수 추가
+- [x] Branding v2 API 함수 추가
 
 ### Phase 3: Hook 추가
 
 - [x] Category v2 Hook (완료 - #101)
-- [ ] Posts v2 Hook 추가
-- [ ] Settings v2 Hook 추가
-- [ ] Banners v2 Hook 추가
-- [ ] Analytics v2 Hook 추가
+- [x] Posts v2 Hook 추가
+- [x] Settings v2 Hook 추가
+- [x] Upload v2 Hook 추가
+- [x] Banners v2 Hook 추가
+- [x] Analytics v2 Hook 추가
+- [x] Branding Upload v2 Hook 추가
 
 ### Phase 4: 테스트
-
-- [ ] 각 v2 API 동작 확인
-- [ ] X-Site-Id 헤더 전송 확인
+- [x] 각 v2 API 동작 확인
+- [x] X-Site-Id 헤더 전송 확인
 
 ## 테스트 계획
 
 ### 수동 테스트
-
-- [ ] 게시글 CRUD v2
-- [ ] 카테고리 CRUD v2
-- [ ] 설정 조회/수정 v2
-- [ ] 파일 업로드 v2
-- [ ] 배너 CRUD v2
-- [ ] 분석 조회 v2
+- [x] 게시글 CRUD v2
+- [x] 카테고리 CRUD v2
+- [x] 설정 조회/수정 v2
+- [x] 파일 업로드 v2
+- [x] 배너 CRUD v2
+- [x] 분석 조회 v2
 
 ## 참고 자료
 
