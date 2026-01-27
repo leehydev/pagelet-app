@@ -15,6 +15,7 @@ import { HistoryMenu } from './menu/HistoryMenu';
 interface MenuBarProps {
   editor: Editor;
   siteId: string;
+  postId?: string;
 }
 
 const Separator = () => (
@@ -23,7 +24,7 @@ const Separator = () => (
   </div>
 );
 
-export function MenuBar({ editor, siteId }: MenuBarProps) {
+export function MenuBar({ editor, siteId, postId }: MenuBarProps) {
   const editorState = useMenuEditorState(editor);
 
   if (!editorState) {
@@ -32,7 +33,7 @@ export function MenuBar({ editor, siteId }: MenuBarProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-0 p-2 border-b bg-background sticky top-[64px] z-10">
-      <MediaMenu editor={editor} siteId={siteId} />
+      <MediaMenu editor={editor} siteId={siteId} postId={postId} />
       <Separator />
       <LinkMenu editor={editor} editorState={editorState} />
       <Separator />

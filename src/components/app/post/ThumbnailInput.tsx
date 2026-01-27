@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 export interface ThumbnailInputProps {
   siteId: string;
+  postId?: string;
   value?: string | null;
   onChange?: (url: string | null) => void;
   disabled?: boolean;
@@ -23,6 +24,7 @@ type InputMode = 'url' | 'upload';
  */
 export function ThumbnailInput({
   siteId,
+  postId,
   value,
   onChange,
   disabled = false,
@@ -49,7 +51,7 @@ export function ThumbnailInput({
     if (!file) return;
 
     try {
-      await upload(file, { imageType: 'THUMBNAIL' });
+      await upload(file, { imageType: 'THUMBNAIL', postId });
     } catch (error) {
       console.error('Upload failed:', error);
     }

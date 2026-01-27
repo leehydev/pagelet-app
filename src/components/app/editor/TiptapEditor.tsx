@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
 import { extensions } from './extensions';
@@ -31,13 +31,20 @@ export interface TiptapEditorRef {
 
 interface TiptapEditorProps {
   siteId: string;
+  postId?: string;
   content?: string | Record<string, unknown>;
   onEditorReady?: (editor: Editor) => void;
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
-  ({ siteId, content, onEditorReady }, ref) => {
+  ({ siteId, postId, content, onEditorReady }, ref) => {
     const { upload, uploadProgress, reset } = useUpload(siteId);
+
+    // postId를 ref로 관리하여 useEditor 핸들러에서 항상 최신 값 참조
+    const postIdRef = useRef(postId);
+    useEffect(() => {
+      postIdRef.current = postId;
+    }, [postId]);
 
     // 이미지 파일 업로드
     const handleImageUpload = useCallback(
@@ -53,11 +60,11 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           return false;
         }
 
-        // 업로드 시작
-        await upload(file, { imageType: 'CONTENT' });
+        // 업로드 시작 (ref에서 최신 postId 참조)
+        await upload(file, { imageType: 'CONTENT', postId: postIdRef.current });
         return true;
       },
-      [upload],
+      [upload, postId],
     );
 
     const editor = useEditor({
@@ -190,7 +197,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
 
     return (
       <div className="border rounded-md">
-        <MenuBar editor={editor} siteId={siteId} />
+        <MenuBar editor={editor} siteId={siteId} postId={postId} />
 
         {/* 업로드 진행 상태 표시 */}
         {isUploading && (

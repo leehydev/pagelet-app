@@ -5,13 +5,14 @@ import { ImageInsertButton } from './ImageInsertButton';
 interface MediaMenuProps {
   editor: Editor;
   siteId: string;
+  postId?: string;
 }
 
-export function MediaMenu({ editor, siteId }: MediaMenuProps) {
+export function MediaMenu({ editor, siteId, postId }: MediaMenuProps) {
   return (
     <div className="flex items-center gap-2 pr-2 mr-2">
       <YoutubeInsertButton editor={editor} />
-      <ImageInsertButton editor={editor} siteId={siteId} />
+      <ImageInsertButton editor={editor} siteId={siteId} postId={postId} />
     </div>
   );
 }

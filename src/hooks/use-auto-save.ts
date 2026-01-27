@@ -220,15 +220,17 @@ export function useAutoSave({
    * 1. postId 없음 → 새 글 생성 (PRIVATE)
    * 2. postStatus === PRIVATE → post 직접 저장
    * 3. postStatus === PUBLISHED → draft 저장
+   *
+   * @returns 저장 성공 여부
    */
-  const executeSave = useCallback(async () => {
+  const executeSave = useCallback(async (): Promise<boolean> => {
     const data = pendingDataRef.current;
-    if (!data) return;
+    if (!data) return false;
 
     // 이미 저장 중이면 스킵
     const isPending =
       createMutation.isPending || updatePostMutation.isPending || saveDraftMutation.isPending;
-    if (isPending) return;
+    if (isPending) return false;
 
     setState((prev) => ({ ...prev, isSaving: true }));
 
@@ -237,34 +239,38 @@ export function useAutoSave({
       // 내용이 비어있으면 저장하지 않음
       if (isContentEmpty(data.contentJson)) {
         setState((prev) => ({ ...prev, isSaving: false }));
-        return;
+        return false;
       }
-      await createMutation.mutateAsync(toCreateRequest(data));
-      return;
+      const post = await createMutation.mutateAsync(toCreateRequest(data));
+      // mutateAsync 완료 후 즉시 postIdRef 설정 (onSuccess보다 먼저)
+      postIdRef.current = post.id;
+      return true;
     }
 
     // Case 2: PRIVATE 게시글 → post 직접 저장
     if (postStatus === PostStatus.PRIVATE) {
       await updatePostMutation.mutateAsync(data as UpdatePostRequest);
-      return;
+      return true;
     }
 
     // Case 3: PUBLISHED 게시글 → draft 저장
     if (postStatus === PostStatus.PUBLISHED) {
       await saveDraftMutation.mutateAsync(data as SaveDraftRequest);
-      return;
+      return true;
     }
 
     // 그 외 상태는 저장하지 않음
     setState((prev) => ({ ...prev, isSaving: false }));
+    return false;
   }, [postStatus, createMutation, updatePostMutation, saveDraftMutation]);
 
   /**
    * 수동 저장 트리거
+   * @returns 저장 성공 여부
    */
-  const saveNow = useCallback(async () => {
-    if (!pendingDataRef.current) return;
-    await executeSave();
+  const saveNow = useCallback(async (): Promise<boolean> => {
+    if (!pendingDataRef.current) return false;
+    return await executeSave();
   }, [executeSave]);
 
   /**

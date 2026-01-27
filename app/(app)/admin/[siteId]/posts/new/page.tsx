@@ -320,8 +320,22 @@ export default function NewPostPage() {
 
   /** 저장 버튼 (수동) */
   const handleSave = async () => {
-    await saveNow();
-    toast.success('저장되었습니다');
+    // 저장 전에 최신 데이터 수집
+    const data = collectFormData();
+    if (data) {
+      markAsChanged(data);
+    }
+
+    const saved = await saveNow();
+    if (saved) {
+      toast.success('저장되었습니다');
+      const savedPostId = getPostId();
+      if (savedPostId) {
+        router.push(`/admin/${siteId}/posts/${savedPostId}`);
+      }
+    } else {
+      toast.error('저장할 내용이 없습니다. 본문을 입력해주세요.');
+    }
   };
 
   const isPending = isSaving || publishMutation.isPending || createAndPublishMutation.isPending;
@@ -363,7 +377,12 @@ export default function NewPostPage() {
                 />
                 <Field>
                   <FieldLabel>내용</FieldLabel>
-                  <TiptapEditor ref={editorRef} siteId={siteId} onEditorReady={handleEditorReady} />
+                  <TiptapEditor
+                    ref={editorRef}
+                    siteId={siteId}
+                    postId={createdPostId ?? undefined}
+                    onEditorReady={handleEditorReady}
+                  />
                 </Field>
               </div>
             </div>
@@ -479,6 +498,7 @@ export default function NewPostPage() {
                 <h3 className="font-medium text-gray-900 mb-3">썸네일</h3>
                 <ThumbnailInput
                   siteId={siteId}
+                  postId={createdPostId ?? undefined}
                   value={watchedOgImageUrl || ''}
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
