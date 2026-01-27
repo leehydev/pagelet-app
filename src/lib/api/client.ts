@@ -241,7 +241,7 @@ export async function createSite(data: CreateSiteRequest): Promise<void> {
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
   try {
     const response = await api.get<ApiResponse<{ available: boolean }>>(
-      `/sites/check-slug?slug=${encodeURIComponent(slug)}`,
+      `/onboarding/check-slug?slug=${encodeURIComponent(slug)}`,
     );
     return response.data.data.available;
   } catch {
