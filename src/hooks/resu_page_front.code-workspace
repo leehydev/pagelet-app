@@ -1,11 +1,11 @@
 {
-	"folders": [
-		{
-			"path": "../.."
-		},
-		{
-			"path": "../../../../resumify-front"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": "../..",
+    },
+    {
+      "path": "../../../../resumify-front",
+    },
+  ],
+  "settings": {},
 }

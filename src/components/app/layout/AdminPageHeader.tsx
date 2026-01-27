@@ -40,14 +40,23 @@ function SidebarToggle() {
 /**
  * 페이지에서 직접 사용하는 헤더 컴포넌트
  */
-export function AdminPageHeader({ breadcrumb, breadcrumbHref, title, action, extra }: AdminPageHeaderProps) {
+export function AdminPageHeader({
+  breadcrumb,
+  breadcrumbHref,
+  title,
+  action,
+  extra,
+}: AdminPageHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white">
       <div className="flex h-16 items-center gap-4 px-4">
         <SidebarToggle />
         <div className="flex items-center gap-2 text-sm">
           {breadcrumbHref ? (
-            <Link href={breadcrumbHref} className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href={breadcrumbHref}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               {breadcrumb}
             </Link>
           ) : (
@@ -62,8 +71,8 @@ export function AdminPageHeader({ breadcrumb, breadcrumbHref, title, action, ext
         <div className="flex flex-1 items-center justify-end">
           <div className="flex items-center gap-3">
             {extra}
-            {action && (
-              action.href ? (
+            {action &&
+              (action.href ? (
                 <Link href={action.href}>
                   <Button className="gap-2">
                     {action.icon && <action.icon className="h-4 w-4" />}
@@ -75,8 +84,7 @@ export function AdminPageHeader({ breadcrumb, breadcrumbHref, title, action, ext
                   {action.icon && <action.icon className="h-4 w-4" />}
                   {action.label}
                 </Button>
-              )
-            )}
+              ))}
           </div>
         </div>
       </div>

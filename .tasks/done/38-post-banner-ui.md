@@ -1,6 +1,7 @@
 # [FE] 게시글 배너 UI 리팩토링
 
 ## GitHub 이슈
+
 - **이슈 번호**: #38
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/38
 - **생성일**: 2026-01-23
@@ -8,6 +9,7 @@
 - **관련 태스크**: pagelet-api#33 (백엔드)
 
 ## 의존성
+
 - [ ] leehydev/pagelet-api#33
 
 ## 개요
@@ -15,12 +17,14 @@
 기존 이미지 기반 배너 UI를 게시글 기반 배너 UI로 리팩토링합니다.
 
 ### 변경 사항
+
 - **기존**: 이미지 업로드 + 링크 입력 + desktop/mobile 탭
 - **변경**: 게시글 검색/선택 + 가로형 카드 레이아웃 + 캐러셀
 
 ## 작업 범위
 
 ### 포함
+
 - API 타입 정의 수정
 - 게시글 검색 오토컴플리트 컴포넌트
 - 가로형 게시글 배너 카드 컴포넌트
@@ -29,6 +33,7 @@
 - 배너 폼 수정
 
 ### 제외
+
 - 백엔드 API 구현 (별도 이슈)
 
 ## UI/UX 명세
@@ -36,6 +41,7 @@
 ### 1. 가로형 게시글 배너 카드 (PostBannerCard)
 
 **레이아웃 (데스크톱):**
+
 - 텍스트 영역 60-65% (왼쪽)
 - 이미지 영역 35-40% (오른쪽)
 - 카테고리 태그 (Badge)
@@ -46,10 +52,12 @@
 - 전체 카드 클릭 시 블로그 글로 이동
 
 **레이아웃 (모바일):**
+
 - 세로 배치 (이미지 위, 텍스트 아래)
 - breakpoint: md (768px)
 
 **이미지:**
+
 - 16:9 비율
 - border-radius: 8px
 - object-fit: cover
@@ -85,29 +93,34 @@
 ## 구현 체크리스트
 
 ### API/타입
+
 - [x] API 타입 정의 수정 (Banner, PublicBanner, CreateBannerRequest 등)
 - [x] 게시글 검색 API 훅 추가
 - [x] 배너 관련 API 훅 수정 (deviceType 제거)
 - [x] DeviceType 관련 코드 제거
 
 ### 컴포넌트 신규
+
 - [x] PostSearchAutocomplete 컴포넌트
 - [x] PostBannerCard 컴포넌트 (가로형 레이아웃)
 - [x] PostBannerSlider 컴포넌트
 
 ### 컴포넌트 수정
+
 - [x] BannerList 수정 (탭 제거)
 - [x] BannerFormSheet 수정 (게시글 선택)
 - [x] BannerCard 수정 또는 제거
 - [x] BannerUploader 제거
 
 ### 페이지
+
 - [x] 어드민 배너 관리 페이지 수정
 - [x] 공개 블로그 페이지 배너 섹션 수정
 
 ## 영향받는 파일
 
 ### 수정
+
 - `src/lib/api/types.ts`
 - `src/lib/api/client.ts`
 - `src/lib/api/server.ts`
@@ -121,11 +134,13 @@
 - `app/(public)/t/[slug]/page.tsx`
 
 ### 신규
+
 - `src/components/app/banners/PostSearchAutocomplete.tsx`
 - `src/components/public/PostBannerCard.tsx`
 - `src/components/public/PostBannerSlider.tsx`
 
 ### 삭제
+
 - `src/components/app/banners/BannerUploader.tsx`
 - `src/components/public/BannerSlider.tsx`
 - `src/hooks/use-banner-upload.ts`

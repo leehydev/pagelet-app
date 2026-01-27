@@ -1,6 +1,7 @@
 # [FE] CTA 버튼 표시 및 추적
 
 ## GitHub 이슈
+
 - **이슈 번호**: #47
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/47
 - **생성일**: 2026-01-23
@@ -20,6 +21,7 @@
 ## 작업 범위
 
 ### 포함
+
 - PublicLayout에 CtaBanner 컴포넌트 추가
 - 푸터 위 고정 위치 (sticky bottom)
 - 페이지 로드 시 pageview 추적
@@ -27,12 +29,14 @@
 - visitorId 관리 (localStorage)
 
 ### 제외
+
 - CTA 설정 UI (pagelet-app#46)
 - 백엔드 API (pagelet-api#41, #42)
 
 ## 기술 명세
 
 ### 영향받는 파일
+
 - `app/(public)/layout.tsx`
 - `src/components/public/CtaBanner.tsx` (신규)
 - `src/hooks/use-analytics.ts` (신규)
@@ -73,9 +77,7 @@ function CtaBanner({ siteSettings }: CtaBannerProps) {
   return (
     <div className="sticky bottom-0 w-full bg-primary p-4">
       {siteSettings.ctaType === 'text' ? (
-        <button onClick={handleClick}>
-          {siteSettings.ctaText}
-        </button>
+        <button onClick={handleClick}>{siteSettings.ctaText}</button>
       ) : (
         <button onClick={handleClick}>
           <img src={siteSettings.ctaImageUrl} alt="CTA" />
@@ -132,6 +134,7 @@ export function getOrCreateVisitorId(): string {
 ```
 
 ## 구현 체크리스트
+
 - [ ] visitor.ts - visitorId 관리 유틸
 - [ ] useAnalytics 훅 구현
 - [ ] CtaBanner 컴포넌트 구현
@@ -142,6 +145,7 @@ export function getOrCreateVisitorId(): string {
 - [ ] CTA 클릭 추적
 
 ## 테스트 계획
+
 - [ ] CTA 버튼 표시 확인
 - [ ] 비활성화 시 숨김 확인
 - [ ] 페이지 로드 시 pageview API 호출 확인

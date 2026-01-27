@@ -30,7 +30,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={false} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByText('No error')).toBeInTheDocument();
@@ -40,11 +40,13 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByText('문제가 발생했습니다')).toBeInTheDocument();
-    expect(screen.getByText('예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')).toBeInTheDocument();
+    expect(
+      screen.getByText('예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+    ).toBeInTheDocument();
   });
 
   it('에러 발생 시 에러 메시지를 표시해야 함', () => {
@@ -60,7 +62,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByText('Test error message')).toBeInTheDocument();
@@ -78,11 +80,11 @@ describe('ErrorBoundary', () => {
     // resetErrorBoundary가 호출되는지 확인
     // 실제 앱에서는 key prop을 변경하여 컴포넌트를 완전히 새로 마운트하는 것이 일반적
     let errorKey = 0;
-    
+
     const { rerender } = render(
       <ErrorBoundary key={errorKey}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     // 에러 상태 확인
@@ -96,15 +98,15 @@ describe('ErrorBoundary', () => {
     // 같은 에러가 다시 발생하므로 여전히 fallback이 표시되어야 함
     // 실제로는 key를 변경하여 완전히 새로 마운트하거나, 에러 원인을 해결해야 함
     expect(screen.getByText('문제가 발생했습니다')).toBeInTheDocument();
-    
+
     // 에러가 해결된 경우를 시뮬레이션: key를 변경하여 새로 마운트
     errorKey = 1;
     rerender(
       <ErrorBoundary key={errorKey}>
         <ThrowError shouldThrow={false} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
-    
+
     expect(screen.getByText('No error')).toBeInTheDocument();
   });
 
@@ -114,7 +116,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary onError={onError}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(onError).toHaveBeenCalled();
@@ -122,7 +124,7 @@ describe('ErrorBoundary', () => {
       expect.any(Error),
       expect.objectContaining({
         componentStack: expect.any(String),
-      })
+      }),
     );
   });
 
@@ -134,7 +136,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback={CustomFallback}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByText('Custom Error: Test error message')).toBeInTheDocument();

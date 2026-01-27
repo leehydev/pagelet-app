@@ -17,7 +17,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             'flex h-9 w-full appearance-none rounded-md border border-input bg-transparent px-3 py-1 pr-8 text-sm shadow-sm transition-colors',
             'focus:outline-none focus:ring-1 focus:ring-ring',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            className
+            className,
           )}
           ref={ref}
           {...props}
@@ -32,7 +32,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50 pointer-events-none" />
       </div>
     );
-  }
+  },
 );
 Select.displayName = 'Select';
 
@@ -41,7 +41,7 @@ export interface SelectOptionProps extends React.OptionHTMLAttributes<HTMLOption
 const SelectOption = React.forwardRef<HTMLOptionElement, SelectOptionProps>(
   ({ className, ...props }, ref) => {
     return <option className={cn(className)} ref={ref} {...props} />;
-  }
+  },
 );
 SelectOption.displayName = 'SelectOption';
 

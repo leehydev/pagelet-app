@@ -23,7 +23,9 @@ describe('ErrorFallback', () => {
     render(<ErrorFallback error={error} resetErrorBoundary={resetErrorBoundary} />);
 
     expect(screen.getByText('문제가 발생했습니다')).toBeInTheDocument();
-    expect(screen.getByText('예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')).toBeInTheDocument();
+    expect(
+      screen.getByText('예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+    ).toBeInTheDocument();
   });
 
   it('개발 환경에서 에러 메시지와 스택 트레이스를 표시해야 함', () => {
@@ -80,7 +82,9 @@ describe('ErrorFallback', () => {
     const error = new Error('Test error');
     const resetErrorBoundary = vi.fn();
 
-    const { container } = render(<ErrorFallback error={error} resetErrorBoundary={resetErrorBoundary} />);
+    const { container } = render(
+      <ErrorFallback error={error} resetErrorBoundary={resetErrorBoundary} />,
+    );
 
     // AlertTriangle 아이콘은 SVG로 렌더링되므로 container에서 확인
     const icon = container.querySelector('svg');

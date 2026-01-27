@@ -1,6 +1,7 @@
 # [FE] 사이트 배너 관리 UI 구현
 
 ## GitHub 이슈
+
 - **이슈 번호**: #35
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/35
 - **생성일**: 2025-01-23
@@ -19,6 +20,7 @@
 ## 작업 범위
 
 ### 포함
+
 - 배너 관리 페이지 UI (/admin/[siteId]/banners)
 - 배너 목록 표시 (데스크톱/모바일 탭)
 - 배너 등록/수정 폼 (모달 또는 별도 페이지)
@@ -28,6 +30,7 @@
 - 공개 사이트에서 배너 슬라이더 표시
 
 ### 제외
+
 - 백엔드 API (pagelet-api#29에서 진행)
 
 ## 기술 명세
@@ -35,6 +38,7 @@
 ### 영향받는 파일
 
 **신규 생성:**
+
 - `app/(app)/admin/[siteId]/banners/page.tsx` - 배너 관리 페이지
 - `src/components/app/banners/BannerList.tsx` - 배너 목록 컴포넌트
 - `src/components/app/banners/BannerCard.tsx` - 배너 카드 컴포넌트
@@ -45,6 +49,7 @@
 - `src/hooks/useBanners.ts` - React Query 훅
 
 **수정:**
+
 - `src/lib/api/types.ts` - 타입 정의 추가
 - `src/lib/api/client.ts` - API 함수 추가
 - `src/lib/api/server.ts` - Public API 함수 추가
@@ -130,53 +135,38 @@ export interface BannerOrderRequest {
 // Presign URL 발급
 export async function presignBannerUpload(
   siteId: string,
-  request: BannerPresignRequest
-): Promise<BannerPresignResponse>
+  request: BannerPresignRequest,
+): Promise<BannerPresignResponse>;
 
 // 배너 생성
-export async function createBanner(
-  siteId: string,
-  request: CreateBannerRequest
-): Promise<Banner>
+export async function createBanner(siteId: string, request: CreateBannerRequest): Promise<Banner>;
 
 // 배너 목록 조회
-export async function fetchBanners(
-  siteId: string,
-  deviceType?: DeviceType
-): Promise<Banner[]>
+export async function fetchBanners(siteId: string, deviceType?: DeviceType): Promise<Banner[]>;
 
 // 배너 상세 조회
-export async function fetchBanner(
-  siteId: string,
-  bannerId: string
-): Promise<Banner>
+export async function fetchBanner(siteId: string, bannerId: string): Promise<Banner>;
 
 // 배너 수정
 export async function updateBanner(
   siteId: string,
   bannerId: string,
-  request: UpdateBannerRequest
-): Promise<Banner>
+  request: UpdateBannerRequest,
+): Promise<Banner>;
 
 // 배너 삭제
-export async function deleteBanner(
-  siteId: string,
-  bannerId: string
-): Promise<void>
+export async function deleteBanner(siteId: string, bannerId: string): Promise<void>;
 
 // 순서 변경
-export async function updateBannerOrder(
-  siteId: string,
-  request: BannerOrderRequest
-): Promise<void>
+export async function updateBannerOrder(siteId: string, request: BannerOrderRequest): Promise<void>;
 
 // src/lib/api/server.ts에 추가
 
 // 공개 배너 조회
 export async function fetchPublicBanners(
   siteSlug: string,
-  deviceType: DeviceType
-): Promise<PublicBanner[]>
+  deviceType: DeviceType,
+): Promise<PublicBanner[]>;
 ```
 
 ### React Query 훅
@@ -184,12 +174,12 @@ export async function fetchPublicBanners(
 ```typescript
 // src/hooks/useBanners.ts
 
-export function useBanners(siteId: string, deviceType?: DeviceType)
-export function useBanner(siteId: string, bannerId: string)
-export function useCreateBanner(siteId: string)
-export function useUpdateBanner(siteId: string)
-export function useDeleteBanner(siteId: string)
-export function useUpdateBannerOrder(siteId: string)
+export function useBanners(siteId: string, deviceType?: DeviceType);
+export function useBanner(siteId: string, bannerId: string);
+export function useCreateBanner(siteId: string);
+export function useUpdateBanner(siteId: string);
+export function useDeleteBanner(siteId: string);
+export function useUpdateBannerOrder(siteId: string);
 ```
 
 ### UI 명세

@@ -1,6 +1,7 @@
 # [FE] 크로스 도메인 인증 방식 변경
 
 ## GitHub 이슈
+
 - **이슈 번호**: #78
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/78
 - **생성일**: 2026-01-25
@@ -12,6 +13,7 @@
 백엔드 도메인이 `pagelet-api.kr`로 변경되어 쿠키 공유가 불가능해졌습니다.
 
 **변경 방향:**
+
 - accessToken: localStorage + Authorization 헤더
 - refreshToken: 프론트 서버 httpOnly 쿠키 (보안)
 
@@ -20,6 +22,7 @@
 ### 1. 토큰 관리 API Route 구현
 
 #### GET /api/auth/callback
+
 ```typescript
 // app/api/auth/callback/route.ts
 export async function GET(request: NextRequest) {
@@ -48,6 +51,7 @@ export async function GET(request: NextRequest) {
 ```
 
 #### POST /api/auth/refresh
+
 ```typescript
 // app/api/auth/refresh/route.ts
 export async function POST(request: NextRequest) {
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
 ```
 
 #### POST /api/auth/logout
+
 ```typescript
 // app/api/auth/logout/route.ts
 export async function POST() {
@@ -74,6 +79,7 @@ export async function POST() {
 ```
 
 ### 2. Axios 클라이언트 수정
+
 ```typescript
 // src/lib/api/client.ts
 export const api = axios.create({
@@ -89,17 +95,21 @@ api.interceptors.request.use((config) => {
 });
 
 // Response: 401 → /api/auth/refresh 호출
-api.interceptors.response.use(response => response, async (error) => {
-  if (error.response?.status === 401) {
-    const res = await fetch('/api/auth/refresh', { method: 'POST' });
-    const { accessToken } = await res.json();
-    localStorage.setItem('accessToken', accessToken);
-    // 원래 요청 재시도
-  }
-});
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      const res = await fetch('/api/auth/refresh', { method: 'POST' });
+      const { accessToken } = await res.json();
+      localStorage.setItem('accessToken', accessToken);
+      // 원래 요청 재시도
+    }
+  },
+);
 ```
 
 ### 3. OAuth 콜백 페이지 수정
+
 ```typescript
 // app/(auth)/auth/success/page.tsx
 useEffect(() => {
@@ -112,6 +122,7 @@ useEffect(() => {
 ```
 
 ## 영향받는 파일
+
 - `app/api/auth/callback/route.ts` (신규)
 - `app/api/auth/refresh/route.ts` (신규)
 - `app/api/auth/logout/route.ts` (신규)
@@ -120,6 +131,7 @@ useEffect(() => {
 - `app/(auth)/auth/success/page.tsx`
 
 ## 구현 체크리스트
+
 - [ ] `app/api/auth/callback/route.ts` 생성
 - [ ] `app/api/auth/refresh/route.ts` 생성
 - [ ] `app/api/auth/logout/route.ts` 생성
@@ -131,10 +143,12 @@ useEffect(() => {
 - [ ] 환경 변수 설정 (`BACKEND_URL`)
 
 ## 테스트 계획
+
 - [ ] OAuth 로그인 → localStorage에 accessToken 저장 확인
 - [ ] API 요청 → Authorization 헤더 포함 확인
 - [ ] 토큰 만료 → 자동 갱신 확인
 - [ ] 로그아웃 → localStorage + 쿠키 삭제 확인
 
 ## 의존성
+
 - pagelet-api #79 완료 후 진행

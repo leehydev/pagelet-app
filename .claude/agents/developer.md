@@ -68,8 +68,8 @@ npm run dev
 # 5. 빌드
 npm run build
 
-# 6. 테스트
-npm run test
+# 6. 테스트 (--run: watch 모드 없이 1회 실행 후 종료)
+npm run test -- --run
 ```
 
 ### 4. 커밋 & PR

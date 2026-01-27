@@ -1,6 +1,7 @@
 # [FE] 브랜딩 이미지 삭제 기능 구현
 
 ## GitHub 이슈
+
 - **이슈 번호**: #63
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/63
 - **생성일**: 2026-01-24
@@ -16,6 +17,7 @@
 ## 작업 범위
 
 ### 포함
+
 - 삭제 API 함수 추가 (`deleteBrandingAsset`)
 - `useBrandingUpload` 훅에 delete 기능 추가
 - BrandingUploader 컴포넌트의 삭제 버튼에 실제 삭제 로직 연결
@@ -23,12 +25,14 @@
 - 삭제 성공/실패 토스트 메시지
 
 ### 제외
+
 - 백엔드 API 구현 (별도 이슈)
 - 삭제 취소/복구 기능
 
 ## 기술 명세
 
 ### 영향받는 파일
+
 - `src/lib/api/types.ts` - BrandingDeleteResponse 타입 추가
 - `src/lib/api/client.ts` - deleteBrandingAsset 함수 추가
 - `src/lib/api/index.ts` - 재내보내기
@@ -100,11 +104,11 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
     upload,
     commit,
     reset,
-    deleteAsset,  // 추가
+    deleteAsset, // 추가
     isUploading: state.status === 'uploading',
     isUploaded: state.status === 'uploaded',
     isCommitting: state.status === 'committing',
-    isDeleting: deleteMutation.isPending,  // 추가
+    isDeleting: deleteMutation.isPending, // 추가
     hasChanges: state.status === 'uploaded',
   };
 }
@@ -199,6 +203,7 @@ export function BrandingUploader({
 ```
 
 ## 구현 체크리스트
+
 - [ ] `BrandingDeleteResponse` 타입 추가 (`src/lib/api/types.ts`)
 - [ ] `deleteBrandingAsset` API 함수 추가 (`src/lib/api/client.ts`)
 - [ ] `useBrandingUpload` 훅에 delete 기능 추가
@@ -209,6 +214,7 @@ export function BrandingUploader({
 - [ ] 에러 메시지 매핑 (`src/lib/error-messages.ts`)
 
 ## 테스트 계획
+
 - [ ] 삭제 버튼 클릭 시 확인 다이얼로그 표시
 - [ ] 확인 클릭 시 API 호출 및 이미지 제거
 - [ ] 취소 클릭 시 다이얼로그 닫힘
@@ -218,9 +224,11 @@ export function BrandingUploader({
 - [ ] 각 브랜딩 타입별 테스트 (logo, favicon, og)
 
 ## 참고 자료
+
 - 기존 BrandingUploader: `src/components/app/settings/BrandingUploader.tsx`
 - useBrandingUpload 훅: `src/hooks/use-branding-upload.ts`
 - AlertDialog 컴포넌트: `src/components/ui/alert-dialog.tsx`
 
 ## 의존성
+
 - [ ] pagelet-api#63 - 브랜딩 이미지 삭제 API 구현

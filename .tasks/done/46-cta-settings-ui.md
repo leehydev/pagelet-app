@@ -1,6 +1,7 @@
 # [FE] CTA 설정 UI
 
 ## GitHub 이슈
+
 - **이슈 번호**: #46
 - **이슈 링크**: https://github.com/leehydev/pagelet-app/issues/46
 - **생성일**: 2026-01-23
@@ -19,6 +20,7 @@
 ## 작업 범위
 
 ### 포함
+
 - 사이트 설정 페이지에 "CTA 버튼" 섹션 추가
 - 버튼 타입 선택 (텍스트/이미지)
 - 텍스트 입력 또는 이미지 업로드
@@ -26,12 +28,14 @@
 - 활성화/비활성화 토글
 
 ### 제외
+
 - CTA 버튼 표시 (pagelet-app#47)
 - 백엔드 API (pagelet-api#41)
 
 ## 기술 명세
 
 ### 영향받는 파일
+
 - `app/(app)/admin/[siteId]/settings/page.tsx`
 - `src/components/app/settings/CtaSettingsSection.tsx` (신규)
 - `src/hooks/use-site-settings.ts` (기존 훅 수정)
@@ -78,6 +82,7 @@ interface CtaSettingsSectionProps {
 기존 사이트 설정 훅(use-site-settings)을 확장하여 CTA 필드 관리
 
 ## 구현 체크리스트
+
 - [ ] CtaSettingsSection 컴포넌트 생성
 - [ ] 활성화 토글 구현
 - [ ] 버튼 타입 라디오 버튼 구현
@@ -89,6 +94,7 @@ interface CtaSettingsSectionProps {
 - [ ] API 연동 (저장/조회)
 
 ## 테스트 계획
+
 - [ ] 텍스트 버튼 설정 및 저장
 - [ ] 이미지 버튼 설정 및 저장
 - [ ] 활성화/비활성화 토글

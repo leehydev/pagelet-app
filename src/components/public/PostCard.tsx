@@ -15,7 +15,7 @@ interface PostCardProps {
 // Category color mapping
 const getCategoryColor = (categoryName: string | null) => {
   if (!categoryName) return 'bg-gray-100 text-gray-700';
-  
+
   const name = categoryName.toLowerCase();
   if (name.includes('design')) return 'bg-blue-100 text-blue-700';
   if (name.includes('marketing')) return 'bg-purple-100 text-purple-700';
@@ -47,7 +47,12 @@ export function PostCard({ post, siteSlug }: PostCardProps) {
           {/* 카테고리 */}
           {post.categoryName && (
             <div className="mb-3">
-              <span className={cn('inline-block px-3 py-1 text-xs font-semibold rounded-full uppercase', categoryColor)}>
+              <span
+                className={cn(
+                  'inline-block px-3 py-1 text-xs font-semibold rounded-full uppercase',
+                  categoryColor,
+                )}
+              >
                 {post.categoryName}
               </span>
             </div>

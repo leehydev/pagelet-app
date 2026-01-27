@@ -9,24 +9,26 @@
 ## 목적
 
 게시글 관리 화면에 드래프트 관련 UI를 추가합니다.
+
 - 게시글 목록에서 "편집 중" 상태 표시
 - 에디터에서 "발행", "재발행", "변경 취소", "비공개 전환" 버튼 추가
 
 ## 변경된 버전 관리 전략
 
 ### Status 정의
+
 - **PRIVATE**: 비공개 (새 글 또는 비공개 전환)
 - **PUBLISHED**: 공개
 
 ### 액션별 동작
 
-| 상태 | 액션 | 동작 |
-|------|------|------|
-| PRIVATE + draft | 발행 | drafts -> posts, status -> PUBLISHED, drafts 삭제 |
-| PUBLISHED | 편집 시작 | posts -> drafts 복사 |
-| PUBLISHED + draft | 재발행 | drafts -> posts, drafts 삭제 |
-| PUBLISHED + draft | 변경 취소 | drafts 삭제 |
-| PUBLISHED | 비공개 전환 | drafts 있으면 머지, status -> PRIVATE |
+| 상태              | 액션        | 동작                                              |
+| ----------------- | ----------- | ------------------------------------------------- |
+| PRIVATE + draft   | 발행        | drafts -> posts, status -> PUBLISHED, drafts 삭제 |
+| PUBLISHED         | 편집 시작   | posts -> drafts 복사                              |
+| PUBLISHED + draft | 재발행      | drafts -> posts, drafts 삭제                      |
+| PUBLISHED + draft | 변경 취소   | drafts 삭제                                       |
+| PUBLISHED         | 비공개 전환 | drafts 있으면 머지, status -> PRIVATE             |
 
 > 기존 "발행 취소"를 "비공개 전환"으로 용어 변경
 
@@ -58,12 +60,12 @@
 
 **상태 표시:**
 
-| posts.status | hasDraft | 표시 |
-|--------------|----------|------|
-| PRIVATE | false | 비공개 |
-| PRIVATE | true | 작성 중 |
-| PUBLISHED | false | 발행됨 |
-| PUBLISHED | true | 발행됨 (편집 중) |
+| posts.status | hasDraft | 표시             |
+| ------------ | -------- | ---------------- |
+| PRIVATE      | false    | 비공개           |
+| PRIVATE      | true     | 작성 중          |
+| PUBLISHED    | false    | 발행됨           |
+| PUBLISHED    | true     | 발행됨 (편집 중) |
 
 ### 상태 배지 컴포넌트
 
@@ -94,12 +96,14 @@ function PostStatusBadge({ status, hasDraft }: PostStatusBadgeProps) {
 ### 에디터 버튼 영역
 
 **PRIVATE + 드래프트 있는 경우:**
+
 ```
 [발행]
    └ drafts -> posts, status -> PUBLISHED, drafts 삭제
 ```
 
 **PUBLISHED + 드래프트 있는 경우:**
+
 ```
 [재발행] [변경 취소] [비공개 전환]
    |         |           |
@@ -109,6 +113,7 @@ function PostStatusBadge({ status, hasDraft }: PostStatusBadgeProps) {
 ```
 
 **PUBLISHED + 드래프트 없는 경우:**
+
 ```
 [비공개 전환]
    └ status -> PRIVATE
@@ -117,6 +122,7 @@ function PostStatusBadge({ status, hasDraft }: PostStatusBadgeProps) {
 ### 버튼 동작 상세
 
 **발행 버튼 (PRIVATE + draft):**
+
 ```typescript
 async function handlePublish() {
   const confirmed = await showConfirmModal({
@@ -134,6 +140,7 @@ async function handlePublish() {
 ```
 
 **재발행 버튼 (PUBLISHED + draft):**
+
 ```typescript
 async function handleRepublish() {
   const confirmed = await showConfirmModal({
@@ -151,6 +158,7 @@ async function handleRepublish() {
 ```
 
 **변경 취소 버튼 (PUBLISHED + draft):**
+
 ```typescript
 async function handleDiscardChanges() {
   const confirmed = await showConfirmModal({
@@ -169,6 +177,7 @@ async function handleDiscardChanges() {
 ```
 
 **비공개 전환 버튼 (PUBLISHED):**
+
 ```typescript
 async function handleUnpublish() {
   const message = post.hasDraft
@@ -197,29 +206,34 @@ async function handleUnpublish() {
 ## 구현 체크리스트
 
 ### 게시글 목록 드래프트 표시
+
 - [ ] 목록 API 응답에서 hasDraft 확인
 - [ ] 상태 배지 컴포넌트 수정 (PRIVATE/PUBLISHED)
 - [ ] "작성 중" / "편집 중" 배지 표시
 
 ### 발행 버튼 (PRIVATE + draft)
+
 - [ ] PRIVATE + hasDraft일 때만 표시
 - [ ] 확인 모달 추가
 - [ ] publishPost() API 호출
 - [ ] 성공 시 상태 업데이트 및 토스트
 
 ### 재발행 버튼 (PUBLISHED + draft)
+
 - [ ] PUBLISHED + hasDraft일 때만 표시
 - [ ] 확인 모달 추가
 - [ ] republishPost() API 호출
 - [ ] 성공 시 상태 업데이트 및 토스트
 
 ### 변경 취소 버튼 (PUBLISHED + draft)
+
 - [ ] PUBLISHED + hasDraft일 때만 표시
 - [ ] 확인 모달 추가
 - [ ] deleteDraft() API 호출
 - [ ] 성공 시 에디터 리로드 (발행본 내용)
 
 ### 비공개 전환 버튼 (PUBLISHED)
+
 - [ ] PUBLISHED일 때 표시
 - [ ] hasDraft 여부에 따른 메시지 분기
 - [ ] unpublishPost() API 호출
@@ -274,24 +288,28 @@ async function handleUnpublish() {
 ## 테스트 시나리오
 
 ### 발행 플로우 (PRIVATE + draft)
+
 1. 새 글 작성 (PRIVATE + 드래프트 있는 상태)
 2. "발행" 클릭
 3. 확인 모달에서 확인
 4. 기대: 게시글이 PUBLISHED 상태로 변경, 드래프트 삭제
 
 ### 재발행 플로우 (PUBLISHED + draft)
+
 1. PUBLISHED + 드래프트 있는 게시글 열기
 2. "재발행" 클릭
 3. 확인 모달에서 확인
 4. 기대: 발행본이 드래프트 내용으로 업데이트, 드래프트 삭제
 
 ### 변경 취소 플로우 (PUBLISHED + draft)
+
 1. PUBLISHED + 드래프트 있는 게시글 열기
 2. "변경 취소" 클릭
 3. 확인 모달에서 확인
 4. 기대: 에디터가 발행본 내용으로 리로드, 드래프트 삭제
 
 ### 비공개 전환 - 드래프트 있음
+
 1. PUBLISHED + 드래프트 있는 게시글 열기
 2. "비공개 전환" 클릭
 3. 경고 모달 표시: "편집 중인 내용이 적용됩니다"
@@ -299,6 +317,7 @@ async function handleUnpublish() {
 5. 기대: 게시글이 드래프트 내용으로 PRIVATE 상태로 변경
 
 ### 비공개 전환 - 드래프트 없음
+
 1. PUBLISHED 상태 게시글 열기 (드래프트 없음)
 2. "비공개 전환" 클릭
 3. 확인 모달 표시
@@ -325,6 +344,7 @@ async function handleUnpublish() {
 ## 진행 로그
 
 ### 2026-01-24
+
 - 태스크 파일 생성
 - "발행 취소" -> "비공개 전환"으로 용어 변경
 - DRAFT -> PRIVATE 상태 변경

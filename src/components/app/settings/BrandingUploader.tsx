@@ -309,12 +309,7 @@ export function BrandingUploader({
             {isUploaded ? (
               // 업로드 완료 상태: 적용하기 + 취소 버튼
               <>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCommitClick}
-                  disabled={isCommitting}
-                >
+                <Button type="button" size="sm" onClick={handleCommitClick} disabled={isCommitting}>
                   {isCommitting ? '적용 중...' : '지금 적용하기'}
                 </Button>
                 <Button

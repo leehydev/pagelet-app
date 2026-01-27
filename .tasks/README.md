@@ -22,12 +22,12 @@ backlog → in-progress → review → done
    └───────────┘ (작업 중단 시)
 ```
 
-| 상태 | 디렉토리 | 설명 |
-|------|----------|------|
-| 대기 | `backlog/` | Architect가 생성한 새 태스크 |
+| 상태   | 디렉토리       | 설명                         |
+| ------ | -------------- | ---------------------------- |
+| 대기   | `backlog/`     | Architect가 생성한 새 태스크 |
 | 진행중 | `in-progress/` | Developer가 작업 중인 태스크 |
-| 리뷰 | `review/` | PR 생성 후 리뷰 대기 중 |
-| 완료 | `done/` | 머지 완료된 태스크 |
+| 리뷰   | `review/`      | PR 생성 후 리뷰 대기 중      |
+| 완료   | `done/`        | 머지 완료된 태스크           |
 
 ## 파일 명명 규칙
 
@@ -36,6 +36,7 @@ backlog → in-progress → review → done
 ```
 
 **예시:**
+
 - `42-post-pagination.md`
 - `43-image-optimization.md`
 - `44-login-error-fix.md`

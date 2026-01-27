@@ -7,8 +7,9 @@ import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-export interface ValidationTextareaProps<TFieldValues extends FieldValues = FieldValues>
-  extends Omit<React.ComponentProps<typeof Textarea>, 'name'> {
+export interface ValidationTextareaProps<
+  TFieldValues extends FieldValues = FieldValues,
+> extends Omit<React.ComponentProps<typeof Textarea>, 'name'> {
   name: FieldPath<TFieldValues>;
   label?: string;
   description?: string;
@@ -80,11 +81,11 @@ function ValidationTextareaInner<TFieldValues extends FieldValues = FieldValues>
               }
               className={className}
               value={field.value ?? ''}
-              onChange={e => {
+              onChange={(e) => {
                 field.onChange(e);
                 props.onChange?.(e);
               }}
-              onBlur={e => {
+              onBlur={(e) => {
                 field.onBlur();
                 props.onBlur?.(e);
               }}

@@ -20,7 +20,10 @@ interface QueryErrorProps {
   className?: string;
 }
 
-const sizeStyles: Record<ErrorSize, { container: string; icon: string; title: string; message: string }> = {
+const sizeStyles: Record<
+  ErrorSize,
+  { container: string; icon: string; title: string; message: string }
+> = {
   sm: {
     container: 'p-4 rounded-lg',
     icon: 'w-5 h-5',
