@@ -3,11 +3,11 @@
 /**
  * 게시글 수정 페이지
  *
- * 저장 로직:
- * - 저장 버튼: PUT으로 전체 교체 (draft 자동 삭제)
- * - 임시저장 버튼: draft만 저장
- * - 불러오기 버튼: draft 내용을 폼에 로드
- * - 자동저장: 5분마다 draft로 저장
+ * 저장 로직 (수동 저장 방식):
+ * - [등록] 버튼만 표시 (PUT으로 전체 교체)
+ * - 저장 버튼 없음 (임시저장 없음)
+ * - 저장된 글 불러오기 버튼 없음
+ * - 자동저장 없음
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -19,16 +19,14 @@ import { z } from 'zod';
 import { useSiteId } from '@/stores/site-store';
 import {
   getAdminPost,
-  getDraft,
   PostStatus,
   ReplacePostRequest,
   revalidatePost,
   replaceAdminPost,
-  saveDraft,
 } from '@/lib/api';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
-import { useAutoSave } from '@/hooks/use-auto-save';
+import { useLeaveConfirm } from '@/hooks/use-leave-confirm';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
@@ -36,6 +34,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
 import { PostStatusRadio } from '@/components/app/post/PostStatusRadio';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
+import { LeaveConfirmModal } from '@/components/app/post/LeaveConfirmModal';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { AxiosError } from 'axios';
@@ -90,6 +89,19 @@ export default function EditPostPage() {
   const [editorReady, setEditorReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<PostStatus>(PostStatus.PRIVATE);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
+  // --------------------------------------------------------------------------
+  // 이탈 감지
+  // --------------------------------------------------------------------------
+
+  const { allowLeave, isLeaveAllowed } = useLeaveConfirm({
+    hasChanges,
+    mode: 'edit-post',
+  });
 
   // --------------------------------------------------------------------------
   // 데이터 조회
@@ -105,13 +117,6 @@ export default function EditPostPage() {
     enabled: !!siteId && !!postId,
   });
 
-  // 드래프트 조회 (post.hasDraft가 true일 때만)
-  const { data: draft, isLoading: draftLoading } = useQuery({
-    queryKey: ['admin', 'draft', siteId, postId],
-    queryFn: () => getDraft(siteId, postId),
-    enabled: !!siteId && !!postId && post?.hasDraft === true,
-  });
-
   const {
     data: categories,
     isLoading: categoriesLoading,
@@ -119,56 +124,6 @@ export default function EditPostPage() {
   } = useAdminCategories(siteId);
 
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
-
-  // --------------------------------------------------------------------------
-  // 자동 저장
-  // --------------------------------------------------------------------------
-
-  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged } = useAutoSave({
-    siteId,
-    postId,
-    intervalMs: 5 * 60 * 1000,
-    onSaveSuccess: () => {
-      toast.success('자동 저장되었습니다', { duration: 2000 });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-    },
-    onSaveError: (err) => {
-      console.error('Auto-save failed:', err);
-    },
-  });
-
-  // --------------------------------------------------------------------------
-  // 상태 표시
-  // --------------------------------------------------------------------------
-
-  const getStatusText = () => {
-    if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
-    if (!post) return null;
-
-    if (post.status === PostStatus.PUBLISHED) {
-      if (post.hasDraft) {
-        return { text: '편집 중 (미발행 변경사항)', color: 'text-amber-600' };
-      }
-      return { text: '발행됨', color: 'text-green-600' };
-    }
-
-    return { text: '비공개', color: 'text-gray-600' };
-  };
-
-  const statusInfo = getStatusText();
-
-  const headerExtra = (
-    <div className="flex items-center gap-2 text-sm text-gray-500">
-      {statusInfo && <span className={statusInfo.color}>{statusInfo.text}</span>}
-      {!isSaving && lastSavedAt && (
-        <span className="text-gray-400">
-          ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
-        </span>
-      )}
-      {hasUnsavedChanges && !isSaving && <span className="text-orange-600">• 저장 대기 중</span>}
-    </div>
-  );
 
   // --------------------------------------------------------------------------
   // 폼 설정
@@ -189,7 +144,7 @@ export default function EditPostPage() {
 
   // 폼 초기화 (post 데이터 로드 시)
   useEffect(() => {
-    if (!post) return;
+    if (!post || initialDataLoaded) return;
 
     methods.reset({
       title: post.title || '',
@@ -202,15 +157,29 @@ export default function EditPostPage() {
     });
 
     setSelectedStatus(post.status);
-  }, [post, methods]);
+    setInitialDataLoaded(true);
+  }, [post, methods, initialDataLoaded]);
 
   const watchedOgImageUrl = useWatch({
     control: methods.control,
     name: 'ogImageUrl',
   });
 
+  // 변경 감지
+  const watchedValues = useWatch({ control: methods.control });
+
+  useEffect(() => {
+    if (editorReady && initialDataLoaded) {
+      setHasChanges(true);
+    }
+  }, [watchedValues, editorReady, initialDataLoaded]);
+
+  const handleEditorReady = useCallback(() => {
+    setEditorReady(true);
+  }, []);
+
   // --------------------------------------------------------------------------
-  // 데이터 수집 & 변경 감지
+  // 데이터 수집
   // --------------------------------------------------------------------------
 
   const collectFormData = useCallback((): ReplacePostRequest | null => {
@@ -239,28 +208,15 @@ export default function EditPostPage() {
     };
   }, [methods, selectedStatus]);
 
-  const watchedValues = useWatch({ control: methods.control });
-
-  useEffect(() => {
-    if (!editorReady || !post) return;
-    const data = collectFormData();
-    if (data) markAsChanged(data);
-  }, [watchedValues, editorReady, post, collectFormData, markAsChanged]);
-
-  const handleEditorReady = useCallback(() => {
-    setEditorReady(true);
-  }, []);
-
   // --------------------------------------------------------------------------
   // Mutations
   // --------------------------------------------------------------------------
 
-  // PUT으로 전체 교체 (draft 자동 삭제)
+  // PUT으로 전체 교체
   const saveMutation = useMutation({
     mutationFn: (data: ReplacePostRequest) => replaceAdminPost(siteId, postId, data),
     onSuccess: async (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
 
       if (siteSettings?.slug && updatedPost.slug) {
@@ -274,6 +230,7 @@ export default function EditPostPage() {
       toast.success(
         updatedPost.status === PostStatus.PUBLISHED ? '게시글이 발행되었습니다' : '저장되었습니다',
       );
+      allowLeave();
       router.push('/admin/posts');
     },
     onError: (err) => {
@@ -295,7 +252,7 @@ export default function EditPostPage() {
   // 핸들러
   // --------------------------------------------------------------------------
 
-  /** 저장 버튼 */
+  /** 등록 버튼 */
   const handleSave = async () => {
     setError(null);
 
@@ -328,59 +285,41 @@ export default function EditPostPage() {
     saveMutation.mutate(data);
   };
 
-  /** 임시저장 버튼 */
-  const handleDraftSave = async () => {
-    const data = collectFormData();
-    if (!data) {
-      toast.error('에디터가 준비되지 않았습니다');
-      return;
-    }
-
-    try {
-      await saveDraft(siteId, postId, data);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
-      toast.success('임시저장되었습니다');
-    } catch (err) {
-      toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
+  /** 네비게이션 시도 */
+  const handleNavigate = (path: string) => {
+    if (hasChanges && !isLeaveAllowed) {
+      setPendingNavigation(path);
+      setShowLeaveModal(true);
+    } else {
+      router.push(path);
     }
   };
 
-  /** 불러오기 버튼 */
-  const handleLoadDraft = async () => {
-    if (!draft) {
-      toast.error('불러올 임시저장 내용이 없습니다');
-      return;
+  /** 저장하지 않고 이탈 */
+  const handleLeaveWithoutSave = () => {
+    allowLeave();
+    setShowLeaveModal(false);
+    if (pendingNavigation) {
+      router.push(pendingNavigation);
+    } else {
+      router.back();
     }
+  };
 
-    // 폼에 draft 내용 로드
-    methods.reset({
-      title: draft.title || '',
-      subtitle: draft.subtitle || '',
-      slug: post?.slug || '', // slug는 원본에서
-      categoryId: draft.categoryId || '',
-      seoTitle: draft.seoTitle || '',
-      seoDescription: draft.seoDescription || '',
-      ogImageUrl: draft.ogImageUrl || '',
-    });
-
-    // 에디터에 content 로드
-    const editor = editorRef.current?.getEditor();
-    if (editor && draft.contentJson) {
-      editor.commands.setContent(draft.contentJson);
-    }
-
-    toast.success('임시저장 내용을 불러왔습니다');
+  /** 이탈 취소 */
+  const handleCancelLeave = () => {
+    setShowLeaveModal(false);
+    setPendingNavigation(null);
   };
 
   // --------------------------------------------------------------------------
   // 로딩/에러 상태
   // --------------------------------------------------------------------------
 
-  if (postLoading || (post?.hasDraft && draftLoading)) {
+  if (postLoading) {
     return (
       <>
-        <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
+        <AdminPageHeader breadcrumb="Management" title="Edit Post" />
         <div className="p-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/4" />
@@ -408,7 +347,30 @@ export default function EditPostPage() {
     );
   }
 
-  const isPending = isSaving || saveMutation.isPending;
+  const isPending = saveMutation.isPending;
+
+  // --------------------------------------------------------------------------
+  // 상태 표시
+  // --------------------------------------------------------------------------
+
+  const getStatusText = () => {
+    if (isPending) return { text: '저장 중...', color: 'text-blue-600' };
+
+    if (post.status === PostStatus.PUBLISHED) {
+      return { text: '발행됨', color: 'text-green-600' };
+    }
+
+    return { text: '비공개', color: 'text-gray-600' };
+  };
+
+  const statusInfo = getStatusText();
+
+  const headerExtra = (
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <span className={statusInfo.color}>{statusInfo.text}</span>
+      {hasChanges && !isPending && <span className="text-orange-600">• 변경사항 있음</span>}
+    </div>
+  );
 
   // --------------------------------------------------------------------------
   // 렌더링
@@ -480,40 +442,15 @@ export default function EditPostPage() {
                     onClick={handleSave}
                     disabled={isPending}
                   >
-                    {saveMutation.isPending ? '저장 중...' : '저장'}
+                    {isPending ? '등록 중...' : '등록'}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleDraftSave}
-                    disabled={isPending}
-                  >
-                    임시저장
-                  </Button>
-
-                  {/* 불러오기 버튼 (draft 있을 때만) */}
-                  {post.hasDraft && draft && (
-                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                      <p className="text-sm text-amber-700 mb-2">임시저장된 내용이 있습니다</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-amber-700 border-amber-300 hover:bg-amber-100"
-                        onClick={handleLoadDraft}
-                        disabled={isPending}
-                      >
-                        불러오기
-                      </Button>
-                    </div>
-                  )}
 
                   <Button
                     type="button"
                     variant="ghost"
                     className="w-full"
-                    onClick={() => router.back()}
+                    onClick={() => handleNavigate('/admin/posts')}
+                    disabled={isPending}
                   >
                     돌아가기
                   </Button>
@@ -596,10 +533,8 @@ export default function EditPostPage() {
                   value={watchedOgImageUrl || ''}
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
-                    const data = collectFormData();
-                    if (data) markAsChanged({ ...data, ogImageUrl: url || null });
                   }}
-                  disabled={isSaving}
+                  disabled={isPending}
                 />
               </div>
 
@@ -635,6 +570,15 @@ export default function EditPostPage() {
             </div>
           </div>
         </div>
+
+        {/* 이탈 확인 모달 */}
+        <LeaveConfirmModal
+          open={showLeaveModal}
+          onOpenChange={setShowLeaveModal}
+          mode="edit-post"
+          onLeaveWithoutSave={handleLeaveWithoutSave}
+          onCancel={handleCancelLeave}
+        />
       </>
     </FormProvider>
   );

@@ -444,7 +444,7 @@ export interface DailyAnalytics {
   ctaClicks: number;
 }
 
-// ===== Draft Types =====
+// ===== Draft Types (Post-connected, Legacy) =====
 
 export interface PostDraft {
   id: string;
@@ -474,6 +474,63 @@ export interface SaveDraftRequest {
   ogImageUrl?: string | null;
   categoryId?: string | null;
 }
+
+// ===== Independent Draft Types (v2) =====
+
+/**
+ * 독립적인 Draft (임시저장 글)
+ * Post와 연결되지 않은 독립적인 임시저장
+ */
+export interface Draft {
+  id: string;
+  siteId: string;
+  userId: string;
+  title: string;
+  subtitle: string;
+  slug: string | null;
+  contentJson: Record<string, unknown> | null;
+  contentHtml: string | null;
+  contentText: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  categoryId: string | null;
+  categoryName?: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Draft 목록 아이템 (경량 버전)
+ */
+export interface DraftListItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  ogImageUrl: string | null;
+  categoryName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Draft 생성/수정 요청
+ */
+export interface CreateDraftRequest {
+  title?: string;
+  subtitle?: string;
+  slug?: string | null;
+  contentJson?: Record<string, unknown>;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+  categoryId?: string | null;
+}
+
+export type UpdateDraftRequest = CreateDraftRequest;
 
 /**
  * PUT /admin/sites/:siteId/posts/:postId 용 전체 교체 요청

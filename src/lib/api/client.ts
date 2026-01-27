@@ -47,6 +47,10 @@ import type {
   DailyAnalytics,
   PostDraft,
   SaveDraftRequest,
+  Draft,
+  DraftListItem,
+  CreateDraftRequest,
+  UpdateDraftRequest,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -999,5 +1003,54 @@ export async function getDailyAnalytics(
       params: { days },
     },
   );
+  return response.data.data;
+}
+
+// ===== Independent Draft API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 임시저장 글 목록 조회
+ */
+export async function getDraftsV2(): Promise<DraftListItem[]> {
+  const response = await api.get<ApiResponse<DraftListItem[]>>('/admin/v2/drafts');
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 생성
+ */
+export async function createDraftV2(data: CreateDraftRequest): Promise<Draft> {
+  const response = await api.post<ApiResponse<Draft>>('/admin/v2/drafts', data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 상세 조회
+ */
+export async function getDraftByIdV2(draftId: string): Promise<Draft> {
+  const response = await api.get<ApiResponse<Draft>>(`/admin/v2/drafts/${draftId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 수정
+ */
+export async function updateDraftV2(draftId: string, data: UpdateDraftRequest): Promise<Draft> {
+  const response = await api.put<ApiResponse<Draft>>(`/admin/v2/drafts/${draftId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 삭제
+ */
+export async function deleteDraftByIdV2(draftId: string): Promise<void> {
+  await api.delete(`/admin/v2/drafts/${draftId}`);
+}
+
+/**
+ * v2 임시저장 글을 게시글로 등록
+ */
+export async function publishDraftV2(draftId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/drafts/${draftId}/publish`);
   return response.data.data;
 }
