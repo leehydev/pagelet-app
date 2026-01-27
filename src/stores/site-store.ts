@@ -40,3 +40,16 @@ export const useSiteStore = create<SiteStore>()(
 export function getCurrentSiteId(): string | null {
   return useSiteStore.getState().currentSiteId;
 }
+
+/**
+ * 현재 사이트 ID를 가져오는 hook
+ * Admin 페이지에서 siteId가 필요할 때 사용
+ * @throws Error if currentSiteId is null
+ */
+export function useSiteId(): string {
+  const currentSiteId = useSiteStore((state) => state.currentSiteId);
+  if (!currentSiteId) {
+    throw new Error('useSiteId: currentSiteId is not set. Make sure you are within AdminLayout.');
+  }
+  return currentSiteId;
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useSiteId } from '@/stores/site-store';
 import { useAdminCategories, useDeleteCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Category } from '@/lib/api';
@@ -11,8 +11,7 @@ import { QueryError } from '@/components/common/QueryError';
 import { Plus } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
-  const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
 
   const { data: categories, isLoading, error, refetch } = useAdminCategories(siteId);
   const deleteCategory = useDeleteCategory(siteId);
@@ -32,7 +31,7 @@ export default function AdminCategoriesPage() {
 
   const headerAction = {
     label: 'New Category',
-    href: `/admin/${siteId}/categories/new`,
+    href: '/admin/categories/new',
     icon: Plus,
   };
 
@@ -98,7 +97,6 @@ export default function AdminCategoriesPage() {
                     <CategoryRow
                       key={category.id}
                       category={category}
-                      siteId={siteId}
                       onDelete={() => handleDelete(category.id, category.name)}
                     />
                   ))}
@@ -108,7 +106,7 @@ export default function AdminCategoriesPage() {
           ) : (
             <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
               <p className="text-gray-500 mb-4">아직 카테고리가 없습니다.</p>
-              <Link href={`/admin/${siteId}/categories/new`}>
+              <Link href="/admin/categories/new">
                 <Button>첫 카테고리 만들기</Button>
               </Link>
             </div>
@@ -119,15 +117,7 @@ export default function AdminCategoriesPage() {
   );
 }
 
-function CategoryRow({
-  category,
-  siteId,
-  onDelete,
-}: {
-  category: Category;
-  siteId: string;
-  onDelete: () => void;
-}) {
+function CategoryRow({ category, onDelete }: { category: Category; onDelete: () => void }) {
   const isDefault = category.slug === 'uncategorized';
 
   return (
@@ -147,7 +137,7 @@ function CategoryRow({
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex justify-end gap-2">
-          <Link href={`/admin/${siteId}/categories/${category.id}/edit`}>
+          <Link href={`/admin/categories/${category.id}/edit`}>
             <Button variant="outline" size="sm">
               수정
             </Button>

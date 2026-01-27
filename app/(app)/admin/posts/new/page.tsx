@@ -10,11 +10,12 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSiteId } from '@/stores/site-store';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { useAutoSave } from '@/hooks/use-auto-save';
@@ -72,9 +73,8 @@ type PostFormData = z.infer<typeof postSchema>;
 
 export default function NewPostPage() {
   const router = useRouter();
-  const params = useParams();
   const queryClient = useQueryClient();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
 
   // --------------------------------------------------------------------------
   // 데이터 조회
@@ -219,7 +219,7 @@ export default function NewPostPage() {
         }
       }
       toast.success('게시글이 발행되었습니다');
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
@@ -239,7 +239,7 @@ export default function NewPostPage() {
         }
       }
       toast.success('게시글이 발행되었습니다');
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     },
     onError: (err) => {
       const errorCode = getErrorCode(err);
@@ -331,7 +331,7 @@ export default function NewPostPage() {
       toast.success('저장되었습니다');
       const savedPostId = getPostId();
       if (savedPostId) {
-        router.push(`/admin/${siteId}/posts/${savedPostId}`);
+        router.push(`/admin/posts/${savedPostId}`);
       }
     } else {
       toast.error('저장할 내용이 없습니다. 본문을 입력해주세요.');

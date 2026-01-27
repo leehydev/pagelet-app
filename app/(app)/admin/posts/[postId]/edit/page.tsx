@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSiteId } from '@/stores/site-store';
 import {
   getAdminPost,
   getDraft,
@@ -95,10 +96,11 @@ type DraftChoice = 'pending' | 'use-draft' | 'use-original';
 // ============================================================================
 
 export default function EditPostPage() {
-  const params = useParams<{ siteId: string; postId: string }>();
+  const params = useParams<{ postId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { siteId, postId } = params;
+  const siteId = useSiteId();
+  const { postId } = params;
 
   // --------------------------------------------------------------------------
   // 로컬 상태
@@ -323,7 +325,7 @@ export default function EditPostPage() {
         }
       }
       toast.success('게시글이 발행되었습니다');
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
@@ -345,7 +347,7 @@ export default function EditPostPage() {
         }
       }
       toast.success('변경사항이 발행되었습니다');
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '업데이트에 실패했습니다'));
@@ -381,7 +383,7 @@ export default function EditPostPage() {
         }
       }
       toast.success('게시글이 비공개로 전환되었습니다');
-      router.push(`/admin/${siteId}/posts`);
+      router.push('/admin/posts');
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '비공개 전환에 실패했습니다'));
@@ -415,7 +417,7 @@ export default function EditPostPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'draft', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
       toast.success('임시저장되었습니다');
-      router.push(`/admin/${siteId}/posts/${postId}`);
+      router.push(`/admin/posts/${postId}`);
     },
     onError: (err) => {
       toast.error(getErrorDisplayMessage(err, '임시저장에 실패했습니다'));
@@ -532,7 +534,7 @@ export default function EditPostPage() {
         <div className="p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-700 mb-4">게시글을 찾을 수 없습니다.</p>
-            <Button variant="outline" onClick={() => router.push(`/admin/${siteId}/posts`)}>
+            <Button variant="outline" onClick={() => router.push('/admin/posts')}>
               목록으로 돌아가기
             </Button>
           </div>

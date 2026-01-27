@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
+import { useSiteId } from '@/stores/site-store';
 import { useAdminPosts } from '@/hooks/use-posts';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { PostStatus } from '@/lib/api';
@@ -17,12 +18,11 @@ import { Plus } from 'lucide-react';
 const ITEMS_PER_PAGE = 5;
 
 export default function AdminPostsPage() {
-  const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId] = useState<string>('');
   const currentPage = Number(searchParams.get('page')) || 1;
 
   const { data, isLoading, error, refetch } = useAdminPosts(siteId, {
@@ -30,7 +30,7 @@ export default function AdminPostsPage() {
     page: currentPage,
     limit: ITEMS_PER_PAGE,
   });
-  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useAdminCategories(siteId);
+  const { error: categoriesError } = useAdminCategories(siteId);
 
   const posts = data?.items;
   const meta = data?.meta;
@@ -38,7 +38,7 @@ export default function AdminPostsPage() {
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
-    router.push(`/admin/${siteId}/posts?${params.toString()}`);
+    router.push(`/admin/posts?${params.toString()}`);
   };
 
   if (isLoading) {
@@ -47,7 +47,7 @@ export default function AdminPostsPage() {
         <AdminPageHeader
           breadcrumb="Management"
           title="All Posts"
-          action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+          action={{ label: 'New Post', href: '/admin/posts/new', icon: Plus }}
         />
         <div className="p-8">
           <div className="animate-pulse space-y-4">
@@ -65,7 +65,7 @@ export default function AdminPostsPage() {
         <AdminPageHeader
           breadcrumb="Management"
           title="All Posts"
-          action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+          action={{ label: 'New Post', href: '/admin/posts/new', icon: Plus }}
         />
         <div className="p-8">
           <QueryError
@@ -83,37 +83,18 @@ export default function AdminPostsPage() {
       <AdminPageHeader
         breadcrumb="Management"
         title="All Posts"
-        action={{ label: 'New Post', href: `/admin/${siteId}/posts/new`, icon: Plus }}
+        action={{ label: 'New Post', href: '/admin/posts/new', icon: Plus }}
       />
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
           {/* 카테고리 조회 에러 메시지 */}
           {categoriesError && (
-            <QueryErrorInline error={categoriesError} fallbackMessage="카테고리 목록을 불러올 수 없습니다" />
+            <QueryErrorInline
+              error={categoriesError}
+              fallbackMessage="카테고리 목록을 불러올 수 없습니다"
+            />
           )}
-          {/* 카테고리 필터 */}
-          {/* <div className="flex items-center gap-3">
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => {
-                setSelectedCategoryId(e.target.value);
-                // 카테고리 변경 시 페이지를 1로 리셋
-                const params = new URLSearchParams(searchParams.toString());
-                params.delete('page');
-                router.push(`/admin/${siteId}/posts?${params.toString()}`);
-              }}
-              disabled={categoriesLoading}
-              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">전체 카테고리</option>
-              {categories?.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name} ({category.postCount || 0})
-                </option>
-              ))}
-            </select>
-          </div> */}
         </div>
         {/* 썸네일 이미지 추가 */}
         {posts && posts.length > 0 ? (
@@ -144,7 +125,7 @@ export default function AdminPostsPage() {
                     <tr
                       key={post.id}
                       className="h-20 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => (window.location.href = `/admin/${siteId}/posts/${post.id}`)}
+                      onClick={() => (window.location.href = `/admin/posts/${post.id}`)}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
@@ -161,7 +142,7 @@ export default function AdminPostsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <Link
-                          href={`/admin/${siteId}/posts/${post.id}`}
+                          href={`/admin/posts/${post.id}`}
                           className="text-sm font-medium text-gray-900 hover:text-blue-600"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -224,7 +205,7 @@ export default function AdminPostsPage() {
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-500 mb-4">아직 작성한 게시글이 없습니다.</p>
-            <Link href={`/admin/${siteId}/posts/new`}>
+            <Link href="/admin/posts/new">
               <Button>첫 글 작성하기</Button>
             </Link>
           </div>

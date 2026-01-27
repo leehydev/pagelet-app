@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useSiteId } from '@/stores/site-store';
 import { useCreateCategory } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +13,7 @@ import { AdminPageHeader } from '@/components/app/layout/AdminPageHeader';
 
 export default function NewCategoryPage() {
   const router = useRouter();
-  const params = useParams();
-  const siteId = params.siteId as string;
+  const siteId = useSiteId();
 
   const createCategory = useCreateCategory(siteId);
 
@@ -35,7 +35,7 @@ export default function NewCategoryPage() {
 
     try {
       await createCategory.mutateAsync(formData);
-      router.push(`/admin/${siteId}/categories`);
+      router.push('/admin/categories');
     } catch (err) {
       setError(getErrorDisplayMessage(err, '카테고리 생성에 실패했습니다.'));
     }
