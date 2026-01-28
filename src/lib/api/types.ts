@@ -177,14 +177,14 @@ export interface CreatePostRequest {
   subtitle: string;
   content?: string; // Deprecated: 하위 호환성
   contentJson: Record<string, unknown>;
-  contentHtml?: string;
-  contentText?: string;
-  slug?: string;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  slug?: string | null;
   status?: PostStatus;
-  seoTitle?: string;
-  seoDescription?: string;
-  ogImageUrl?: string;
-  categoryId?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+  categoryId?: string | null;
 }
 
 export interface UpdatePostRequest {
@@ -194,12 +194,12 @@ export interface UpdatePostRequest {
   contentJson?: Record<string, unknown>;
   contentHtml?: string;
   contentText?: string;
-  slug?: string;
+  slug?: string | null;
   status?: PostStatus;
-  seoTitle?: string;
-  seoDescription?: string;
-  ogImageUrl?: string;
-  categoryId?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+  categoryId?: string | null;
 }
 
 // ===== Upload Types =====
@@ -444,7 +444,7 @@ export interface DailyAnalytics {
   ctaClicks: number;
 }
 
-// ===== Draft Types =====
+// ===== Draft Types (Post-connected, Legacy) =====
 
 export interface PostDraft {
   id: string;
@@ -465,11 +465,87 @@ export interface PostDraft {
 export interface SaveDraftRequest {
   title?: string;
   subtitle?: string;
+  slug?: string | null;
   contentJson?: Record<string, unknown>;
-  contentHtml?: string;
-  contentText?: string;
-  seoTitle?: string;
-  seoDescription?: string;
-  ogImageUrl?: string;
-  categoryId?: string;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+  categoryId?: string | null;
+}
+
+// ===== Independent Draft Types (v2) =====
+
+/**
+ * 독립적인 Draft (임시저장 글)
+ * Post와 연결되지 않은 독립적인 임시저장
+ */
+export interface Draft {
+  id: string;
+  siteId: string;
+  userId: string;
+  title: string;
+  subtitle: string;
+  slug: string | null;
+  contentJson: Record<string, unknown> | null;
+  contentHtml: string | null;
+  contentText: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  categoryId: string | null;
+  categoryName?: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Draft 목록 아이템 (경량 버전)
+ */
+export interface DraftListItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  ogImageUrl: string | null;
+  categoryName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Draft 생성/수정 요청
+ */
+export interface CreateDraftRequest {
+  title?: string;
+  subtitle?: string;
+  slug?: string | null;
+  contentJson?: Record<string, unknown>;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+  categoryId?: string | null;
+}
+
+export type UpdateDraftRequest = CreateDraftRequest;
+
+/**
+ * PUT /admin/sites/:siteId/posts/:postId 용 전체 교체 요청
+ * 모든 필드를 명시적으로 전달하여 게시글을 덮어씁니다.
+ */
+export interface ReplacePostRequest {
+  title: string;
+  subtitle: string;
+  slug: string | null;
+  contentJson: Record<string, unknown>;
+  contentHtml: string | null;
+  contentText: string | null;
+  status: PostStatus;
+  categoryId: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
 }

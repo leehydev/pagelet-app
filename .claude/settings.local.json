@@ -22,7 +22,13 @@
       "Bash(npx tsc:*)",
       "Bash(gh pr list:*)",
       "Bash(npx prettier:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(pnpm prettier:*)",
+      "Bash(gh project item-list:*)",
+      "Bash(gh project item-edit:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(grep:*)"
     ]
   }
 }

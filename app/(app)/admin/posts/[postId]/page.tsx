@@ -211,7 +211,7 @@ export default function AdminPostDetailPage() {
   const handleStatusChange = async (newStatus: PostStatus) => {
     if (!post || !siteSettings) return;
     try {
-      await updateStatusMutation.mutateAsync({ status: newStatus });
+      await updateStatusMutation.mutateAsync(newStatus);
       if (siteSettings.slug && post.slug) {
         try {
           await revalidatePost(siteSettings.slug, post.slug);
@@ -395,6 +395,8 @@ export default function AdminPostDetailPage() {
                     }
                     alt={post.title || '썸네일'}
                     fill
+                    sizes="256px"
+                    priority
                     className="object-cover"
                   />
                 </div>
@@ -416,6 +418,30 @@ export default function AdminPostDetailPage() {
                     <div className="flex justify-between">
                       <dt className="text-gray-500">발행일</dt>
                       <dd className="text-gray-900">{publishedDate || '-'}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <Separator />
+
+                {/* SEO 정보 */}
+                <div className="p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">SEO 정보</h3>
+                  <dl className="space-y-3 text-sm">
+                    <div>
+                      <dt className="text-gray-500 mb-1">SEO 제목</dt>
+                      <dd className="text-gray-900 break-words">
+                        {(activeTab === 'draft' && draft?.seoTitle) || post.seoTitle || (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-gray-500 mb-1">SEO 설명</dt>
+                      <dd className="text-gray-900 break-words">
+                        {(activeTab === 'draft' && draft?.seoDescription) ||
+                          post.seoDescription || <span className="text-gray-400">-</span>}
+                      </dd>
                     </div>
                   </dl>
                 </div>

@@ -21,6 +21,7 @@ import type {
   CreateSiteRequest,
   CreatePostRequest,
   UpdatePostRequest,
+  ReplacePostRequest,
   UpdateSiteSettingsRequest,
   PresignUploadRequest,
   PresignUploadResponse,
@@ -46,6 +47,10 @@ import type {
   DailyAnalytics,
   PostDraft,
   SaveDraftRequest,
+  Draft,
+  DraftListItem,
+  CreateDraftRequest,
+  UpdateDraftRequest,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -241,7 +246,7 @@ export async function createSite(data: CreateSiteRequest): Promise<void> {
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
   try {
     const response = await api.get<ApiResponse<{ available: boolean }>>(
-      `/sites/check-slug?slug=${encodeURIComponent(slug)}`,
+      `/onboarding/check-slug?slug=${encodeURIComponent(slug)}`,
     );
     return response.data.data.available;
   } catch {
@@ -305,6 +310,20 @@ export async function updateAdminPost(
     `/admin/sites/${siteId}/posts/${postId}`,
     data,
   );
+  return response.data.data;
+}
+
+/**
+ * PUT으로 게시글 전체 교체
+ * 모든 필드를 명시적으로 전달하여 덮어씁니다.
+ * 백엔드에서 draft가 있으면 자동 삭제됩니다.
+ */
+export async function replaceAdminPost(
+  siteId: string,
+  postId: string,
+  data: ReplacePostRequest,
+): Promise<Post> {
+  const response = await api.put<ApiResponse<Post>>(`/admin/sites/${siteId}/posts/${postId}`, data);
   return response.data.data;
 }
 
@@ -631,10 +650,31 @@ export async function updateAdminPostV2(postId: string, data: UpdatePostRequest)
 }
 
 /**
+ * v2 게시글 전체 교체 (PUT)
+ */
+export async function replaceAdminPostV2(postId: string, data: ReplacePostRequest): Promise<Post> {
+  const response = await api.put<ApiResponse<Post>>(`/admin/v2/posts/${postId}`, data);
+  return response.data.data;
+}
+
+/**
  * v2 게시글 삭제
  */
 export async function deleteAdminPostV2(postId: string): Promise<void> {
   await api.delete(`/admin/v2/posts/${postId}`);
+}
+
+/**
+ * v2 게시글 상태 변경 (PRIVATE ↔ PUBLISHED)
+ */
+export async function updatePostStatusV2(
+  postId: string,
+  status: 'PRIVATE' | 'PUBLISHED',
+): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(`/admin/v2/posts/${postId}/status`, {
+    status,
+  });
+  return response.data.data;
 }
 
 /**
@@ -976,5 +1016,54 @@ export async function getDailyAnalytics(
       params: { days },
     },
   );
+  return response.data.data;
+}
+
+// ===== Independent Draft API v2 (X-Site-Id 헤더 사용) =====
+
+/**
+ * v2 임시저장 글 목록 조회
+ */
+export async function getDraftsV2(): Promise<DraftListItem[]> {
+  const response = await api.get<ApiResponse<DraftListItem[]>>('/admin/v2/drafts');
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 생성
+ */
+export async function createDraftV2(data: CreateDraftRequest): Promise<Draft> {
+  const response = await api.post<ApiResponse<Draft>>('/admin/v2/drafts', data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 상세 조회
+ */
+export async function getDraftByIdV2(draftId: string): Promise<Draft> {
+  const response = await api.get<ApiResponse<Draft>>(`/admin/v2/drafts/${draftId}`);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 수정
+ */
+export async function updateDraftV2(draftId: string, data: UpdateDraftRequest): Promise<Draft> {
+  const response = await api.put<ApiResponse<Draft>>(`/admin/v2/drafts/${draftId}`, data);
+  return response.data.data;
+}
+
+/**
+ * v2 임시저장 글 삭제
+ */
+export async function deleteDraftByIdV2(draftId: string): Promise<void> {
+  await api.delete(`/admin/v2/drafts/${draftId}`);
+}
+
+/**
+ * v2 임시저장 글을 게시글로 등록
+ */
+export async function publishDraftV2(draftId: string): Promise<Post> {
+  const response = await api.post<ApiResponse<Post>>(`/admin/v2/drafts/${draftId}/publish`);
   return response.data.data;
 }

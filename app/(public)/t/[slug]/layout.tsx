@@ -92,10 +92,7 @@ export default async function PublicLayout({
   const fontClass = getFontClass(settings.fontKey);
 
   return (
-    <div
-      className={`flex-1 ${fontClass} flex flex-col bg-gray-50`}
-      style={{ fontFamily: 'var(--font-base)' }}
-    >
+    <div className={`flex-1 ${fontClass} flex flex-col`} style={{ fontFamily: 'var(--font-base)' }}>
       {/* 헤더 */}
       <Header
         logoImageUrl={settings.logoImageUrl || ''}
@@ -105,7 +102,7 @@ export default async function PublicLayout({
       />
 
       {/* 페이지 콘텐츠 */}
-      <div className="flex-1 background-light">{children}</div>
+      <div className="flex-1 bg-[#f6f7f8]">{children}</div>
 
       {/* CTA 배너 */}
       <CtaBanner settings={settings} />

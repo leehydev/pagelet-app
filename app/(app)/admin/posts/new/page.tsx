@@ -3,10 +3,11 @@
 /**
  * 새 게시글 작성 페이지
  *
- * 저장 로직:
- * - 5분마다 PRIVATE 상태로 post 자동 생성/저장
- * - 발행 버튼: PUBLISHED 상태로 발행
- * - 저장 버튼: 수동으로 즉시 저장
+ * 저장 로직 (수동 저장 방식):
+ * - [저장] 버튼: Draft 생성/업데이트
+ * - [등록] 버튼: Post로 발행
+ * - [저장된 글 불러오기] 버튼: Draft 목록 모달
+ * - 자동저장 없음
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -15,23 +16,29 @@ import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { FileText } from 'lucide-react';
 import { useSiteId } from '@/stores/site-store';
 import { useAdminCategories } from '@/hooks/use-categories';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
-import { useAutoSave } from '@/hooks/use-auto-save';
+import { useCreateDraft, useUpdateDraft, usePublishDraft } from '@/hooks/use-drafts';
+import { useLeaveConfirm, type EditorMode } from '@/hooks/use-leave-confirm';
 import {
   PostStatus,
   revalidatePost,
   createAdminPost,
-  publishPost,
+  getDraftByIdV2,
   CreatePostRequest,
+  DraftListItem,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { ThumbnailInput } from '@/components/app/post/ThumbnailInput';
+import { PostStatusRadio } from '@/components/app/post/PostStatusRadio';
 import { TiptapEditor, type TiptapEditorRef } from '@/components/app/editor/TiptapEditor';
+import { DraftListModal } from '@/components/app/post/DraftListModal';
+import { LeaveConfirmModal } from '@/components/app/post/LeaveConfirmModal';
 import { scrollToFirstError } from '@/lib/scroll-to-error';
 import { getErrorDisplayMessage, getErrorCode } from '@/lib/error-handler';
 import { AxiosError } from 'axios';
@@ -94,54 +101,30 @@ export default function NewPostPage() {
   const editorRef = useRef<TiptapEditorRef>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdPostId, setCreatedPostId] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<PostStatus>(PostStatus.PRIVATE);
+
+  // Draft 관련 상태
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  // 에디터 모드: create (새 글) 또는 edit-draft (불러온 Draft 편집)
+  const editorMode: EditorMode = currentDraftId ? 'edit-draft' : 'create';
 
   // --------------------------------------------------------------------------
-  // 자동 저장
+  // 이탈 감지
   // --------------------------------------------------------------------------
 
-  const { lastSavedAt, isSaving, hasUnsavedChanges, markAsChanged, saveNow, getPostId } =
-    useAutoSave({
-      siteId,
-      postId: createdPostId,
-      postStatus: null, // 새 글은 상태 없음 (PRIVATE로 생성됨)
-      intervalMs: 5 * 60 * 1000,
-      onSaveSuccess: () => {
-        toast.success('자동 저장되었습니다', { duration: 2000 });
-        queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      },
-      onSaveError: (err) => {
-        console.error('Auto-save failed:', err);
-        toast.error('자동 저장에 실패했습니다');
-      },
-      onPostCreated: (postId) => {
-        setCreatedPostId(postId);
-      },
-    });
-
-  // --------------------------------------------------------------------------
-  // 상태 표시
-  // --------------------------------------------------------------------------
-
-  const getStatusText = () => {
-    if (isSaving) return { text: '저장 중...', color: 'text-blue-600' };
-    if (createdPostId) return { text: '작성 중', color: 'text-blue-600' };
-    return { text: '새 글', color: 'text-gray-600' };
-  };
-
-  const statusInfo = getStatusText();
-
-  const headerExtra = (
-    <div className="flex items-center gap-2 text-sm text-gray-500">
-      <span className={statusInfo.color}>{statusInfo.text}</span>
-      {!isSaving && lastSavedAt && (
-        <span className="text-gray-400">
-          ({lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 저장됨)
-        </span>
-      )}
-      {hasUnsavedChanges && !isSaving && <span className="text-orange-600">• 저장 대기 중</span>}
-    </div>
-  );
+  const { allowLeave, isLeaveAllowed } = useLeaveConfirm({
+    hasChanges,
+    mode: editorMode,
+    onNavigationBlocked: (path) => {
+      if (path) setPendingNavigation(path);
+      setShowLeaveModal(true);
+    },
+  });
 
   // --------------------------------------------------------------------------
   // 폼 설정
@@ -165,8 +148,51 @@ export default function NewPostPage() {
     name: 'ogImageUrl',
   });
 
+  // 변경 감지
+  const watchedValues = useWatch({ control: methods.control });
+
+  const isContentEmpty = useCallback((contentJson: Record<string, unknown> | undefined) => {
+    if (!contentJson) return true;
+    const content = contentJson.content as Array<Record<string, unknown>> | undefined;
+    if (!content || content.length === 0) return true;
+    if (
+      content.length === 1 &&
+      content[0].type === 'paragraph' &&
+      (!content[0].content || (content[0].content as Array<unknown>).length === 0)
+    ) {
+      return true;
+    }
+    return false;
+  }, []);
+
+  useEffect(() => {
+    if (editorReady) {
+      // 폼 필드에 실제 내용이 있는지 확인
+      const formHasContent = Boolean(
+        watchedValues.title?.trim() ||
+          watchedValues.subtitle?.trim() ||
+          watchedValues.slug?.trim() ||
+          watchedValues.categoryId?.trim() ||
+          watchedValues.seoTitle?.trim() ||
+          watchedValues.seoDescription?.trim() ||
+          watchedValues.ogImageUrl?.trim(),
+      );
+
+      // 에디터에 내용이 있는지 확인
+      const editor = editorRef.current;
+      const editorJson = editor?.getJSON();
+      const editorHasContent = editorJson ? !isContentEmpty(editorJson) : false;
+
+      setHasChanges(formHasContent || editorHasContent);
+    }
+  }, [watchedValues, editorReady]);
+
+  const handleEditorReady = useCallback(() => {
+    setEditorReady(true);
+  }, []);
+
   // --------------------------------------------------------------------------
-  // 데이터 수집 & 변경 감지
+  // 데이터 수집
   // --------------------------------------------------------------------------
 
   const collectFormData = useCallback(() => {
@@ -177,73 +203,54 @@ export default function NewPostPage() {
     const contentJson = editor.getJSON();
     if (!contentJson) return null;
 
+    const trimOrNull = (value: string | undefined): string | null =>
+      value?.trim() ? value.trim() : null;
+
     return {
-      title: data.title?.trim(),
-      subtitle: data.subtitle?.trim(),
+      title: data.title?.trim() || '',
+      subtitle: data.subtitle?.trim() || '',
+      slug: data.slug?.trim() || null,
       contentJson,
       contentHtml: editor.getHTML(),
       contentText: editor.getText().trim(),
-      categoryId: data.categoryId?.trim() || undefined,
-      seoTitle: data.seoTitle?.trim() || undefined,
-      seoDescription: data.seoDescription?.trim() || undefined,
-      ogImageUrl: data.ogImageUrl?.trim() || undefined,
+      categoryId: data.categoryId?.trim() || null,
+      seoTitle: trimOrNull(data.seoTitle),
+      seoDescription: trimOrNull(data.seoDescription),
+      ogImageUrl: trimOrNull(data.ogImageUrl),
     };
   }, [methods]);
 
-  const watchedValues = useWatch({ control: methods.control });
-
-  useEffect(() => {
-    if (!editorReady) return;
-    const data = collectFormData();
-    if (data) markAsChanged(data);
-  }, [watchedValues, editorReady, collectFormData, markAsChanged]);
-
-  const handleEditorReady = useCallback(() => {
-    setEditorReady(true);
-  }, []);
-
   // --------------------------------------------------------------------------
-  // 발행 Mutations
+  // Mutations
   // --------------------------------------------------------------------------
 
-  // postId가 있을 때: publishPost API 호출
-  const publishMutation = useMutation({
-    mutationFn: (postId: string) => publishPost(siteId, postId),
-    onSuccess: async (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && updatedPost.slug) {
-        try {
-          await revalidatePost(siteSettings.slug, updatedPost.slug);
-        } catch (e) {
-          console.warn('Failed to revalidate:', e);
-        }
-      }
-      toast.success('게시글이 발행되었습니다');
-      router.push('/admin/posts');
-    },
-    onError: (err) => {
-      toast.error(getErrorDisplayMessage(err, '발행에 실패했습니다'));
-    },
-  });
+  const createDraftMutation = useCreateDraft(siteId);
+  const updateDraftMutation = useUpdateDraft(siteId);
+  const publishDraftMutation = usePublishDraft(siteId);
 
-  // postId가 없을 때: 바로 PUBLISHED로 생성
-  const createAndPublishMutation = useMutation({
+  // Post 직접 생성 (Draft 없이 바로 발행)
+  const createPostMutation = useMutation({
     mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
     onSuccess: async (createdPost) => {
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      if (siteSettings?.slug && createdPost.slug) {
+      if (createdPost.status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
         try {
           await revalidatePost(siteSettings.slug, createdPost.slug);
         } catch (e) {
           console.warn('Failed to revalidate:', e);
         }
       }
-      toast.success('게시글이 발행되었습니다');
+      toast.success(
+        createdPost.status === PostStatus.PUBLISHED
+          ? '게시글이 발행되었습니다'
+          : '게시글이 저장되었습니다',
+      );
+      allowLeave();
       router.push('/admin/posts');
     },
     onError: (err) => {
       const errorCode = getErrorCode(err);
-      const errorMessage = getErrorDisplayMessage(err, '게시글 발행에 실패했습니다.');
+      const errorMessage = getErrorDisplayMessage(err, '게시글 저장에 실패했습니다.');
 
       if (errorCode === 'POST_002' || (err instanceof AxiosError && err.response?.status === 409)) {
         methods.setError('slug', { type: 'manual', message: errorMessage });
@@ -259,86 +266,190 @@ export default function NewPostPage() {
   // 핸들러
   // --------------------------------------------------------------------------
 
-  /** 발행 버튼 */
+  /** 저장 버튼 (Draft 생성/업데이트) */
+  const handleSaveDraft = async () => {
+    const data = collectFormData();
+    if (!data) {
+      toast.error('에디터가 준비되지 않았습니다');
+      return;
+    }
+
+    try {
+      if (currentDraftId) {
+        // 기존 Draft 업데이트
+        await updateDraftMutation.mutateAsync({ draftId: currentDraftId, data });
+      } else {
+        // 새 Draft 생성
+        const draft = await createDraftMutation.mutateAsync(data);
+        setCurrentDraftId(draft.id);
+      }
+      setHasChanges(false);
+      toast.success('저장되었습니다');
+    } catch (err) {
+      toast.error(getErrorDisplayMessage(err, '저장에 실패했습니다'));
+    }
+  };
+
+  /** 등록 버튼 (Post로 발행) */
   const handlePublish = async () => {
     setError(null);
 
-    // 폼 검증
     const isValid = await methods.trigger();
     if (!isValid) {
       setTimeout(() => scrollToFirstError(methods.formState.errors), 150);
       return;
     }
 
-    const data = methods.getValues();
-    const editor = editorRef.current;
-    if (!editor) {
+    const data = collectFormData();
+    if (!data) {
       toast.error('에디터를 불러올 수 없습니다');
       return;
     }
 
-    const contentJson = editor.getJSON();
-    const contentHtml = editor.getHTML();
-    const contentText = editor.getText().trim();
-
-    // 내용 검증
-    const isEmpty =
-      !contentJson?.content ||
-      (Array.isArray(contentJson.content) &&
-        (contentJson.content.length === 0 ||
-          (contentJson.content.length === 1 &&
-            contentJson.content[0].type === 'paragraph' &&
-            (!contentJson.content[0].content || contentJson.content[0].content.length === 0))));
-
-    if (isEmpty || !contentText) {
+    if (isContentEmpty(data.contentJson)) {
       toast.error('내용을 입력해주세요');
       return;
     }
 
-    const currentPostId = getPostId();
+    if (currentDraftId) {
+      // Draft가 있으면 먼저 업데이트 후 발행
+      try {
+        await updateDraftMutation.mutateAsync({ draftId: currentDraftId, data });
+        const post = await publishDraftMutation.mutateAsync(currentDraftId);
 
-    if (currentPostId) {
-      // 이미 저장된 게시글이 있으면 publishPost 호출
-      publishMutation.mutate(currentPostId);
+        if (post.status === PostStatus.PUBLISHED && siteSettings?.slug && post.slug) {
+          try {
+            await revalidatePost(siteSettings.slug, post.slug);
+          } catch (e) {
+            console.warn('Failed to revalidate:', e);
+          }
+        }
+
+        toast.success('게시글이 발행되었습니다');
+        allowLeave();
+        router.push('/admin/posts');
+      } catch (err) {
+        const errorCode = getErrorCode(err);
+        const errorMessage = getErrorDisplayMessage(err, '발행에 실패했습니다');
+
+        if (
+          errorCode === 'POST_002' ||
+          errorCode === 'SLUG_ALREADY_EXISTS' ||
+          (err instanceof AxiosError && err.response?.status === 409)
+        ) {
+          methods.setError('slug', { type: 'manual', message: errorMessage });
+          setError(errorMessage);
+          setTimeout(() => scrollToFirstError(errorMessage), 150);
+        } else {
+          setError(errorMessage);
+          toast.error(errorMessage);
+        }
+      }
     } else {
-      // 새 글이면 바로 PUBLISHED로 생성
-      createAndPublishMutation.mutate({
-        title: data.title.trim(),
-        subtitle: data.subtitle.trim(),
-        slug: data.slug?.trim() || undefined,
-        contentJson,
-        contentHtml,
-        contentText,
-        status: PostStatus.PUBLISHED,
-        categoryId: data.categoryId?.trim() || undefined,
-        seoTitle: data.seoTitle?.trim() || undefined,
-        seoDescription: data.seoDescription?.trim() || undefined,
-        ogImageUrl: data.ogImageUrl?.trim() || undefined,
+      // Draft 없이 바로 Post 생성
+      createPostMutation.mutate({
+        ...data,
+        status: selectedStatus,
       });
     }
   };
 
-  /** 저장 버튼 (수동) */
-  const handleSave = async () => {
-    // 저장 전에 최신 데이터 수집
-    const data = collectFormData();
-    if (data) {
-      markAsChanged(data);
-    }
+  /** Draft 불러오기 */
+  const handleLoadDraft = async (draftItem: DraftListItem) => {
+    try {
+      const draft = await getDraftByIdV2(draftItem.id);
 
-    const saved = await saveNow();
-    if (saved) {
-      toast.success('저장되었습니다');
-      const savedPostId = getPostId();
-      if (savedPostId) {
-        router.push(`/admin/posts/${savedPostId}`);
+      methods.reset({
+        title: draft.title || '',
+        subtitle: draft.subtitle || '',
+        slug: draft.slug || '',
+        categoryId: draft.categoryId || '',
+        seoTitle: draft.seoTitle || '',
+        seoDescription: draft.seoDescription || '',
+        ogImageUrl: draft.ogImageUrl || '',
+      });
+
+      const editor = editorRef.current?.getEditor();
+      if (editor && draft.contentJson) {
+        editor.commands.setContent(draft.contentJson);
       }
-    } else {
-      toast.error('저장할 내용이 없습니다. 본문을 입력해주세요.');
+
+      setCurrentDraftId(draft.id);
+      setHasChanges(false);
+      toast.success('저장된 글을 불러왔습니다');
+    } catch {
+      toast.error('글을 불러올 수 없습니다');
     }
   };
 
-  const isPending = isSaving || publishMutation.isPending || createAndPublishMutation.isPending;
+  /** 임시저장 후 불러오기 (hasChanges가 true일 때) */
+  const handleSaveBeforeLoad = async () => {
+    await handleSaveDraft();
+  };
+
+  /** 네비게이션 시도 */
+  const handleNavigate = (path: string) => {
+    if (hasChanges && !isLeaveAllowed) {
+      setPendingNavigation(path);
+      setShowLeaveModal(true);
+    } else {
+      router.push(path);
+    }
+  };
+
+  /** 임시저장 후 이탈 */
+  const handleSaveAndLeave = async () => {
+    await handleSaveDraft();
+    allowLeave();
+    setShowLeaveModal(false);
+    if (pendingNavigation) {
+      router.push(pendingNavigation);
+    } else {
+      router.back();
+    }
+  };
+
+  /** 저장하지 않고 이탈 */
+  const handleLeaveWithoutSave = () => {
+    allowLeave();
+    setShowLeaveModal(false);
+    if (pendingNavigation) {
+      router.push(pendingNavigation);
+    } else {
+      router.back();
+    }
+  };
+
+  /** 이탈 취소 */
+  const handleCancelLeave = () => {
+    setShowLeaveModal(false);
+    setPendingNavigation(null);
+  };
+
+  const isPending =
+    createDraftMutation.isPending ||
+    updateDraftMutation.isPending ||
+    publishDraftMutation.isPending ||
+    createPostMutation.isPending;
+
+  // --------------------------------------------------------------------------
+  // 상태 표시
+  // --------------------------------------------------------------------------
+
+  const getStatusText = () => {
+    if (isPending) return { text: '저장 중...', color: 'text-blue-600' };
+    if (currentDraftId) return { text: 'Draft 편집 중', color: 'text-amber-600' };
+    return { text: '새 글', color: 'text-gray-600' };
+  };
+
+  const statusInfo = getStatusText();
+
+  const headerExtra = (
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <span className={statusInfo.color}>{statusInfo.text}</span>
+      {hasChanges && !isPending && <span className="text-orange-600">• 변경사항 있음</span>}
+    </div>
+  );
 
   // --------------------------------------------------------------------------
   // 렌더링
@@ -348,17 +459,17 @@ export default function NewPostPage() {
     <FormProvider {...methods}>
       <>
         <AdminPageHeader breadcrumb="Management" title="New Post" extra={headerExtra} />
-        <div className="p-6">
+        <div className="p-6 *:max-w-7xl *:w-full flex flex-col items-center">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
               {error}
             </div>
           )}
 
-          <div className="flex flex-col lg:flex-row gap-6 max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 max-w-3xl">
                 <ValidationInput
                   name="title"
                   label="제목"
@@ -377,12 +488,7 @@ export default function NewPostPage() {
                 />
                 <Field>
                   <FieldLabel>내용</FieldLabel>
-                  <TiptapEditor
-                    ref={editorRef}
-                    siteId={siteId}
-                    postId={createdPostId ?? undefined}
-                    onEditorReady={handleEditorReady}
-                  />
+                  <TiptapEditor ref={editorRef} siteId={siteId} onEditorReady={handleEditorReady} />
                 </Field>
               </div>
             </div>
@@ -392,6 +498,16 @@ export default function NewPostPage() {
               {/* 게시글 관리 */}
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
                 <h3 className="font-medium text-gray-900 mb-4">게시글 관리</h3>
+
+                {/* 공개 여부 */}
+                <div className="mb-4">
+                  <PostStatusRadio
+                    value={selectedStatus}
+                    onChange={setSelectedStatus}
+                    disabled={isPending}
+                  />
+                </div>
+
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
@@ -399,24 +515,39 @@ export default function NewPostPage() {
                     onClick={handlePublish}
                     disabled={isPending}
                   >
-                    {publishMutation.isPending || createAndPublishMutation.isPending
-                      ? '발행 중...'
-                      : '발행'}
+                    {publishDraftMutation.isPending || createPostMutation.isPending
+                      ? '등록 중...'
+                      : '등록'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={handleSave}
-                    disabled={isPending || !hasUnsavedChanges}
+                    onClick={handleSaveDraft}
+                    disabled={isPending}
                   >
-                    {isSaving ? '저장 중...' : '저장'}
+                    {createDraftMutation.isPending || updateDraftMutation.isPending
+                      ? '저장 중...'
+                      : '저장'}
                   </Button>
+
+                  {/* 저장된 글 불러오기 버튼 */}
                   <Button
                     type="button"
                     variant="ghost"
                     className="w-full"
-                    onClick={() => router.back()}
+                    onClick={() => setShowDraftModal(true)}
+                    disabled={isPending}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    저장된 글 불러오기
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => handleNavigate('/admin/posts')}
                     disabled={isPending}
                   >
                     취소
@@ -498,12 +629,9 @@ export default function NewPostPage() {
                 <h3 className="font-medium text-gray-900 mb-3">썸네일</h3>
                 <ThumbnailInput
                   siteId={siteId}
-                  postId={createdPostId ?? undefined}
                   value={watchedOgImageUrl || ''}
                   onChange={(url) => {
                     methods.setValue('ogImageUrl', url || '');
-                    const data = collectFormData();
-                    if (data) markAsChanged({ ...data, ogImageUrl: url || undefined });
                   }}
                   disabled={isPending}
                 />
@@ -541,6 +669,27 @@ export default function NewPostPage() {
             </div>
           </div>
         </div>
+
+        {/* 저장된 글 불러오기 모달 */}
+        <DraftListModal
+          siteId={siteId}
+          open={showDraftModal}
+          onOpenChange={setShowDraftModal}
+          onSelect={handleLoadDraft}
+          hasUnsavedChanges={hasChanges && editorMode === 'create'}
+          onSaveBeforeLoad={handleSaveBeforeLoad}
+        />
+
+        {/* 이탈 확인 모달 */}
+        <LeaveConfirmModal
+          open={showLeaveModal}
+          onOpenChange={setShowLeaveModal}
+          mode={editorMode}
+          onSaveAndLeave={handleSaveAndLeave}
+          onLeaveWithoutSave={handleLeaveWithoutSave}
+          onCancel={handleCancelLeave}
+          isSaving={createDraftMutation.isPending || updateDraftMutation.isPending}
+        />
       </>
     </FormProvider>
   );

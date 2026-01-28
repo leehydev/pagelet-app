@@ -61,7 +61,7 @@ export function ImprovedPostCard({ post, siteSlug }: ImprovedPostCardProps) {
         </div>
 
         {/* Bottom accent line */}
-        <div className="h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+        <div className="h-1 bg-linear-to-r from-primary/20 via-primary to-primary/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
       </article>
     </Link>
   );

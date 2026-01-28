@@ -121,7 +121,7 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
   }
 
   return (
-    <>
+    <div className="*:max-w-6xl *:w-full flex flex-col items-center">
       {/* 카테고리 정보 */}
       <PostsPageHeader
         category={category.slug}
@@ -130,7 +130,7 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
       />
 
       {/* 메인 콘텐츠 */}
-      <main className="mx-auto max-w-6xl h-full px-4 py-8">
+      <main className="px-4 py-8 xl:px-0">
         {posts.length > 0 ? (
           <>
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -159,6 +159,6 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
           />
         )}
       </main>
-    </>
+    </div>
   );
 }

@@ -101,7 +101,7 @@ export function LandingHero() {
       {/* Hero Image Mockup - Separate section for scroll effect */}
       <div
         ref={mockupRef}
-        className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 pb-20 animate-fade-in-down [animation-delay:800ms]"
+        className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 pb-20 animate-fade-in-down [animation-delay:800ms]"
       >
         <div className="relative rounded-lg overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           {/* Browser Chrome */}

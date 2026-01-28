@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { MobileMenu } from './MobileMenu';
 import { PublicCategory } from '@/lib/api/types';
 import Link from 'next/link';
+import { SiteLogo } from '../SiteLogo';
 
 interface HeaderProps {
   logoImageUrl: string;
@@ -15,26 +15,13 @@ interface HeaderProps {
 export function Header({ logoImageUrl, siteSlug, siteName, categories = [] }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 xl:px-0">
         <div className="flex items-center justify-between h-16">
-          <Link href={`/t/${siteSlug}`}>
-            <div className="flex items-center gap-2">
-              {logoImageUrl && (
-                <div className="relative w-[100px] h-[40px] overflow-hidden flex items-center">
-                  <Image
-                    src={logoImageUrl}
-                    alt={siteName}
-                    fill
-                    sizes="100px"
-                    className="object-contain object-left"
-                    priority
-                  />
-                </div>
-              )}
-              <h1 className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {siteName}
-              </h1>
-            </div>
+          <Link href={`/t/${siteSlug}`} className="flex items-center gap-2">
+            {logoImageUrl && <SiteLogo src={logoImageUrl} alt={siteName} priority />}
+            <h1 className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {siteName}
+            </h1>
           </Link>
           <div className="flex items-center gap-4">
             <MobileMenu categories={categories} siteSlug={siteSlug} />
