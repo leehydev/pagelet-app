@@ -113,7 +113,7 @@ export function ProductPreview() {
       id="product-preview"
       className="relative py-20 bg-gray-50 dark:bg-background-dark"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
           className="text-center mb-16"

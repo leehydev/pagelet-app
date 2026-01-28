@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { SocialLinks } from '../SocialLinks';
 import { SiteSettings } from '@/lib/api';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import { SiteLogo } from '../SiteLogo';
 
 interface FooterProps {
   siteSlug: string;
@@ -30,27 +31,29 @@ export function Footer({
 
   const footerCategories = categories.length > 0 ? categories : defaultCategories;
 
+  const pathname = usePathname();
+  const segments = pathname?.split('/').filter(Boolean) ?? [];
+
+  // 게시글 본문: /t/[slug]/posts/[postSlug] 또는 rewrite된 /posts/[id]
+  const isPostDetail =
+    (segments[0] === 't' && segments[2] === 'posts' && !!segments[3]) ||
+    (segments[0] === 'posts' && !!segments[1]);
+  const maxWidthClass = isPostDetail ? '*:max-w-3xl' : '*:max-w-6xl';
+
   return (
-    <footer className="bg-gray-100 border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer
+      className={`bg-white border-t border-gray-200 ${maxWidthClass} *:w-full flex flex-col items-center`}
+    >
+      <div className="px-4 xl:px-0 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column - Brand */}
           <div>
-            <Link href={`/t/${siteSlug}`}>
-              <div className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
-                {logoImageUrl && (
-                  <div className="relative w-[100px] h-[40px] overflow-hidden flex items-center">
-                    <Image
-                      src={logoImageUrl as string}
-                      alt={siteName || ''}
-                      fill
-                      sizes="100px"
-                      className="object-contain object-left"
-                    />
-                  </div>
-                )}
-                <span className="text-xl font-bold text-gray-900">{siteName}</span>
-              </div>
+            <Link
+              href={`/t/${siteSlug}`}
+              className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
+            >
+              {logoImageUrl && <SiteLogo src={logoImageUrl} alt={siteName || ''} />}
+              <span className="text-xl font-bold text-gray-900">{siteName}</span>
             </Link>
             <div className="text-sm text-gray-600 mb-6 max-w-sm space-y-1">
               <p>

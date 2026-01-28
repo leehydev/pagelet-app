@@ -53,14 +53,18 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
   const hasChangesRef = useRef(hasChanges);
   const isLeaveAllowedRef = useRef(isLeaveAllowed);
   const historyPushedRef = useRef(false);
+  const onNavigationBlockedRef = useRef(onNavigationBlocked);
 
-  const { setGuard, setHasUnsavedChanges, clearGuard } = useNavigationGuardStore();
+  // onNavigationBlocked 변경 시 ref 업데이트
+  useEffect(() => {
+    onNavigationBlockedRef.current = onNavigationBlocked;
+  }, [onNavigationBlocked]);
 
   // hasChanges 변경 시 ref 및 스토어 업데이트
   useEffect(() => {
     hasChangesRef.current = hasChanges;
-    setHasUnsavedChanges(hasChanges);
-  }, [hasChanges, setHasUnsavedChanges]);
+    useNavigationGuardStore.getState().setHasUnsavedChanges(hasChanges);
+  }, [hasChanges]);
 
   // isLeaveAllowed 변경 시 ref 업데이트
   useEffect(() => {
@@ -71,14 +75,16 @@ export function useLeaveConfirm(options: UseLeaveConfirmOptions): UseLeaveConfir
   useEffect(() => {
     if (!onNavigationBlocked) return;
 
-    setGuard((path) => {
-      if (!isLeaveAllowedRef.current) {
-        onNavigationBlocked(path);
+    useNavigationGuardStore.getState().setGuard((path) => {
+      if (!isLeaveAllowedRef.current && onNavigationBlockedRef.current) {
+        onNavigationBlockedRef.current(path);
       }
     });
 
-    return () => clearGuard();
-  }, [onNavigationBlocked, setGuard, clearGuard]);
+    return () => {
+      useNavigationGuardStore.getState().clearGuard();
+    };
+  }, [onNavigationBlocked]);
 
   // beforeunload 이벤트 핸들러 (브라우저 기본 경고)
   useEffect(() => {

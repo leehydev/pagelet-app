@@ -13,12 +13,14 @@ import {
   deleteAdminPostV2,
   updateAdminPostV2,
   searchPostsV2,
+  updatePostStatusV2,
   CreatePostRequest,
   UpdatePostRequest,
   PublicPost,
   PaginatedResponse,
   PostListItem,
   PostSearchResult,
+  PostStatus,
 } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -88,12 +90,19 @@ export function useDeletePost(siteId: string) {
 
 /**
  * 게시글 상태 변경 mutation 훅
+ * 새로운 v2 API 사용 (PATCH /admin/v2/posts/:id/status)
  */
 export function useUpdatePostStatus(siteId: string, postId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdatePostRequest) => updateAdminPost(siteId, postId, data),
+    mutationFn: (status: PostStatus) => {
+      // PRIVATE 또는 PUBLISHED만 허용
+      if (status !== 'PRIVATE' && status !== 'PUBLISHED') {
+        throw new Error('Invalid status. Only PRIVATE or PUBLISHED are allowed.');
+      }
+      return updatePostStatusV2(postId, status as 'PRIVATE' | 'PUBLISHED');
+    },
     onSuccess: () => {
       // 게시글 목록 및 단일 게시글 캐시 무효화
       queryClient.invalidateQueries({ queryKey: postKeys.adminList(siteId) });
@@ -186,12 +195,19 @@ export function useDeletePostV2(siteId: string) {
 
 /**
  * 게시글 상태 변경 mutation 훅 (v2)
+ * 새로운 v2 API 사용 (PATCH /admin/v2/posts/:id/status)
  */
 export function useUpdatePostStatusV2(siteId: string, postId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdatePostRequest) => updateAdminPostV2(postId, data),
+    mutationFn: (status: PostStatus) => {
+      // PRIVATE 또는 PUBLISHED만 허용
+      if (status !== 'PRIVATE' && status !== 'PUBLISHED') {
+        throw new Error('Invalid status. Only PRIVATE or PUBLISHED are allowed.');
+      }
+      return updatePostStatusV2(postId, status as 'PRIVATE' | 'PUBLISHED');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: postKeys.adminListV2(siteId) });
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', 'v2', siteId, postId] });

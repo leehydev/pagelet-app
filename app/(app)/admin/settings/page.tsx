@@ -249,7 +249,7 @@ export default function SiteSettingsPage() {
                   siteId={siteId}
                   type="logo"
                   title="로고"
-                  description="권장: 가로형 200×60px 이상, PNG/JPG/SVG/WebP"
+                  description="권장: 정사각형 또는 가로형 (높이 30px 기준으로 표시), PNG/JPG/SVG/WebP"
                   currentUrl={settings.logoImageUrl}
                   updatedAt={settings.updatedAt}
                 />

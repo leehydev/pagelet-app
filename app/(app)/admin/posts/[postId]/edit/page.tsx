@@ -384,17 +384,17 @@ export default function EditPostPage() {
     <FormProvider {...methods}>
       <>
         <AdminPageHeader breadcrumb="Management" title="Edit Post" extra={headerExtra} />
-        <div className="p-6">
+        <div className="p-6 *:max-w-7xl *:w-full flex flex-col items-center">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm max-w-7xl">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
               {error}
             </div>
           )}
 
-          <div className="flex flex-col lg:flex-row gap-6 max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 max-w-3xl">
                 <ValidationInput
                   name="title"
                   label="제목"

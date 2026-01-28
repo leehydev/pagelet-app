@@ -211,7 +211,7 @@ export default function AdminPostDetailPage() {
   const handleStatusChange = async (newStatus: PostStatus) => {
     if (!post || !siteSettings) return;
     try {
-      await updateStatusMutation.mutateAsync({ status: newStatus });
+      await updateStatusMutation.mutateAsync(newStatus);
       if (siteSettings.slug && post.slug) {
         try {
           await revalidatePost(siteSettings.slug, post.slug);

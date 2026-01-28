@@ -8,6 +8,7 @@ import { formatPostDate } from '@/lib/date-utils';
 import { PostContent } from '@/components/app/post/PostContent';
 import { AdjacentPostsNav } from '@/components/public/AdjacentPostsNav';
 import { AdjacentPostsMobileNav } from '@/components/public/AdjacentPostsMobileNav';
+import { ShareButton } from '@/components/public/common/ShareButton';
 
 // ISR: 60초마다 재검증
 export const revalidate = 60;
@@ -88,8 +89,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [{ url: post.ogImageUrl, width: 1200, height: 630 }]
         : settings.ogImageUrl
-          ? [{ url: settings.ogImageUrl, width: 1200, height: 630 }]
-          : undefined,
+        ? [{ url: settings.ogImageUrl, width: 1200, height: 630 }]
+        : undefined,
       type: 'article',
       publishedTime: post.publishedAt,
     },
@@ -100,8 +101,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [post.ogImageUrl]
         : settings.ogImageUrl
-          ? [settings.ogImageUrl]
-          : undefined,
+        ? [settings.ogImageUrl]
+        : undefined,
     },
     ...(settings.canonicalBaseUrl && {
       alternates: {
@@ -126,15 +127,15 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
   const formattedDate = formatPostDate(post.publishedAt);
 
   return (
-    <>
+    <div className="*:max-w-3xl *:w-full flex flex-col items-center">
       {/* 게시글 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+      <div>
+        <div className=" py-12 border-b border-gray-200">
           {/* 카테고리 */}
           {post.categoryName && (
             <div className="">
               <Link href={`/t/${slug}/category/${post.categorySlug}`}>
-                <Badge variant="secondary" className="hover:bg-gray-200 transition-colors">
+                <Badge variant="default" className="hover:bg-gray-200 transition-colors">
                   {post.categoryName}
                 </Badge>
               </Link>
@@ -146,29 +147,36 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
             {post.title}
           </h1>
 
-          {/* 부제목 */}
-          {post.subtitle && <p className="text-xl text-gray-600">{post.subtitle}</p>}
+          <div className="flex items-center justify-between items-baseline">
+            <div>
+              {/* 부제목 */}
+              {post.subtitle && <p className="text-xl text-gray-600">{post.subtitle}</p>}
 
-          {/* 메타 정보 */}
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <time dateTime={post.publishedAt}>{formattedDate}</time>
-            <span>·</span>
-            <span>{settings.name}</span>
+              {/* 메타 정보 */}
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <time dateTime={post.publishedAt}>{formattedDate}</time>
+                <span>·</span>
+                <span>{settings.name}</span>
+              </div>
+            </div>
+            <div>
+              <ShareButton />
+            </div>
           </div>
         </div>
       </div>
 
       {/* 본문 */}
-      <main className="bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+      <main className="">
+        <div className=" py-12 border-b border-gray-200">
           <PostContent html={post.contentHtml} />
         </div>
       </main>
 
       {/* 인접 게시글 네비게이션 */}
       {post.adjacentPosts && post.adjacentPosts.length > 0 && (
-        <div className="bg-gray-50 border-t border-gray-200">
-          <div className="max-w-6xl mx-auto px-4">
+        <div className="">
+          <div className="">
             <AdjacentPostsNav
               posts={post.adjacentPosts}
               siteSlug={slug}
@@ -182,36 +190,6 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
           </div>
         </div>
       )}
-
-      {/* 하단 네비게이션 */}
-      <div className="bg-gray-50 border-t border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            {/* 카테고리에서 접근한 경우 카테고리로 돌아가기 링크 표시 */}
-            {from === 'category' && queryCategorySlug ? (
-              <Link
-                href={`/t/${slug}/category/${queryCategorySlug}`}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                카테고리로 돌아가기
-              </Link>
-            ) : (
-              <Link
-                href={`/t/${slug}/posts`}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                전체 게시글
-              </Link>
-            )}
-            <Link
-              href={`/t/${slug}`}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              홈으로
-            </Link>
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

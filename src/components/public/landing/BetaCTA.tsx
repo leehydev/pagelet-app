@@ -43,7 +43,7 @@ export function BetaCTA() {
         />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Emoji Icon */}
         <motion.div
           className="text-6xl mb-6"

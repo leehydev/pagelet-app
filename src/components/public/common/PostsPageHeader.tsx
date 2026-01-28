@@ -8,8 +8,8 @@ interface PostsPageHeaderProps {
 
 export function PostsPageHeader({ category, title, description }: PostsPageHeaderProps) {
   return (
-    <header className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
-      <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+    <header className="border-b border-gray-200">
+      <div className="px-4 py-12 md:py-16">
         <div className="text-center space-y-4">
           {/* Category Badge */}
           <div>

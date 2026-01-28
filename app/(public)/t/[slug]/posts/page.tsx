@@ -109,7 +109,7 @@ export default async function AllPostsPage({ params, searchParams }: PageProps) 
   }
 
   return (
-    <>
+    <div className="*:max-w-6xl *:w-full flex flex-col items-center">
       {/* 전체 게시글 섹션 헤더 */}
       <PostsPageHeader
         category="All Posts"
@@ -118,7 +118,7 @@ export default async function AllPostsPage({ params, searchParams }: PageProps) 
       />
 
       {/* 메인 콘텐츠 */}
-      <main className="mx-auto max-w-6xl h-full px-4 py-8">
+      <main className="h-full px-4 py-8">
         {posts.length > 0 ? (
           <>
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -133,6 +133,6 @@ export default async function AllPostsPage({ params, searchParams }: PageProps) 
           <EmptyPostList siteSlug={slug} showBackLink={false} />
         )}
       </main>
-    </>
+    </div>
   );
 }

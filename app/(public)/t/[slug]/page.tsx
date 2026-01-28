@@ -98,20 +98,18 @@ export default async function TenantHomePage({ params }: PageProps) {
   ]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col *:max-w-5xl *:w-full items-center">
       {/* 배너 섹션 */}
       {banners.length > 0 && (
         <div className="py-8">
-          <div className="max-w-6xl mx-auto">
-            <PostBannerSlider banners={banners} siteSlug={slug} />
-          </div>
+          <PostBannerSlider banners={banners} siteSlug={slug} />
         </div>
       )}
 
       {/* Latest Posts Section */}
       {recentPosts.length > 0 && (
-        <section className="bg-gray-50 flex-1">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section className="flex-1">
+          <div className="px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Latest Posts</h2>
               <div className="flex items-center gap-2">

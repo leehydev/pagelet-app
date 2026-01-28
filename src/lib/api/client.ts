@@ -665,6 +665,19 @@ export async function deleteAdminPostV2(postId: string): Promise<void> {
 }
 
 /**
+ * v2 게시글 상태 변경 (PRIVATE ↔ PUBLISHED)
+ */
+export async function updatePostStatusV2(
+  postId: string,
+  status: 'PRIVATE' | 'PUBLISHED',
+): Promise<Post> {
+  const response = await api.patch<ApiResponse<Post>>(`/admin/v2/posts/${postId}/status`, {
+    status,
+  });
+  return response.data.data;
+}
+
+/**
  * v2 게시글 검색
  */
 export async function searchPostsV2(
