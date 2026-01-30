@@ -26,18 +26,3 @@ export function getOrCreateVisitorId(): string | null {
     return crypto.randomUUID();
   }
 }
-
-/**
- * 방문자 ID를 가져옵니다 (없으면 null).
- */
-export function getVisitorId(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    return localStorage.getItem(VISITOR_ID_KEY);
-  } catch {
-    return null;
-  }
-}

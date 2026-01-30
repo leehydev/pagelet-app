@@ -57,19 +57,19 @@ git checkout -b feature/[이슈번호]-[간단한-설명]
 npx prettier --write .
 
 # 2. 린트
-pnpm lint
+npm run lint
 
 # 3. 타입 체크
-pnpm tsc --noEmit
+npm run tsc --noEmit
 
 # 4. 개발 서버 실행 확인 (에러/경고 없어야 함)
-pnpm dev
+npm run dev
 
 # 5. 빌드
-pnpm build
+npm run build
 
 # 6. 테스트 (1회 실행 후 종료)
-pnpm exec vitest run
+npx vitest run
 ```
 
 ### 4. 커밋 & PR

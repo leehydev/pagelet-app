@@ -16,7 +16,7 @@ export function GuardedLink({ href, onClick, children, ...props }: LinkProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (hasUnsavedChanges && onNavigationAttempt) {
       e.preventDefault();
-      const path = typeof href === 'string' ? href : href.pathname ?? '';
+      const path = typeof href === 'string' ? href : (href.pathname ?? '');
       onNavigationAttempt(path);
       return;
     }

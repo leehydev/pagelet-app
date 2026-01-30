@@ -117,7 +117,7 @@ export default function EditPostPage() {
     error: postError,
   } = useQuery({
     queryKey: ['admin', 'post', siteId, postId],
-    queryFn: () => getAdminPost(siteId, postId),
+    queryFn: () => getAdminPost(postId),
     enabled: !!siteId && !!postId,
   });
 
@@ -218,7 +218,7 @@ export default function EditPostPage() {
 
   // PUT으로 전체 교체
   const saveMutation = useMutation({
-    mutationFn: (data: ReplacePostRequest) => replaceAdminPost(siteId, postId, data),
+    mutationFn: (data: ReplacePostRequest) => replaceAdminPost(postId, data),
     onSuccess: async (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'post', siteId, postId] });
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });

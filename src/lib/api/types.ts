@@ -475,7 +475,7 @@ export interface SaveDraftRequest {
   categoryId?: string | null;
 }
 
-// ===== Independent Draft Types (v2) =====
+// ===== Independent Draft Types =====
 
 /**
  * 독립적인 Draft (임시저장 글)

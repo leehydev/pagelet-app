@@ -50,16 +50,16 @@
 npx prettier --write .
 
 # 2. 린트
-pnpm lint
+npm run lint
 
 # 3. 타입 체크
-pnpm tsc --noEmit
+npm run tsc --noEmit
 
 # 4. 개발 서버 실행 확인 (에러/경고 없어야 함)
-pnpm dev
+npm run dev
 
 # 5. 빌드
-pnpm build
+npm run build
 ```
 
 ---

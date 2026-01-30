@@ -88,7 +88,6 @@ function toCreateRequest(data: FormData): CreatePostRequest {
 // ============================================================================
 
 export function useAutoSave({
-  siteId,
   postId: initialPostId,
   intervalMs = 5 * 60 * 1000, // 5분
   onSaveSuccess,
@@ -120,7 +119,7 @@ export function useAutoSave({
    * 새 게시글 생성 (PRIVATE 상태)
    */
   const createMutation = useMutation({
-    mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
+    mutationFn: (data: CreatePostRequest) => createAdminPost(data),
     onSuccess: (post) => {
       postIdRef.current = post.id;
       setState((prev) => ({
@@ -147,7 +146,7 @@ export function useAutoSave({
   const saveDraftMutation = useMutation({
     mutationFn: (data: SaveDraftRequest) => {
       if (!postIdRef.current) throw new Error('postId is required');
-      return saveDraft(siteId, postIdRef.current, data);
+      return saveDraft(postIdRef.current, data);
     },
     onSuccess: () => {
       setState((prev) => ({

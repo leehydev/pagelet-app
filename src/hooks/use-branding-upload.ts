@@ -73,9 +73,6 @@ import {
   presignBrandingUpload,
   commitBrandingUpload,
   deleteBrandingAsset,
-  presignBrandingUploadV2,
-  commitBrandingUploadV2,
-  deleteBrandingAssetV2,
   BrandingType,
   BrandingPresignResponse,
 } from '@/lib/api';
@@ -131,8 +128,9 @@ const initialState: BrandingUploadState = {
 
 /**
  * 브랜딩 에셋 업로드 훅
+ * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
  *
- * @param siteId - 사이트 ID
+ * @param siteId - 캐시 키 용도로만 사용
  * @param type - 브랜딩 타입 (logo, favicon, og, cta)
  *
  * @example
@@ -153,13 +151,7 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<BrandingUploadState>(initialState);
 
-  // ref로 최신 값 추적 (클로저 문제 방지)
-  const siteIdRef = useRef(siteId);
   const stateRef = useRef(state);
-
-  useEffect(() => {
-    siteIdRef.current = siteId;
-  }, [siteId]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -172,24 +164,22 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
   /** Presign API - S3 업로드용 URL 발급 */
   const presignMutation = useMutation({
     mutationFn: (data: { type: BrandingType; filename: string; size: number; mimeType: string }) =>
-      presignBrandingUpload(siteIdRef.current, data),
+      presignBrandingUpload(data),
   });
 
   /** Commit API - 업로드된 이미지를 활성화 */
   const commitMutation = useMutation({
-    mutationFn: (data: { type: BrandingType; tmpKey: string }) =>
-      commitBrandingUpload(siteIdRef.current, data),
+    mutationFn: (data: { type: BrandingType; tmpKey: string }) => commitBrandingUpload(data),
     onSuccess: () => {
-      // commit 성공 시 사이트 설정 캐시 무효화 → 새 이미지 URL 반영
-      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteIdRef.current) });
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteId) });
     },
   });
 
   /** Delete API - 서버에 저장된 이미지 삭제 */
   const deleteMutation = useMutation({
-    mutationFn: () => deleteBrandingAsset(siteIdRef.current, type),
+    mutationFn: () => deleteBrandingAsset(type),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteIdRef.current) });
+      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.admin(siteId) });
     },
   });
 
@@ -217,199 +207,6 @@ export function useBrandingUpload(siteId: string, type: BrandingType) {
    * 3. S3에 직접 업로드 (진행률 추적)
    * 4. 완료 → 'uploaded' 상태로 전환
    */
-  const upload = useCallback(
-    async (file: File) => {
-      // 1. 로컬 미리보기 생성 - 파일 선택 즉시 UI에 표시
-      const localPreviewUrl = URL.createObjectURL(file);
-
-      setState({
-        status: 'uploading',
-        progress: 0,
-        localPreviewUrl,
-      });
-
-      try {
-        // 2. Presign API 호출 - S3 업로드용 URL 발급
-        const presignResponse: BrandingPresignResponse = await presignMutation.mutateAsync({
-          type,
-          filename: file.name,
-          size: file.size,
-          mimeType: file.type,
-        });
-
-        // 3. S3에 직접 업로드 (진행률 콜백)
-        await uploadFileToS3(presignResponse.uploadUrl, file, file.type, (progress) => {
-          setState((prev) => ({ ...prev, progress }));
-        });
-
-        // 4. 업로드 완료 - "지금 적용하기" 버튼 표시 대기
-        setState({
-          status: 'uploaded',
-          progress: 100,
-          localPreviewUrl, // 로컬 미리보기 유지
-          tmpPreviewUrl: presignResponse.tmpPublicUrl,
-          tmpKey: presignResponse.tmpKey,
-        });
-
-        return presignResponse;
-      } catch (error) {
-        // 에러 시 로컬 미리보기 URL 해제 (메모리 정리)
-        URL.revokeObjectURL(localPreviewUrl);
-
-        const errorMessage = getErrorDisplayMessage(error, '파일 업로드에 실패했습니다.');
-        setState({
-          status: 'error',
-          progress: 0,
-          error: errorMessage,
-        });
-        throw error;
-      }
-    },
-    [type, presignMutation],
-  );
-
-  /**
-   * 업로드 확정 (2단계 - Commit)
-   *
-   * 프로세스:
-   * 1. commit API 호출 → 서버에서 DB에 활성 이미지로 저장
-   * 2. React Query 캐시 무효화 → 새 이미지 URL 반영
-   * 3. 상태 초기화
-   */
-  const commit = useCallback(async () => {
-    const currentTmpKey = stateRef.current.tmpKey;
-    if (!currentTmpKey) {
-      throw new Error('업로드된 파일이 없습니다.');
-    }
-
-    setState((prev) => ({ ...prev, status: 'committing' }));
-
-    try {
-      // commit API 호출
-      const response = await commitMutation.mutateAsync({
-        type,
-        tmpKey: currentTmpKey,
-      });
-
-      // 메모리 정리 후 상태 초기화
-      revokeLocalPreview();
-      setState(initialState);
-
-      return response;
-    } catch (error) {
-      const errorMessage = getErrorDisplayMessage(error, '저장에 실패했습니다.');
-      setState((prev) => ({ ...prev, status: 'error', error: errorMessage }));
-      throw error;
-    }
-  }, [type, commitMutation, revokeLocalPreview]);
-
-  /**
-   * 상태 초기화 (취소)
-   *
-   * 업로드 중이거나 업로드 완료 후 취소할 때 사용
-   * - 로컬 미리보기 URL 메모리 해제
-   * - 상태를 초기값으로 리셋
-   */
-  const reset = useCallback(() => {
-    revokeLocalPreview();
-    setState(initialState);
-  }, [revokeLocalPreview]);
-
-  /**
-   * 서버에 저장된 이미지 삭제
-   *
-   * 이미 commit되어 서버에 저장된 이미지를 삭제할 때 사용
-   */
-  const deleteAsset = useCallback(async () => {
-    try {
-      const response = await deleteMutation.mutateAsync();
-      toast.success('이미지가 삭제되었습니다');
-      return response;
-    } catch (error) {
-      const errorMessage = getErrorDisplayMessage(error, '이미지 삭제에 실패했습니다');
-      toast.error(errorMessage);
-      throw error;
-    }
-  }, [deleteMutation]);
-
-  // --------------------------------------------------------------------------
-  // 반환값
-  // --------------------------------------------------------------------------
-
-  return {
-    /** 현재 상태 */
-    state,
-
-    /** 파일 업로드 (1단계) */
-    upload,
-
-    /** 업로드 확정 (2단계) */
-    commit,
-
-    /** 상태 초기화 (취소) */
-    reset,
-
-    /** 서버 이미지 삭제 */
-    deleteAsset,
-
-    // 편의 플래그
-    isUploading: state.status === 'uploading',
-    isUploaded: state.status === 'uploaded',
-    isCommitting: state.status === 'committing',
-    isDeleting: deleteMutation.isPending,
-    hasChanges: state.status === 'uploaded',
-  };
-}
-
-// ============================================================================
-// v2 훅 (X-Site-Id 헤더 사용)
-// ============================================================================
-
-/**
- * 브랜딩 에셋 업로드 훅 (v2)
- * siteId는 interceptor가 X-Site-Id 헤더로 자동 주입
- *
- * @param siteId - 캐시 키 용도로만 사용
- * @param type - 브랜딩 타입 (logo, favicon, og, cta)
- */
-export function useBrandingUploadV2(siteId: string, type: BrandingType) {
-  const queryClient = useQueryClient();
-  const [state, setState] = useState<BrandingUploadState>(initialState);
-
-  const stateRef = useRef(state);
-
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
-  /** Presign API v2 */
-  const presignMutation = useMutation({
-    mutationFn: (data: { type: BrandingType; filename: string; size: number; mimeType: string }) =>
-      presignBrandingUploadV2(data),
-  });
-
-  /** Commit API v2 */
-  const commitMutation = useMutation({
-    mutationFn: (data: { type: BrandingType; tmpKey: string }) => commitBrandingUploadV2(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.adminV2(siteId) });
-    },
-  });
-
-  /** Delete API v2 */
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteBrandingAssetV2(type),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: siteSettingsKeys.adminV2(siteId) });
-    },
-  });
-
-  const revokeLocalPreview = useCallback(() => {
-    if (stateRef.current.localPreviewUrl) {
-      URL.revokeObjectURL(stateRef.current.localPreviewUrl);
-    }
-  }, []);
-
   const upload = useCallback(
     async (file: File) => {
       const localPreviewUrl = URL.createObjectURL(file);
@@ -456,6 +253,14 @@ export function useBrandingUploadV2(siteId: string, type: BrandingType) {
     [type, presignMutation],
   );
 
+  /**
+   * 업로드 확정 (2단계 - Commit)
+   *
+   * 프로세스:
+   * 1. commit API 호출 → 서버에서 DB에 활성 이미지로 저장
+   * 2. React Query 캐시 무효화 → 새 이미지 URL 반영
+   * 3. 상태 초기화
+   */
   const commit = useCallback(async () => {
     const currentTmpKey = stateRef.current.tmpKey;
     if (!currentTmpKey) {
@@ -481,11 +286,17 @@ export function useBrandingUploadV2(siteId: string, type: BrandingType) {
     }
   }, [type, commitMutation, revokeLocalPreview]);
 
+  /**
+   * 상태 초기화 (취소)
+   */
   const reset = useCallback(() => {
     revokeLocalPreview();
     setState(initialState);
   }, [revokeLocalPreview]);
 
+  /**
+   * 서버에 저장된 이미지 삭제
+   */
   const deleteAsset = useCallback(async () => {
     try {
       const response = await deleteMutation.mutateAsync();
@@ -498,12 +309,27 @@ export function useBrandingUploadV2(siteId: string, type: BrandingType) {
     }
   }, [deleteMutation]);
 
+  // --------------------------------------------------------------------------
+  // 반환값
+  // --------------------------------------------------------------------------
+
   return {
+    /** 현재 상태 */
     state,
+
+    /** 파일 업로드 (1단계) */
     upload,
+
+    /** 업로드 확정 (2단계) */
     commit,
+
+    /** 상태 초기화 (취소) */
     reset,
+
+    /** 서버 이미지 삭제 */
     deleteAsset,
+
+    // 편의 플래그
     isUploading: state.status === 'uploading',
     isUploaded: state.status === 'uploaded',
     isCommitting: state.status === 'committing',

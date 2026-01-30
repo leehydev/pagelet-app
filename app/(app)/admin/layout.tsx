@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { useAdminSites } from '@/hooks/use-admin-sites';
-import { useSiteStore } from '@/stores/site-store';
+import { useSiteStore, getCurrentSiteId } from '@/stores/site-store';
 import { AccountStatus } from '@/lib/api';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { QueryError } from '@/components/common/QueryError';
@@ -25,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const currentSiteId = useSiteStore((state) => state.currentSiteId);
   const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
+  const hasInitializedSiteRef = useRef(false);
 
   // 인증 및 온보딩 체크
   useEffect(() => {
@@ -55,8 +56,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
 
-    // currentSiteId가 유효한지 검증
-    const validSite = currentSiteId ? sites.find((s) => s.id === currentSiteId) : null;
+    // currentSiteId가 유효한지 검증 (스토어에서 직접 가져옴)
+    const storeSiteId = getCurrentSiteId();
+    const validSite = storeSiteId ? sites.find((s) => s.id === storeSiteId) : null;
+
+    // 이미 초기화를 시도했고, currentSiteId가 유효하면 더 이상 실행하지 않음
+    if (hasInitializedSiteRef.current && validSite) {
+      return;
+    }
 
     if (!validSite) {
       // 유효하지 않으면 첫 번째 사이트 또는 localStorage에서 복구
@@ -66,8 +73,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       setCurrentSiteId(targetSite.id);
       localStorage.setItem('pagelet.admin.lastSiteId', targetSite.id);
+      hasInitializedSiteRef.current = true;
+    } else {
+      // 유효한 사이트가 있으면 초기화 완료 표시
+      hasInitializedSiteRef.current = true;
     }
-  }, [sites, sitesLoading, sitesError, currentSiteId, setCurrentSiteId, router]);
+    // currentSiteId를 dependency에서 제거하여 무한 루프 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sites, sitesLoading, sitesError, setCurrentSiteId, router]);
 
   // 로딩 상태
   if (

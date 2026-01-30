@@ -39,12 +39,12 @@ interface ImageInsertButtonProps {
   postId?: string;
 }
 
-export function ImageInsertButton({ editor, siteId, postId }: ImageInsertButtonProps) {
+export function ImageInsertButton({ editor, postId }: ImageInsertButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [mode, setMode] = useState<InputMode>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { upload, uploadProgress, reset, isUploading } = useUpload(siteId);
+  const { upload, uploadProgress, reset, isUploading } = useUpload();
 
   // 업로드 완료 시 에디터에 이미지 삽입
   useEffect(() => {
