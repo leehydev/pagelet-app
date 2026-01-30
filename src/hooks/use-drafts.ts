@@ -2,17 +2,16 @@
 
 /**
  * 독립적인 Draft(임시저장 글) 관련 훅
- * v2 API (X-Site-Id 헤더 기반)
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  getDraftsV2,
-  createDraftV2,
-  getDraftByIdV2,
-  updateDraftV2,
-  deleteDraftByIdV2,
-  publishDraftV2,
+  getDrafts,
+  createDraft,
+  getDraftById,
+  updateDraft,
+  deleteDraftById,
+  publishDraft,
   CreateDraftRequest,
   UpdateDraftRequest,
   DraftListItem,
@@ -35,7 +34,7 @@ export const draftKeys = {
 export function useDrafts(siteId: string) {
   return useQuery<DraftListItem[], AxiosError>({
     queryKey: draftKeys.list(siteId),
-    queryFn: () => getDraftsV2(),
+    queryFn: () => getDrafts(),
     enabled: !!siteId,
   });
 }
@@ -46,7 +45,7 @@ export function useDrafts(siteId: string) {
 export function useDraft(siteId: string, draftId: string | null) {
   return useQuery<Draft, AxiosError>({
     queryKey: draftKeys.detail(siteId, draftId || ''),
-    queryFn: () => getDraftByIdV2(draftId!),
+    queryFn: () => getDraftById(draftId!),
     enabled: !!siteId && !!draftId,
   });
 }
@@ -58,7 +57,7 @@ export function useCreateDraft(siteId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<Draft, AxiosError, CreateDraftRequest>({
-    mutationFn: (data) => createDraftV2(data),
+    mutationFn: (data) => createDraft(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: draftKeys.list(siteId) });
     },
@@ -75,7 +74,7 @@ export function useUpdateDraft(siteId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<Draft, AxiosError, { draftId: string; data: UpdateDraftRequest }>({
-    mutationFn: ({ draftId, data }) => updateDraftV2(draftId, data),
+    mutationFn: ({ draftId, data }) => updateDraft(draftId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: draftKeys.list(siteId) });
       queryClient.invalidateQueries({ queryKey: draftKeys.detail(siteId, variables.draftId) });
@@ -93,7 +92,7 @@ export function useDeleteDraft(siteId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<void, AxiosError, string>({
-    mutationFn: (draftId) => deleteDraftByIdV2(draftId),
+    mutationFn: (draftId) => deleteDraftById(draftId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: draftKeys.list(siteId) });
     },
@@ -110,11 +109,10 @@ export function usePublishDraft(siteId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<Post, AxiosError, string>({
-    mutationFn: (draftId) => publishDraftV2(draftId),
+    mutationFn: (draftId) => publishDraft(draftId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: draftKeys.list(siteId) });
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
-      queryClient.invalidateQueries({ queryKey: ['posts', 'admin', 'v2', siteId] });
     },
     onError: (error) => {
       console.error('Failed to publish draft:', error.response?.data);

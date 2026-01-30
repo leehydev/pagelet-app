@@ -89,8 +89,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [{ url: post.ogImageUrl, width: 1200, height: 630 }]
         : settings.ogImageUrl
-        ? [{ url: settings.ogImageUrl, width: 1200, height: 630 }]
-        : undefined,
+          ? [{ url: settings.ogImageUrl, width: 1200, height: 630 }]
+          : undefined,
       type: 'article',
       publishedTime: post.publishedAt,
     },
@@ -101,8 +101,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: post.ogImageUrl
         ? [post.ogImageUrl]
         : settings.ogImageUrl
-        ? [settings.ogImageUrl]
-        : undefined,
+          ? [settings.ogImageUrl]
+          : undefined,
     },
     ...(settings.canonicalBaseUrl && {
       alternates: {
@@ -127,7 +127,7 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
   const formattedDate = formatPostDate(post.publishedAt);
 
   return (
-    <div className="*:max-w-3xl *:w-full flex flex-col items-center">
+    <div className="*:max-w-3xl *:w-full flex flex-col items-center p-4 md:p-2 xl:p-0">
       {/* 게시글 헤더 */}
       <div>
         <div className=" py-12 border-b border-gray-200">
@@ -147,7 +147,7 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
             {post.title}
           </h1>
 
-          <div className="flex items-center justify-between items-baseline">
+          <div className="flex flex-col md:flex-row gap-2 justify-between items-baseline">
             <div>
               {/* 부제목 */}
               {post.subtitle && <p className="text-xl text-gray-600">{post.subtitle}</p>}

@@ -26,7 +26,7 @@ import {
   PostStatus,
   revalidatePost,
   createAdminPost,
-  getDraftByIdV2,
+  getDraftById,
   CreatePostRequest,
   DraftListItem,
 } from '@/lib/api';
@@ -170,12 +170,12 @@ export default function NewPostPage() {
       // 폼 필드에 실제 내용이 있는지 확인
       const formHasContent = Boolean(
         watchedValues.title?.trim() ||
-          watchedValues.subtitle?.trim() ||
-          watchedValues.slug?.trim() ||
-          watchedValues.categoryId?.trim() ||
-          watchedValues.seoTitle?.trim() ||
-          watchedValues.seoDescription?.trim() ||
-          watchedValues.ogImageUrl?.trim(),
+        watchedValues.subtitle?.trim() ||
+        watchedValues.slug?.trim() ||
+        watchedValues.categoryId?.trim() ||
+        watchedValues.seoTitle?.trim() ||
+        watchedValues.seoDescription?.trim() ||
+        watchedValues.ogImageUrl?.trim(),
       );
 
       // 에디터에 내용이 있는지 확인
@@ -230,7 +230,7 @@ export default function NewPostPage() {
 
   // Post 직접 생성 (Draft 없이 바로 발행)
   const createPostMutation = useMutation({
-    mutationFn: (data: CreatePostRequest) => createAdminPost(siteId, data),
+    mutationFn: (data: CreatePostRequest) => createAdminPost(data),
     onSuccess: async (createdPost) => {
       queryClient.invalidateQueries({ queryKey: ['posts', 'admin', siteId] });
       if (createdPost.status === PostStatus.PUBLISHED && siteSettings?.slug && createdPost.slug) {
@@ -357,7 +357,7 @@ export default function NewPostPage() {
   /** Draft 불러오기 */
   const handleLoadDraft = async (draftItem: DraftListItem) => {
     try {
-      const draft = await getDraftByIdV2(draftItem.id);
+      const draft = await getDraftById(draftItem.id);
 
       methods.reset({
         title: draft.title || '',

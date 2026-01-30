@@ -65,6 +65,7 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 ## 구현 체크리스트
 
 ### Phase 1: 백엔드 v2 API 확인
+
 - [x] Posts v2 API 준비 여부 확인
 - [x] Settings v2 API 준비 여부 확인
 - [x] Uploads v2 API 준비 여부 확인
@@ -92,12 +93,14 @@ v2 API는 URL 파라미터 대신 `X-Site-Id` 헤더를 사용합니다.
 - [x] Branding Upload v2 Hook 추가
 
 ### Phase 4: 테스트
+
 - [x] 각 v2 API 동작 확인
 - [x] X-Site-Id 헤더 전송 확인
 
 ## 테스트 계획
 
 ### 수동 테스트
+
 - [x] 게시글 CRUD v2
 - [x] 카테고리 CRUD v2
 - [x] 설정 조회/수정 v2

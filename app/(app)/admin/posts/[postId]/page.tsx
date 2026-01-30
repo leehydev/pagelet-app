@@ -84,14 +84,14 @@ export default function AdminPostDetailPage() {
     refetch,
   } = useQuery({
     queryKey: ['admin', 'post', siteId, postId],
-    queryFn: () => getAdminPost(siteId, postId),
+    queryFn: () => getAdminPost(postId),
     enabled: !!siteId && !!postId,
   });
 
   // 드래프트 조회 (post.hasDraft가 true일 때만)
   const { data: draft } = useQuery({
     queryKey: ['admin', 'draft', siteId, postId],
-    queryFn: () => getDraft(siteId, postId),
+    queryFn: () => getDraft(postId),
     enabled: !!siteId && !!postId && post?.hasDraft === true,
   });
 

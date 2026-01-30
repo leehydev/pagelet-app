@@ -30,7 +30,7 @@ export function ShareButton({
   const handleShare = async () => {
     try {
       const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
-      
+
       // 클립보드 API 사용
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(shareUrl);
@@ -62,9 +62,7 @@ export function ShareButton({
       aria-label="링크 공유"
     >
       <Share2 className="w-4 h-4" />
-      {label && size !== 'icon' && size !== 'icon-sm' && size !== 'icon-lg' && (
-        <span>{label}</span>
-      )}
+      {label && size !== 'icon' && size !== 'icon-sm' && size !== 'icon-lg' && <span>{label}</span>}
     </Button>
   );
 }

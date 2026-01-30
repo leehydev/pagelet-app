@@ -10,7 +10,7 @@
 
 ```bash
 # 테스트 (1회 실행 후 종료)
-pnpm exec vitest run
+npx vitest run
 ```
 
 테스트 실패 시 → 수정 후 재실행
@@ -19,10 +19,10 @@ pnpm exec vitest run
 
 ```bash
 # 린트 재확인
-pnpm lint
+npm run lint
 
 # 빌드 재확인
-pnpm build
+npm run build
 ```
 
 ### 3. 커밋 & 푸시
@@ -43,14 +43,14 @@ git push -u origin [브랜치명]
 
 **커밋 타입:**
 
-| 타입       | 용도           |
-| ---------- | -------------- |
-| `feat`     | 새 기능        |
-| `fix`      | 버그 수정      |
-| `refactor` | 리팩토링       |
-| `docs`     | 문서           |
-| `test`     | 테스트         |
-| `chore`    | 기타 작업      |
+| 타입       | 용도      |
+| ---------- | --------- |
+| `feat`     | 새 기능   |
+| `fix`      | 버그 수정 |
+| `refactor` | 리팩토링  |
+| `docs`     | 문서      |
+| `test`     | 테스트    |
+| `chore`    | 기타 작업 |
 
 ### 4. PR 생성
 

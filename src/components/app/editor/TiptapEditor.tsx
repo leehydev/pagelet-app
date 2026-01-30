@@ -38,7 +38,7 @@ interface TiptapEditorProps {
 
 export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
   ({ siteId, postId, content, onEditorReady }, ref) => {
-    const { upload, uploadProgress, reset } = useUpload(siteId);
+    const { upload, uploadProgress, reset } = useUpload();
 
     // postId를 ref로 관리하여 useEditor 핸들러에서 항상 최신 값 참조
     const postIdRef = useRef(postId);

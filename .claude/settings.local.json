@@ -28,7 +28,8 @@
       "Bash(gh project item-edit:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm build:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

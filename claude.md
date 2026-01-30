@@ -55,22 +55,22 @@ src/
 
 ```bash
 # 개발 서버 (로컬)
-pnpm local          # APP_ENV=local, port 3001
+npm run local          # APP_ENV=local, port 3001
 
 # 개발 서버
-pnpm dev
+npm run dev
 
 # 빌드 & 실행
-pnpm build
-pnpm start          # port 3001
+npm run build
+npm start          # port 3001
 
 # 린트
-pnpm lint
+npm run lint
 
 # 테스트
-pnpm test           # 단위 테스트
-pnpm test:ui        # 테스트 UI
-pnpm test:coverage  # 커버리지 리포트
+npm test           # 단위 테스트
+npm run test:ui        # 테스트 UI
+npm run test:coverage  # 커버리지 리포트
 ```
 
 ## 코딩 컨벤션

@@ -53,6 +53,7 @@
 ### UI 변경
 
 #### 현재 (복잡)
+
 ```
 ┌─────────────────────────────────────────┐
 │ PRIVATE 상태                             │
@@ -65,6 +66,7 @@
 ```
 
 #### 변경 후 (단순)
+
 ```
 ┌─────────────────────────────────────────┐
 │ 공개 여부                                │
@@ -120,7 +122,7 @@ export interface ReplacePostRequest {
 export interface SaveDraftRequest {
   title?: string;
   subtitle?: string;
-  slug?: string | null;  // 추가
+  slug?: string | null; // 추가
   contentJson?: Record<string, unknown>;
   contentHtml?: string | null;
   contentText?: string | null;
@@ -142,10 +144,7 @@ export async function replaceAdminPost(
   postId: string,
   data: ReplacePostRequest,
 ): Promise<Post> {
-  const response = await api.put<ApiResponse<Post>>(
-    `/admin/sites/${siteId}/posts/${postId}`,
-    data,
-  );
+  const response = await api.put<ApiResponse<Post>>(`/admin/sites/${siteId}/posts/${postId}`, data);
   return response.data.data;
 }
 ```
@@ -162,7 +161,7 @@ const handleSave = async () => {
     // 새 글: POST로 생성
     const post = await createAdminPost(siteId, {
       ...data,
-      status: selectedStatus,  // 라디오 버튼 값
+      status: selectedStatus, // 라디오 버튼 값
     });
     router.push(`/admin/posts/${post.id}`);
   } else {
@@ -191,7 +190,7 @@ const handleDraftSave = async () => {
       status: PostStatus.PRIVATE,
     });
     id = post.id;
-    setPostId(id);  // 상태 업데이트
+    setPostId(id); // 상태 업데이트
   }
 
   // draft 저장
@@ -324,16 +323,19 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 ## 구현 체크리스트
 
 ### Phase 1: 타입 및 API
+
 - [ ] ReplacePostRequest 타입 추가
 - [ ] SaveDraftRequest에 slug 추가
 - [ ] replaceAdminPost() 함수 추가
 - [ ] 기존 상태 전환 API 함수 deprecated 처리
 
 ### Phase 2: 컴포넌트
+
 - [ ] PostStatusRadio 컴포넌트 생성
 - [ ] 불러오기 버튼 UI 추가
 
 ### Phase 3: 새 글 페이지 (new/page.tsx)
+
 - [ ] 버튼 구조 변경: [저장] [임시저장]
 - [ ] 공개 여부 라디오 추가
 - [ ] handleSave 로직 (createAdminPost)
@@ -341,6 +343,7 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 - [ ] 모달 제거
 
 ### Phase 4: 수정 페이지 (edit/page.tsx)
+
 - [ ] 버튼 구조 변경: [저장] [임시저장] [불러오기]
 - [ ] 공개 여부 라디오 추가 (현재 상태로 초기화)
 - [ ] handleSave 로직 (replaceAdminPost)
@@ -350,11 +353,13 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 - [ ] 상태 전환 모달들 제거
 
 ### Phase 5: 자동저장 (use-auto-save.ts)
+
 - [ ] 상태별 분기 제거
 - [ ] 항상 draft로 저장하도록 단순화
 - [ ] postStatus 파라미터 제거
 
 ### Phase 6: 테스트
+
 - [ ] 새 글 저장 테스트
 - [ ] 새 글 임시저장 테스트
 - [ ] 기존 글 저장 테스트
@@ -365,6 +370,7 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 ## 테스트 시나리오
 
 ### 시나리오 1: 새 글 작성 후 공개 저장
+
 ```
 1. 새 글 페이지 진입
 2. 제목, 내용 입력
@@ -374,6 +380,7 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 ```
 
 ### 시나리오 2: 새 글 임시저장 → 나중에 저장
+
 ```
 1. 새 글 페이지 진입
 2. 제목, 내용 입력
@@ -387,6 +394,7 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 ```
 
 ### 시나리오 3: 공개 글 → 비공개 전환
+
 ```
 1. 공개 글 편집 페이지 진입
 2. 공개 여부: "비공개" 선택
@@ -395,6 +403,7 @@ export function PostStatusRadio({ value, onChange, disabled }: PostStatusRadioPr
 ```
 
 ### 시나리오 4: 자동저장
+
 ```
 1. 글 작성/편집 중
 2. 5분 대기
