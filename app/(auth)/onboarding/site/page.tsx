@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, FormProvider, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useUserStore } from '@/stores/user-store';
 import { Button } from '@/components/ui/button';
 import { ValidationInput } from '@/components/app/form/ValidationInput';
 import { Input } from '@/components/ui/input';
@@ -48,7 +49,7 @@ type SiteFormData = z.infer<typeof siteSchema>;
 
 export default function SitePage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const fetchUser = useUserStore((s) => s.fetchUser);
 
   const methods = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
@@ -122,8 +123,8 @@ export default function SitePage() {
     mutationFn: async (data: { name: string; slug: string }) => {
       await createSite(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    onSuccess: async () => {
+      await fetchUser();
       router.push('/waiting');
     },
   });

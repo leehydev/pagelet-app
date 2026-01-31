@@ -9,6 +9,7 @@ import { getOAuthAuthorizeUrl, OAuthProvider } from '@/lib/oauth';
 import { useUser } from '@/hooks/use-user';
 import { useMounted } from '@/hooks/use-mounted';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { AccountStatus } from '@/lib/api/types';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -18,7 +19,12 @@ export default function SignInPage() {
   const mounted = useMounted();
 
   useEffect(() => {
-    if (!isLoading && user) {
+    if (isLoading || !user) return;
+    if (user.accountStatus === AccountStatus.PENDING) {
+      router.replace('/waiting');
+    } else if (user.accountStatus === AccountStatus.ONBOARDING) {
+      router.replace('/onboarding/site');
+    } else {
       router.replace('/admin');
     }
   }, [user, isLoading, router]);

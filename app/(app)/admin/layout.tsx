@@ -25,9 +25,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
   const hasInitializedSiteRef = useRef(false);
 
-  // 사이트 자동 선택 및 유효성 검증
+  // 사이트 자동 선택 및 유효성 검증 (user 로드 후에만 판단, PENDING이면 onboarding 리다이렉트 금지)
   useEffect(() => {
-    if (sitesLoading || sitesError || !sites) return;
+    if (sitesLoading || sitesError || !sites || userLoading || !user) return;
+
+    // PENDING/ONBOARDING은 useRequireAdmin에서 리다이렉트하므로 여기서는 ACTIVE만 처리
+    if (user.accountStatus !== AccountStatus.ACTIVE) return;
 
     // 사이트 없음 → 온보딩
     if (sites.length === 0) {
@@ -57,7 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       // 유효한 사이트가 있으면 초기화 완료 표시
       hasInitializedSiteRef.current = true;
     }
-  }, [sites, sitesLoading, sitesError, setCurrentSiteId, router]);
+    // user 객체 대신 accountStatus만 deps에 넣어 참조 불안정으로 인한 불필요한 effect 실행 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 원시값만 의존성으로 사용
+  }, [sites, sitesLoading, sitesError, user?.accountStatus, userLoading, setCurrentSiteId, router]);
 
   // 로딩 상태 (useRequireAdmin 리다이렉트 대기 포함)
   if (

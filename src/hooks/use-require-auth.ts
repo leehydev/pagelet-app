@@ -65,7 +65,9 @@ export function useRequireAdmin() {
 /**
  * 온보딩 레이아웃에서 사용.
  * - 비로그인/에러 → /signin
- * - accountStatus !== ONBOARDING → /admin
+ * - PENDING → /waiting
+ * - ACTIVE 등 → /admin
+ * - ONBOARDING만 통과
  */
 export function useRequireOnboarding() {
   const router = useRouter();
@@ -76,6 +78,11 @@ export function useRequireOnboarding() {
 
     if (isError || !user) {
       router.replace('/signin');
+      return;
+    }
+
+    if (user.accountStatus === AccountStatus.PENDING) {
+      router.replace('/waiting');
       return;
     }
 
