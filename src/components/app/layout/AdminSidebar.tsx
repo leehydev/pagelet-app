@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAdminSidebarStore } from '@/stores/admin-sidebar-store';
 import { useSiteId } from '@/stores/site-store';
+import { useUserStore } from '@/stores/user-store';
 import { useAdminSiteSettings } from '@/hooks/use-site-settings';
 import { SiteSwitcher } from './SiteSwitcher';
 import { removeAccessToken } from '@/lib/api';
@@ -31,6 +32,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const siteId = useSiteId();
   const isSidebarOpen = useAdminSidebarStore((s) => s.isSidebarOpen);
+  const clearUser = useUserStore((s) => s.clearUser);
   const { data: siteSettings, error: siteSettingsError } = useAdminSiteSettings(siteId);
 
   // 기본 경로 prefix
@@ -46,10 +48,9 @@ export function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
-      // Next.js API 라우트로 쿠키 삭제
       await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
-      // localStorage 토큰 삭제
+      clearUser();
       removeAccessToken();
       window.location.href = '/signin';
     }

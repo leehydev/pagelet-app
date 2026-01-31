@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/hooks/use-user';
+import { useRequireAdmin } from '@/hooks/use-require-auth';
 import { useAdminSites } from '@/hooks/use-admin-sites';
 import { useSiteStore, getCurrentSiteId } from '@/stores/site-store';
 import { AccountStatus } from '@/lib/api';
@@ -10,41 +10,20 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { QueryError } from '@/components/common/QueryError';
 import { AdminSidebar } from '@/components/app/layout/AdminSidebar';
 
-const ONBOARDING_PATH = '/onboarding/site';
-
 /**
  * Admin 레이아웃
- * - 인증 체크 및 온보딩 리다이렉트
+ * - 인증·accountStatus 체크는 useRequireAdmin에서 처리
  * - Site 스토어 기반 현재 사이트 관리
  * - 사이드바 렌더링
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data: user, isLoading: userLoading, error: userError } = useUser();
+  const { user, isLoading: userLoading, isError: userError } = useRequireAdmin();
   const { data: sites, isLoading: sitesLoading, isError: sitesError, refetch } = useAdminSites();
 
   const currentSiteId = useSiteStore((state) => state.currentSiteId);
   const setCurrentSiteId = useSiteStore((state) => state.setCurrentSiteId);
   const hasInitializedSiteRef = useRef(false);
-
-  // 인증 및 온보딩 체크
-  useEffect(() => {
-    if (userLoading) return;
-
-    if (userError) {
-      router.replace('/signin');
-      return;
-    }
-
-    if (user?.accountStatus === AccountStatus.PENDING) {
-      router.replace('/waiting');
-      return;
-    }
-
-    if (user?.accountStatus === AccountStatus.ONBOARDING) {
-      router.replace(ONBOARDING_PATH);
-    }
-  }, [user, userLoading, userError, router]);
 
   // 사이트 자동 선택 및 유효성 검증
   useEffect(() => {
@@ -78,11 +57,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       // 유효한 사이트가 있으면 초기화 완료 표시
       hasInitializedSiteRef.current = true;
     }
-    // currentSiteId를 dependency에서 제거하여 무한 루프 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sites, sitesLoading, sitesError, setCurrentSiteId, router]);
 
-  // 로딩 상태
+  // 로딩 상태 (useRequireAdmin 리다이렉트 대기 포함)
   if (
     userLoading ||
     userError ||

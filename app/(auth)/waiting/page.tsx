@@ -8,11 +8,11 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function WaitingPage() {
   const router = useRouter();
-  const { data: user, isLoading, error } = useUser();
+  const { data: user, isLoading, isError } = useUser();
 
   useEffect(() => {
     // 에러 시 로그인 페이지로
-    if (error) {
+    if (isError) {
       router.replace('/signin');
       return;
     }
@@ -27,9 +27,9 @@ export default function WaitingPage() {
     if (user.accountStatus === AccountStatus.ONBOARDING) {
       router.replace('/onboarding/site');
     }
-  }, [user, isLoading, error, router]);
+  }, [user, isLoading, isError, router]);
 
-  if (isLoading || error || !user) {
+  if (isLoading || isError || !user) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
