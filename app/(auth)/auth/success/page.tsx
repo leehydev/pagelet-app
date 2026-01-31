@@ -46,7 +46,8 @@ export default function AuthSuccessPage() {
   const router = useRouter();
   // 토큰 초기화는 한 번만 실행 (ref로 추적)
   const tokenInitialized = useRef(false);
-  const { data: user, isSuccess, error, refetch } = useUser();
+  const { data: user, isLoading, isError: error, refetch } = useUser();
+  const isSuccess = !isLoading && !!user;
 
   // 임시 쿠키에서 accessToken을 localStorage로 이동
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function AuthSuccessPage() {
           <h1 className="text-2xl font-bold mb-2 text-red-500">❌ 인증 실패</h1>
           <p className="text-gray-500">다시 로그인해주세요</p>
           <button
-            onClick={() => router.push('/auth/login')}
+            onClick={() => router.push('/signin')}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             로그인 페이지로 이동

@@ -2,44 +2,28 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useUser } from '@/hooks/use-user';
+import { useRequireOnboarding } from '@/hooks/use-require-auth';
 import { AccountStatus } from '@/lib/api';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: user, isLoading, error } = useUser();
+  const { user, isLoading, isError } = useRequireOnboarding();
 
+  // 사이트 생성 페이지가 아니면 리다이렉트
   useEffect(() => {
-    if (isLoading) return;
-
-    // 인증되지 않은 경우 로그인 페이지로
-    if (error) {
-      router.replace('/signin');
-      return;
-    }
-
-    if (!user) return;
-
-    // 온보딩 상태가 아니면 대시보드로
-    if (user.accountStatus !== AccountStatus.ONBOARDING) {
-      router.replace('/admin');
-      return;
-    }
-
-    // 사이트 생성 페이지가 아니면 리다이렉트
+    if (isLoading || !user || user.accountStatus !== AccountStatus.ONBOARDING) return;
     if (!pathname.includes('/site')) {
       router.replace('/onboarding/site');
     }
-  }, [user, isLoading, error, pathname, router]);
+  }, [user, isLoading, pathname, router]);
 
   // 로딩 중, 에러, 또는 사용자 정보 없음 (리다이렉트 대기)
-  if (isLoading || error || !user) {
+  if (isLoading || isError || !user) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
-  // 온보딩 상태가 아님
   if (user.accountStatus !== AccountStatus.ONBOARDING) {
     return null;
   }

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
 import { removeAccessToken } from './api/client';
+import { useUserStore } from '@/stores/user-store';
 
 // Devtools는 개발 환경에서만 동적으로 로드
 const ReactQueryDevtools =
@@ -29,9 +30,8 @@ const ReactQueryDevtools =
 async function logout() {
   if (typeof window !== 'undefined') {
     try {
-      // localStorage에서 accessToken 삭제
+      useUserStore.getState().clearUser();
       removeAccessToken();
-      // 프론트 서버 API 호출하여 refreshToken 쿠키 삭제
       await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
       window.location.href = '/signin';
@@ -133,15 +133,7 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
           },
         },
         queryCache: new QueryCache({
-          onError: (error, query) => {
-            // /me 요청에서 403(계정 정지/탈퇴) 또는 404(사용자 없음)면 로그아웃
-            if (query.queryKey[0] === 'user' && query.queryKey[1] === 'me') {
-              const status = (error as AxiosError).response?.status;
-              if (status === 403 || status === 404) {
-                logout();
-                return;
-              }
-            }
+          onError: (error) => {
             handleGlobalError(error);
           },
         }),
