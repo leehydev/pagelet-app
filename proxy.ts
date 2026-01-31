@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import {
+  isPublicPath,
+  redirectToSignin,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '@/lib/middleware-auth';
+
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_TENANT_DOMAIN;
 const RESERVED = new Set(['www', 'app', 'admin']);
 
@@ -23,6 +29,14 @@ export function proxy(req: NextRequest) {
   // public 디렉토리 정적 파일은 rewrite 없이 직접 전달
   if (path.endsWith('.html') || path.startsWith('/images/')) {
     return NextResponse.next();
+  }
+
+  // 비공개 경로: 리프레시 토큰 없으면 로그인 페이지로
+  if (!isPublicPath(path)) {
+    const hasRefreshToken = !!req.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value?.trim();
+    if (!hasRefreshToken) {
+      return redirectToSignin(req);
+    }
   }
 
   // 1) apex 도메인 (랜딩): pagelet.kr, www.pagelet.kr

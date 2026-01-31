@@ -2,8 +2,8 @@
 
 import { Toaster } from 'sonner';
 
+import { AuthShell } from '@/components/app/layout/AuthShell';
 import { GlobalModal } from '@/components/app/modal/GlobalModal';
-
 import { ReactQueryProvider } from '@/lib/react-query';
 import { ThemeProvider } from './theme-provider';
 import { useMounted } from '@/hooks/use-mounted';
@@ -14,7 +14,9 @@ export function RootProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <ReactQueryProvider>
-        {children}
+        <AuthShell>
+          {children}
+        </AuthShell>
         <GlobalModal />
         {mounted && (
           <Toaster
