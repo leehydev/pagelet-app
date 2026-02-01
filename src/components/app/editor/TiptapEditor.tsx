@@ -55,7 +55,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         }
 
         // 지원하는 형식인지 확인
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!allowedTypes.includes(file.type)) {
           return false;
         }
