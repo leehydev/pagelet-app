@@ -173,12 +173,12 @@ export function useUpload() {
       return;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       setUploadProgress({
         status: 'error',
         progress: 0,
-        error: '지원하지 않는 파일 형식입니다. JPEG, PNG, WebP만 가능합니다.',
+        error: '지원하지 않는 파일 형식입니다. JPEG, PNG, WebP, GIF만 가능합니다.',
       });
       return;
     }

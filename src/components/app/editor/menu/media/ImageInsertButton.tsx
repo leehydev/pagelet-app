@@ -139,7 +139,7 @@ export function ImageInsertButton({ editor, postId }: ImageInsertButtonProps) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleFileSelect}
                   disabled={isUploading}
                   className="hidden"
