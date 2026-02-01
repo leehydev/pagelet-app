@@ -163,12 +163,12 @@ export function useUpload() {
     file: File,
     options?: { postId?: string; imageType?: 'THUMBNAIL' | 'CONTENT' | 'GALLERY' },
   ) => {
-    const maxSize = 2 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       setUploadProgress({
         status: 'error',
         progress: 0,
-        error: '파일 크기는 최대 2MB까지 가능합니다.',
+        error: '파일 크기는 최대 5MB까지 가능합니다.',
       });
       return;
     }
