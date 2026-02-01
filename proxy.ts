@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
-  isPublicPath,
+  isAdminPath,
   redirectToSignin,
   REFRESH_TOKEN_COOKIE_NAME,
 } from '@/lib/middleware-auth';
@@ -31,8 +31,8 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 비공개 경로: 리프레시 토큰 없으면 로그인 페이지로
-  if (!isPublicPath(path)) {
+  // /admin 경로만 로그인 필요: 리프레시 토큰 없으면 로그인 페이지로
+  if (isAdminPath(path)) {
     const hasRefreshToken = !!req.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value?.trim();
     if (!hasRefreshToken) {
       return redirectToSignin(req);
