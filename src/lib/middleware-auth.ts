@@ -47,11 +47,12 @@ export function isPublicPath(pathname: string): boolean {
   );
 }
 
-/** 로그인 페이지로 리다이렉트 (from 쿼리에 현재 경로 포함) */
-export function redirectToSignin(request: NextRequest) {
-  const signinUrl = new URL(ERROR_PAGES.signin, request.url);
-  signinUrl.searchParams.set('from', request.nextUrl.pathname);
-  return NextResponse.redirect(signinUrl);
+/**
+ * 로그인이 필요한 경로인지 여부 (/admin 및 하위만 로그인 필요)
+ */
+export function isAdminPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/$/, '') || '/';
+  return normalized === '/admin' || normalized.startsWith('/admin/');
 }
 
 /** 404/500 등 에러 페이지로 리다이렉트 */

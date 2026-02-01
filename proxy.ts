@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  isPublicPath,
-  redirectToSignin,
-  REFRESH_TOKEN_COOKIE_NAME,
-} from '@/lib/middleware-auth';
+import { isAdminPath, REFRESH_TOKEN_COOKIE_NAME } from '@/lib/middleware-auth';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_TENANT_DOMAIN;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || '';
 const RESERVED = new Set(['www', 'app', 'admin']);
 
 function getHostname(req: NextRequest) {
@@ -31,11 +28,13 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 비공개 경로: 리프레시 토큰 없으면 로그인 페이지로
-  if (!isPublicPath(path)) {
+  // /admin 경로만 로그인 필요: 리프레시 토큰 없으면 로그인 페이지로
+  if (isAdminPath(path)) {
     const hasRefreshToken = !!req.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value?.trim();
     if (!hasRefreshToken) {
-      return redirectToSignin(req);
+      const signinUrl = new URL('/signin', APP_URL);
+      signinUrl.searchParams.set('from', path);
+      return NextResponse.redirect(signinUrl);
     }
   }
 
