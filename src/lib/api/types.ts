@@ -94,7 +94,7 @@ export interface SiteSettings {
   seoKeywords: string | null;
   canonicalBaseUrl: string | null;
   robotsIndex: boolean;
-  naverSiteVerification: string | null;
+  naverSearchAdvisorKey: string | null;
   // 연락처
   contactEmail: string | null;
   contactPhone: string | null;
@@ -124,7 +124,7 @@ export interface UpdateSiteSettingsRequest {
   seoDescription?: string | null;
   seoKeywords?: string | null;
   robotsIndex?: boolean;
-  naverSiteVerification?: string | null;
+  naverSearchAdvisorKey?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
   address?: string | null;

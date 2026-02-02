@@ -70,10 +70,10 @@ export async function generateMetadata({
     icons: {
       icon: settings.faviconUrl || '/images/favicon.ico',
     },
-    verification: settings.naverSiteVerification
+    verification: settings.naverSearchAdvisorKey
       ? {
           other: {
-            'naver-site-verification': settings.naverSiteVerification,
+            'naver-site-verification': settings.naverSearchAdvisorKey,
           },
         }
       : undefined,
