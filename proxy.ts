@@ -23,8 +23,13 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // public 디렉토리 정적 파일은 rewrite 없이 직접 전달
-  if (path.endsWith('.html') || path.startsWith('/images/')) {
+  // public 디렉토리 정적 파일 및 SEO 메타데이터 파일은 rewrite 없이 직접 전달
+  if (
+    path.endsWith('.html') ||
+    path.startsWith('/images/') ||
+    path === '/robots.txt' ||
+    path === '/sitemap.xml'
+  ) {
     return NextResponse.next();
   }
 

@@ -126,8 +126,37 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
 
   const formattedDate = formatPostDate(post.publishedAt);
 
+  const tenantDomain = process.env.NEXT_PUBLIC_TENANT_DOMAIN || 'pagelet.kr';
+  const baseUrl = settings.canonicalBaseUrl || `https://${slug}.${tenantDomain}`;
+  const postUrl = `${baseUrl}/posts/${postSlug}`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.seoDescription || post.subtitle || '',
+    datePublished: post.publishedAt,
+    url: postUrl,
+    ...(post.ogImageUrl && { image: post.ogImageUrl }),
+    author: {
+      '@type': 'Organization',
+      name: settings.name,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: settings.name,
+      ...(settings.logoImageUrl && {
+        logo: { '@type': 'ImageObject', url: settings.logoImageUrl },
+      }),
+    },
+  };
+
   return (
     <div className="*:max-w-3xl *:w-full flex flex-col items-center p-4 md:p-2 xl:p-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* 게시글 헤더 */}
       <div>
         <div className=" py-12 border-b border-gray-200">

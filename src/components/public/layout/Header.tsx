@@ -19,9 +19,9 @@ export function Header({ logoImageUrl, siteSlug, siteName, categories = [] }: He
         <div className="flex items-center justify-between h-16">
           <Link href={`/t/${siteSlug}`} className="flex items-center gap-2">
             {logoImageUrl && <SiteLogo src={logoImageUrl} alt={siteName} priority />}
-            <h1 className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <span className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               {siteName}
-            </h1>
+            </span>
           </Link>
           <div className="flex items-center gap-4">
             <MobileMenu categories={categories} siteSlug={siteSlug} />
