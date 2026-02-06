@@ -201,7 +201,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
 
         {/* 업로드 진행 상태 표시 */}
         {isUploading && (
-          <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+          <div className="sticky top-0 z-10 px-4 py-2 bg-blue-50 border-b border-blue-100">
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <Loader2 className="w-4 h-4 animate-spin" />
               {uploadProgress.status === 'presigning' && <span>업로드 준비 중...</span>}
