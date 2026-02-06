@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Type, Heading1, Heading2, Heading3 } from 'lucide-react';
+import { Type, Heading2, Heading3 } from 'lucide-react';
 import { MenuComponentProps } from './types';
 
 export function HeadingMenu({ editor, editorState }: MenuComponentProps) {
@@ -14,16 +14,6 @@ export function HeadingMenu({ editor, editorState }: MenuComponentProps) {
       >
         <Type className="h-4 w-4" />
         <span className="hidden sm:inline">P</span>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        className={editorState.isHeading1 ? 'bg-accent text-accent-foreground' : ''}
-        title="제목 1"
-      >
-        <Heading1 className="h-4 w-4" />
-        <span className="hidden sm:inline">H1</span>
       </Button>
       <Button
         variant="ghost"
