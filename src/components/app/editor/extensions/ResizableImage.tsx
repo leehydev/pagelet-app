@@ -82,7 +82,7 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
     <NodeViewWrapper as={isInline ? 'span' : 'div'} className={wrapperClass}>
       <div
         ref={containerRef}
-        className={`relative inline-block ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+        className={`relative inline-block align-top leading-none ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
       >
         {/* 이미지 툴바 - 선택 시에만 표시 */}
         {selected && (
@@ -123,7 +123,7 @@ function ResizableImageComponent({ node, updateAttributes, selected }: NodeViewP
           alt={alt || ''}
           width={width || undefined}
           height={height || undefined}
-          className="max-w-full h-auto block"
+          className="block max-w-full h-auto"
           style={{
             width: width ? `${width}px` : undefined,
             height: height ? `${height}px` : undefined,
