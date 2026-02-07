@@ -3,15 +3,29 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useRequireOnboarding } from '@/hooks/use-require-auth';
+import { useAdminSites } from '@/hooks/use-admin-sites';
 import { AccountStatus } from '@/lib/api';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+
+/** ONBOARDING 또는 ACTIVE+사이트없음(첫 사이트 생성)일 때 온보딩 허용 */
+function canStayOnOnboarding(
+  accountStatus: AccountStatus,
+  sites: { length: number } | undefined,
+  sitesLoading: boolean
+) {
+  if (accountStatus === AccountStatus.ONBOARDING) return true;
+  if (accountStatus === AccountStatus.ACTIVE && (sitesLoading || !sites || sites.length === 0))
+    return true;
+  return false;
+}
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, isError } = useRequireOnboarding();
+  const { data: sites, isLoading: sitesLoading } = useAdminSites();
 
-  // 사이트 생성 페이지가 아니면 리다이렉트
+  // 사이트 생성 페이지가 아니면 리다이렉트 (ONBOARDING일 때만 경로 제한)
   useEffect(() => {
     if (isLoading || !user || user.accountStatus !== AccountStatus.ONBOARDING) return;
     if (!pathname.includes('/site')) {
@@ -24,7 +38,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     return <LoadingSpinner fullScreen size="lg" />;
   }
 
-  if (user.accountStatus !== AccountStatus.ONBOARDING) {
+  if (!canStayOnOnboarding(user.accountStatus, sites, sitesLoading)) {
     return null;
   }
 
