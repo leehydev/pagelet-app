@@ -127,7 +127,11 @@ export default async function PublicLayout({
       {/* 페이지 콘텐츠 + 사이드바 광고 */}
       <div className="flex-1 bg-[#f6f7f8]">
         <div className={hasSidebarAd ? 'flex gap-4 max-w-7xl mx-auto' : ''}>
-          <div className="flex-1">{children}</div>
+          {/* 사이드바 광고와 대칭을 이루는 투명 스페이서 (xl 이상에서만 표시) */}
+          {hasSidebarAd && (
+            <div className="hidden xl:block w-[160px] shrink-0" aria-hidden="true" />
+          )}
+          <div className="flex-1 min-w-0">{children}</div>
           {hasSidebarAd && (
             <SidebarAd provider={settings.adProvider!} slotId={settings.adPcSidebar!} />
           )}
