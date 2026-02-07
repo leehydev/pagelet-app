@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // PENDING/ONBOARDING은 useRequireAdmin에서 리다이렉트하므로 여기서는 ACTIVE만 처리
     if (user.accountStatus !== AccountStatus.ACTIVE) return;
 
-    // 사이트 없음 → 온보딩
+    // 사이트 없음 → 온보딩 (첫 사이트 생성 유도). useRequireOnboarding에서 ACTIVE+사이트없음은 통과시킴.
     if (sites.length === 0) {
       router.replace('/onboarding/site');
       return;
