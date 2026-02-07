@@ -17,9 +17,22 @@ export function Header({ logoImageUrl, siteSlug, siteName, categories = [] }: He
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-6xl mx-auto px-4 xl:px-0">
         <div className="flex items-center justify-between h-16">
-          <Link href={`/t/${siteSlug}`} className="flex items-center gap-2">
+          <Link
+            href={`/t/${siteSlug}`}
+            className="flex min-w-0 shrink items-center gap-2"
+          >
             {logoImageUrl && <SiteLogo src={logoImageUrl} alt={siteName} priority />}
-            <span className="hidden md:block text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            {/* 모바일: 로고 없을 때만 텍스트 표시, 작은 크기 + 말줄임 */}
+            {!logoImageUrl && (
+              <span
+                className="max-w-[min(180px,50vw)] truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-white md:hidden"
+                title={siteName}
+              >
+                {siteName}
+              </span>
+            )}
+            {/* 데스크톱: 항상 사이트명 표시 */}
+            <span className="hidden text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:block">
               {siteName}
             </span>
           </Link>
