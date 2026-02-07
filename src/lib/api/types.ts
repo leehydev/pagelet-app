@@ -78,6 +78,10 @@ export interface PublicPost {
 
 export type CtaType = 'text' | 'image';
 
+// ===== Ad Types =====
+
+export type AdProvider = 'adsense' | 'adfit';
+
 export interface SiteSettings {
   id: string;
   name: string;
@@ -113,6 +117,10 @@ export interface SiteSettings {
   ctaText: string | null;
   ctaImageUrl: string | null;
   ctaLink: string | null;
+  // 광고 설정
+  adProvider: AdProvider | null;
+  adMobileHeader: string | null;
+  adPcSidebar: string | null;
 }
 
 export interface UpdateSiteSettingsRequest {

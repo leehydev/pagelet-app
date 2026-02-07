@@ -7,6 +7,7 @@ import { CtaTracker } from '@/components/public/CtaTracker';
 import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
 import { Header } from '@/components/public/layout/Header';
 import { Footer } from '@/components/public/layout/Footer';
+import { AdScript, MobileHeaderAd, SidebarAd } from '@/components/public/ad';
 
 const notoSans = Noto_Sans_KR({
   subsets: ['latin'],
@@ -91,8 +92,25 @@ export default async function PublicLayout({
   const [settings, categories] = await Promise.all([getSiteSettings(slug), getCategories(slug)]);
   const fontClass = getFontClass(settings.fontKey);
 
+  // 광고 설정
+  const hasAds = settings.adProvider !== null;
+  const hasMobileAd = hasAds && settings.adMobileHeader !== null;
+  const hasSidebarAd = hasAds && settings.adPcSidebar !== null;
+
+  // AdSense publisherId 추출 (adMobileHeader 또는 adPcSidebar에서)
+  const getPublisherId = () => {
+    const slotId = settings.adMobileHeader || settings.adPcSidebar;
+    if (slotId && slotId.includes('/')) {
+      return slotId.split('/')[0];
+    }
+    return undefined;
+  };
+
   return (
     <div className={`flex-1 ${fontClass} flex flex-col`} style={{ fontFamily: 'var(--font-base)' }}>
+      {/* 광고 스크립트 로드 */}
+      {hasAds && <AdScript provider={settings.adProvider!} publisherId={getPublisherId()} />}
+
       {/* 헤더 */}
       <Header
         logoImageUrl={settings.logoImageUrl || ''}
@@ -101,8 +119,20 @@ export default async function PublicLayout({
         siteSlug={slug}
       />
 
-      {/* 페이지 콘텐츠 */}
-      <div className="flex-1 bg-[#f6f7f8]">{children}</div>
+      {/* 모바일 헤더 아래 광고 */}
+      {hasMobileAd && (
+        <MobileHeaderAd provider={settings.adProvider!} slotId={settings.adMobileHeader!} />
+      )}
+
+      {/* 페이지 콘텐츠 + 사이드바 광고 */}
+      <div className="flex-1 bg-[#f6f7f8]">
+        <div className={hasSidebarAd ? 'flex gap-4 max-w-7xl mx-auto' : ''}>
+          <div className="flex-1">{children}</div>
+          {hasSidebarAd && (
+            <SidebarAd provider={settings.adProvider!} slotId={settings.adPcSidebar!} />
+          )}
+        </div>
+      </div>
 
       {/* CTA 배너 */}
       <CtaBanner settings={settings} />
