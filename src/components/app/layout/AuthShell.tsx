@@ -11,7 +11,7 @@ import { useUserStore } from '@/stores/user-store';
  * usePathname()은 rewrite 전의 브라우저 URL 경로를 반환한다.
  * 따라서 공개 경로를 열거하는 대신, 인증이 필요한 경로만 명시한다.
  */
-const AUTH_REQUIRED_PREFIXES = ['/admin'];
+const AUTH_REQUIRED_PREFIXES = ['/admin', '/signin', '/signup', '/waiting', '/onboarding', '/auth'];
 
 function isAuthRequired(pathname: string): boolean {
   return AUTH_REQUIRED_PREFIXES.some(
@@ -26,13 +26,17 @@ function isAuthRequired(pathname: string): boolean {
  */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   const fetchUser = useUserStore((s) => s.fetchUser);
+  const clearUser = useUserStore((s) => s.clearUser);
   const pathname = usePathname();
 
   useEffect(() => {
     if (isAuthRequired(pathname)) {
       fetchUser();
+    } else {
+      // 인증 불필요 경로: isLoading을 false로 전환하여 로딩 스피너 방지
+      clearUser();
     }
-  }, [fetchUser, pathname]);
+  }, [fetchUser, clearUser, pathname]);
 
   return <>{children}</>;
 }
